@@ -19,21 +19,21 @@ func JWTAuth() gin.HandlerFunc {
 
 		authHeader := c.Request.Header.Get("Authorization")
 		if authHeader == "" {
-			utils.FailWithMessage("请登录", c)
+			utils.FailWithUnauthorized("请登录", c)
 			c.Abort()
 			return
 		}
 
 		parts := strings.SplitN(authHeader, " ", 2)
 		if !(len(parts) == 2 && parts[0] == "Bearer") {
-			utils.FailWithMessage("Token格式错误", c)
+			utils.FailWithUnauthorized("Token格式错误", c)
 			c.Abort()
 			return
 		}
 
 		claims, err := utils.ParseToken(parts[1])
 		if err != nil {
-			utils.FailWithMessage("Token无效或已过期", c)
+			utils.FailWithUnauthorized("Token无效或已过期", c)
 			c.Abort()
 			return
 		}

@@ -243,7 +243,11 @@ func GetUserByID(c *gin.Context) {
 	// 调用服务层
 	userInfo, err := service.UserService.GetUserByID(userID)
 	if err != nil {
-		utils.FailWithMessage(err.Error(), c)
+		if err.Error() == "用户不存在" {
+			utils.FailWithNotFound(err.Error(), c)
+		} else {
+			utils.FailWithMessage(err.Error(), c)
+		}
 		return
 	}
 
@@ -261,7 +265,11 @@ func UpdateUserByAdmin(c *gin.Context) {
 
 	// 调用服务层
 	if err := service.UserService.UpdateUserProfile(userID, req); err != nil {
-		utils.FailWithMessage(err.Error(), c)
+		if err.Error() == "用户不存在" {
+			utils.FailWithNotFound(err.Error(), c)
+		} else {
+			utils.FailWithMessage(err.Error(), c)
+		}
 		return
 	}
 

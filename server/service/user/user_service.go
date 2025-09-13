@@ -177,6 +177,12 @@ func (s *userService) GetUserProfile(userID string) (*user.UserProfileResponse, 
 
 // UpdateUserProfile 更新用户档案
 func (s *userService) UpdateUserProfile(userID string, req user.UpdateUserProfileRequest) error {
+	// 先检查用户是否存在
+	var existingUser model.User
+	if err := global.DB.Where("id = ?", userID).First(&existingUser).Error; err != nil {
+		return errors.New("用户不存在")
+	}
+
 	// 更新用户基本信息
 	updates := make(map[string]interface{})
 	if req.Name != "" {

@@ -14,13 +14,33 @@ type Response struct {
 }
 
 const (
-	SUCCESS = 200
-	ERROR   = 500
+	SUCCESS      = 0
+	ERROR        = 500
+	UNAUTHORIZED = 401
+	FORBIDDEN    = 403
+	NOT_FOUND    = 404
 )
 
 // Result 统一返回结果
 func Result(code int, data interface{}, msg string, c *gin.Context) {
-	c.JSON(http.StatusOK, Response{
+	// 根据业务码确定HTTP状态码
+	var httpStatus int
+	switch code {
+	case SUCCESS:
+		httpStatus = http.StatusOK
+	case UNAUTHORIZED:
+		httpStatus = http.StatusUnauthorized
+	case FORBIDDEN:
+		httpStatus = http.StatusForbidden
+	case NOT_FOUND:
+		httpStatus = http.StatusNotFound
+	case ERROR:
+		httpStatus = http.StatusInternalServerError
+	default:
+		httpStatus = http.StatusOK
+	}
+
+	c.JSON(httpStatus, Response{
 		Code: code,
 		Data: data,
 		Msg:  msg,
@@ -60,4 +80,19 @@ func FailWithMessage(message string, c *gin.Context) {
 // FailWithDetailed 失败返回详细信息
 func FailWithDetailed(data interface{}, message string, c *gin.Context) {
 	Result(ERROR, data, message, c)
+}
+
+// FailWithUnauthorized 未授权返回
+func FailWithUnauthorized(message string, c *gin.Context) {
+	Result(UNAUTHORIZED, map[string]interface{}{}, message, c)
+}
+
+// FailWithForbidden 禁止访问返回
+func FailWithForbidden(message string, c *gin.Context) {
+	Result(FORBIDDEN, map[string]interface{}{}, message, c)
+}
+
+// FailWithNotFound 未找到返回
+func FailWithNotFound(message string, c *gin.Context) {
+	Result(NOT_FOUND, map[string]interface{}{}, message, c)
 }
