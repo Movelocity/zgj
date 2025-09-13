@@ -1,0 +1,52 @@
+server:
+  port: 8888
+  mode: "debug" # release/debug/test
+
+cors:
+  mode: "strict-whitelist"
+  whitelist:
+    - allow-origin: "http://localhost:3000"
+      allow-methods: "POST, GET, OPTIONS, DELETE, PUT"
+      allow-headers: "Content-Type,AccessToken,X-CSRF-Token, Authorization, Token,X-Token,X-User-Id,user_id"
+      expose-headers: "Content-Length, Access-Control-Allow-Origin, Access-Control-Allow-Headers, Content-Type, New-Token, New-Expires-At"
+      allow-credentials: true
+
+pgsql:
+  host: "localhost"
+  port: 5666
+  db-name: "your_db_name"
+  username: "postgres"
+  password: "minecraft123"
+  sslmode: "disable"
+  max-idle-conns: 10
+  max-open-conns: 100
+  log-mode: "info" # silent/error/warn/info
+
+spug-sms:
+  token: "your_spug_token"
+  api-url: "https://api.spug.cc/api/sms/"
+
+jwt:
+  signing-key: "fPiMcrpgB1qv98PSsmnwY6L9zSvkNbRj7EaNUi8M87k3XQTfiXdeFw5I"
+  expires-time: "168h" # 7天
+  buffer-time: "24h"   # 1天
+  issuer: "CLOUD"
+
+local:
+  path: "uploads/file"
+  store-path: "uploads/file"
+  max-size: 10 # MB
+
+upload:
+  image-max-size: 5   # MB
+  file-max-size: 10   # MB
+  allow-image-types: "image/jpeg,image/png,image/gif"
+  allow-file-types: "application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+
+log:
+  level: "info"
+  prefix: "[CLOUD]"
+  format: "json" # text/json
+  director: "log"
+  show-line: true
+  encode-level: "LowercaseColorLevelEncoder" # LowercaseLevelEncoder/LowercaseColorLevelEncoder/CapitalLevelEncoder/CapitalColorLevelEncoder
