@@ -127,6 +127,40 @@ go run main.go
 - `GET /api/admin/system/stats` - 获取系统统计
 - `GET /api/admin/system/logs` - 获取系统日志
 
+```bash
+[GIN-debug] POST   /api/user/register        --> server/api/user.Register (4 handlers)
+[GIN-debug] POST   /api/user/login           --> server/api/user.Login (4 handlers)
+[GIN-debug] POST   /api/user/send_sms        --> server/api/user.SendSMS (4 handlers)
+[GIN-debug] POST   /api/user/verify_sms      --> server/api/user.VerifySMS (4 handlers)
+[GIN-debug] POST   /api/user/reset_password  --> server/api/user.ResetPassword (4 handlers)
+[GIN-debug] GET    /api/user/profile         --> server/api/user.GetUserProfile (5 handlers)
+[GIN-debug] PUT    /api/user/profile         --> server/api/user.UpdateUserProfile (5 handlers)
+[GIN-debug] POST   /api/user/logout          --> server/api/user.Logout (5 handlers)
+[GIN-debug] POST   /api/user/upload_avatar   --> server/api/user.UploadAvatar (5 handlers)
+[GIN-debug] POST   /api/user/upload_resume   --> server/api/user.UploadResume (5 handlers)
+[GIN-debug] GET    /api/conversation         --> server/api/app.GetConversations (5 handlers)
+[GIN-debug] GET    /api/conversation/:id     --> server/api/app.GetConversation (5 handlers)
+[GIN-debug] POST   /api/conversation         --> server/api/app.CreateConversation (5 handlers)
+[GIN-debug] PUT    /api/conversation/:id     --> server/api/app.UpdateConversation (5 handlers)
+[GIN-debug] DELETE /api/conversation/:id     --> server/api/app.DeleteConversation (5 handlers)
+[GIN-debug] GET    /api/workflow             --> server/api/app.GetWorkflows (5 handlers)
+[GIN-debug] GET    /api/workflow/:id         --> server/api/app.GetWorkflow (5 handlers)
+[GIN-debug] POST   /api/workflow             --> server/api/app.CreateWorkflow (5 handlers)
+[GIN-debug] PUT    /api/workflow/:id         --> server/api/app.UpdateWorkflow (5 handlers)
+[GIN-debug] DELETE /api/workflow/:id         --> server/api/app.DeleteWorkflow (5 handlers)
+[GIN-debug] POST   /api/workflow/:id/execute --> server/api/app.ExecuteWorkflow (5 handlers)
+[GIN-debug] GET    /api/admin/user           --> server/api/user.GetAllUsers (6 handlers)
+[GIN-debug] GET    /api/admin/user/:id       --> server/api/user.GetUserByID (6 handlers)
+[GIN-debug] PUT    /api/admin/user/:id       --> server/api/user.UpdateUserByAdmin (6 handlers)
+[GIN-debug] DELETE /api/admin/user/:id       --> server/api/user.DeleteUser (6 handlers)
+[GIN-debug] POST   /api/admin/user/:id/activate --> server/api/user.ActivateUser (6 handlers)
+[GIN-debug] POST   /api/admin/user/:id/deactivate --> server/api/user.DeactivateUser (6 handlers)
+[GIN-debug] GET    /api/admin/system/stats   --> server/api/system.GetSystemStats (6 handlers)
+[GIN-debug] GET    /api/admin/system/logs    --> server/api/system.GetSystemLogs (6 handlers)
+[GIN-debug] GET    /api/admin/workflow/all   --> server/api/app.GetAllWorkflows (6 handlers)
+[GIN-debug] PUT    /api/admin/workflow/:id   --> server/api/app.AdminUpdateWorkflow (6 handlers)
+```
+
 ## 配置说明
 
 ### 服务器配置

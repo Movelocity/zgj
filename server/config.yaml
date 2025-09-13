@@ -14,7 +14,7 @@ cors:
 pgsql:
   host: "localhost"
   port: 5666
-  db-name: "your_db_name"
+  db-name: "d1"
   username: "postgres"
   password: "minecraft123"
   sslmode: "disable"
