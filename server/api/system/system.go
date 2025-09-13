@@ -2,6 +2,7 @@ package system
 
 import (
 	"server/service"
+	systemService "server/service/system"
 	"server/utils"
 
 	"github.com/gin-gonic/gin"
@@ -21,7 +22,7 @@ func GetSystemStats(c *gin.Context) {
 
 // GetSystemLogs 获取系统日志
 func GetSystemLogs(c *gin.Context) {
-	var req GetSystemLogsRequest
+	var req systemService.GetSystemLogsRequest
 	if err := c.ShouldBindQuery(&req); err != nil {
 		utils.FailWithMessage(err.Error(), c)
 		return

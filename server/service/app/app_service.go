@@ -6,7 +6,6 @@ import (
 
 	"server/global"
 	"server/model"
-	"server/types/app"
 	"server/utils"
 
 	"gorm.io/gorm"
@@ -17,20 +16,20 @@ type appService struct{}
 var AppService = &appService{}
 
 // GetConversations 获取对话列表
-func (s *appService) GetConversations(userID string) ([]app.ConversationResponse, error) {
+func (s *appService) GetConversations(userID string) ([]ConversationResponse, error) {
 	var conversations []model.Conversation
 	if err := global.DB.Where("user_id = ?", userID).Order("updated_at desc").Find(&conversations).Error; err != nil {
 		return nil, errors.New("查询对话失败")
 	}
 
-	var responses []app.ConversationResponse
+	var responses []ConversationResponse
 	for _, conv := range conversations {
 		var messages interface{}
 		if len(conv.Messages) > 0 {
 			json.Unmarshal(conv.Messages, &messages)
 		}
 
-		response := app.ConversationResponse{
+		response := ConversationResponse{
 			ID:         conv.ID,
 			Title:      conv.Title,
 			Messages:   messages,
@@ -45,7 +44,7 @@ func (s *appService) GetConversations(userID string) ([]app.ConversationResponse
 }
 
 // GetConversation 获取特定对话
-func (s *appService) GetConversation(conversationID, userID string) (*app.ConversationResponse, error) {
+func (s *appService) GetConversation(conversationID, userID string) (*ConversationResponse, error) {
 	var conversation model.Conversation
 	if err := global.DB.Where("id = ? AND user_id = ?", conversationID, userID).First(&conversation).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -59,7 +58,7 @@ func (s *appService) GetConversation(conversationID, userID string) (*app.Conver
 		json.Unmarshal(conversation.Messages, &messages)
 	}
 
-	response := &app.ConversationResponse{
+	response := &ConversationResponse{
 		ID:         conversation.ID,
 		Title:      conversation.Title,
 		Messages:   messages,
@@ -72,7 +71,7 @@ func (s *appService) GetConversation(conversationID, userID string) (*app.Conver
 }
 
 // CreateConversation 创建对话
-func (s *appService) CreateConversation(userID, title string) (*app.ConversationResponse, error) {
+func (s *appService) CreateConversation(userID, title string) (*ConversationResponse, error) {
 	conversation := model.Conversation{
 		ID:       utils.GenerateTLID(),
 		UserID:   userID,
@@ -84,7 +83,7 @@ func (s *appService) CreateConversation(userID, title string) (*app.Conversation
 		return nil, errors.New("创建对话失败")
 	}
 
-	response := &app.ConversationResponse{
+	response := &ConversationResponse{
 		ID:         conversation.ID,
 		Title:      conversation.Title,
 		Messages:   []interface{}{},
@@ -97,7 +96,7 @@ func (s *appService) CreateConversation(userID, title string) (*app.Conversation
 }
 
 // UpdateConversation 更新对话
-func (s *appService) UpdateConversation(conversationID, userID string, req app.UpdateConversationRequest) error {
+func (s *appService) UpdateConversation(conversationID, userID string, req UpdateConversationRequest) error {
 	// 检查对话是否存在且属于当前用户
 	var conversation model.Conversation
 	if err := global.DB.Where("id = ? AND user_id = ?", conversationID, userID).First(&conversation).Error; err != nil {
@@ -141,14 +140,14 @@ func (s *appService) DeleteConversation(conversationID, userID string) error {
 }
 
 // GetWorkflows 获取工作流列表
-func (s *appService) GetWorkflows(userID string) ([]app.WorkflowResponse, error) {
+func (s *appService) GetWorkflows(userID string) ([]WorkflowResponse, error) {
 	var workflows []model.Workflow
 	// 获取用户创建的工作流和公开的工作流
 	if err := global.DB.Where("creator_id = ? OR is_public = ?", userID, true).Order("updated_at desc").Find(&workflows).Error; err != nil {
 		return nil, errors.New("查询工作流失败")
 	}
 
-	var responses []app.WorkflowResponse
+	var responses []WorkflowResponse
 	for _, workflow := range workflows {
 		var inputs, outputs interface{}
 		if len(workflow.Inputs) > 0 {
@@ -158,7 +157,7 @@ func (s *appService) GetWorkflows(userID string) ([]app.WorkflowResponse, error)
 			json.Unmarshal(workflow.Outputs, &outputs)
 		}
 
-		response := app.WorkflowResponse{
+		response := WorkflowResponse{
 			ID:          workflow.ID,
 			Name:        workflow.Name,
 			Description: workflow.Description,
@@ -176,7 +175,7 @@ func (s *appService) GetWorkflows(userID string) ([]app.WorkflowResponse, error)
 }
 
 // GetWorkflow 获取特定工作流
-func (s *appService) GetWorkflow(workflowID, userID string) (*app.WorkflowResponse, error) {
+func (s *appService) GetWorkflow(workflowID, userID string) (*WorkflowResponse, error) {
 	var workflow model.Workflow
 	// 用户只能访问自己创建的或公开的工作流
 	if err := global.DB.Where("id = ? AND (creator_id = ? OR is_public = ?)", workflowID, userID, true).First(&workflow).Error; err != nil {
@@ -194,7 +193,7 @@ func (s *appService) GetWorkflow(workflowID, userID string) (*app.WorkflowRespon
 		json.Unmarshal(workflow.Outputs, &outputs)
 	}
 
-	response := &app.WorkflowResponse{
+	response := &WorkflowResponse{
 		ID:          workflow.ID,
 		Name:        workflow.Name,
 		Description: workflow.Description,
@@ -210,7 +209,7 @@ func (s *appService) GetWorkflow(workflowID, userID string) (*app.WorkflowRespon
 }
 
 // CreateWorkflow 创建工作流
-func (s *appService) CreateWorkflow(userID string, req app.CreateWorkflowRequest) (*app.WorkflowResponse, error) {
+func (s *appService) CreateWorkflow(userID string, req CreateWorkflowRequest) (*WorkflowResponse, error) {
 	inputsJSON, err := json.Marshal(req.Inputs)
 	if err != nil {
 		return nil, errors.New("输入参数格式错误")
@@ -238,7 +237,7 @@ func (s *appService) CreateWorkflow(userID string, req app.CreateWorkflowRequest
 		return nil, errors.New("创建工作流失败")
 	}
 
-	response := &app.WorkflowResponse{
+	response := &WorkflowResponse{
 		ID:          workflow.ID,
 		Name:        workflow.Name,
 		Description: workflow.Description,
@@ -254,7 +253,7 @@ func (s *appService) CreateWorkflow(userID string, req app.CreateWorkflowRequest
 }
 
 // UpdateWorkflow 更新工作流
-func (s *appService) UpdateWorkflow(workflowID, userID string, req app.UpdateWorkflowRequest) error {
+func (s *appService) UpdateWorkflow(workflowID, userID string, req UpdateWorkflowRequest) error {
 	// 检查工作流是否存在且属于当前用户
 	var workflow model.Workflow
 	if err := global.DB.Where("id = ? AND creator_id = ?", workflowID, userID).First(&workflow).Error; err != nil {
@@ -314,7 +313,7 @@ func (s *appService) DeleteWorkflow(workflowID, userID string) error {
 }
 
 // ExecuteWorkflow 执行工作流
-func (s *appService) ExecuteWorkflow(workflowID, userID string, inputs map[string]interface{}) (*app.ExecuteWorkflowResponse, error) {
+func (s *appService) ExecuteWorkflow(workflowID, userID string, inputs map[string]interface{}) (*ExecuteWorkflowResponse, error) {
 	// 获取工作流信息
 	var workflow model.Workflow
 	if err := global.DB.Where("id = ? AND (creator_id = ? OR is_public = ?)", workflowID, userID, true).First(&workflow).Error; err != nil {
@@ -329,7 +328,7 @@ func (s *appService) ExecuteWorkflow(workflowID, userID string, inputs map[strin
 
 	// 这里应该实现实际的工作流执行逻辑
 	// 目前返回模拟结果
-	response := &app.ExecuteWorkflowResponse{
+	response := &ExecuteWorkflowResponse{
 		Success: true,
 		Data:    map[string]interface{}{"result": "工作流执行成功"},
 		Message: "执行成功",
@@ -339,13 +338,13 @@ func (s *appService) ExecuteWorkflow(workflowID, userID string, inputs map[strin
 }
 
 // GetAllWorkflows 获取所有工作流（管理员）
-func (s *appService) GetAllWorkflows() ([]app.WorkflowResponse, error) {
+func (s *appService) GetAllWorkflows() ([]WorkflowResponse, error) {
 	var workflows []model.Workflow
 	if err := global.DB.Order("updated_at desc").Find(&workflows).Error; err != nil {
 		return nil, errors.New("查询工作流失败")
 	}
 
-	var responses []app.WorkflowResponse
+	var responses []WorkflowResponse
 	for _, workflow := range workflows {
 		var inputs, outputs interface{}
 		if len(workflow.Inputs) > 0 {
@@ -355,7 +354,7 @@ func (s *appService) GetAllWorkflows() ([]app.WorkflowResponse, error) {
 			json.Unmarshal(workflow.Outputs, &outputs)
 		}
 
-		response := app.WorkflowResponse{
+		response := WorkflowResponse{
 			ID:          workflow.ID,
 			Name:        workflow.Name,
 			Description: workflow.Description,
@@ -373,7 +372,7 @@ func (s *appService) GetAllWorkflows() ([]app.WorkflowResponse, error) {
 }
 
 // AdminUpdateWorkflow 管理员更新工作流
-func (s *appService) AdminUpdateWorkflow(workflowID string, req app.UpdateWorkflowRequest) error {
+func (s *appService) AdminUpdateWorkflow(workflowID string, req UpdateWorkflowRequest) error {
 	// 检查工作流是否存在
 	var workflow model.Workflow
 	if err := global.DB.Where("id = ?", workflowID).First(&workflow).Error; err != nil {

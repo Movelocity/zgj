@@ -7,6 +7,7 @@ import (
 
 	"server/global"
 	"server/service"
+	userService "server/service/user"
 	"server/utils"
 
 	"github.com/gin-gonic/gin"
@@ -14,7 +15,7 @@ import (
 
 // Register 用户注册
 func Register(c *gin.Context) {
-	var req RegisterRequest
+	var req userService.RegisterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		utils.FailWithMessage(err.Error(), c)
 		return
@@ -37,7 +38,7 @@ func Register(c *gin.Context) {
 
 // Login 用户登录
 func Login(c *gin.Context) {
-	var req LoginRequest
+	var req userService.LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		utils.FailWithMessage(err.Error(), c)
 		return
@@ -50,7 +51,7 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	response := LoginResponse{
+	response := userService.LoginResponse{
 		Token:     token,
 		ExpiresAt: time.Now().Add(global.CONFIG.JWT.ExpiresTime),
 		User:      *userInfo,
@@ -61,7 +62,7 @@ func Login(c *gin.Context) {
 
 // SendSMS 发送短信验证码
 func SendSMS(c *gin.Context) {
-	var req SendSMSRequest
+	var req userService.SendSMSRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		utils.FailWithMessage(err.Error(), c)
 		return
@@ -81,7 +82,7 @@ func SendSMS(c *gin.Context) {
 
 // VerifySMS 验证短信验证码
 func VerifySMS(c *gin.Context) {
-	var req VerifySMSRequest
+	var req userService.VerifySMSRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		utils.FailWithMessage(err.Error(), c)
 		return
@@ -96,7 +97,7 @@ func VerifySMS(c *gin.Context) {
 
 // ResetPassword 重置密码
 func ResetPassword(c *gin.Context) {
-	var req ResetPasswordRequest
+	var req userService.ResetPasswordRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		utils.FailWithMessage(err.Error(), c)
 		return
@@ -134,7 +135,7 @@ func GetUserProfile(c *gin.Context) {
 // UpdateUserProfile 更新用户信息
 func UpdateUserProfile(c *gin.Context) {
 	userID := c.GetString("userID")
-	var req UpdateUserProfileRequest
+	var req userService.UpdateUserProfileRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		utils.FailWithMessage(err.Error(), c)
 		return
@@ -184,7 +185,7 @@ func UploadAvatar(c *gin.Context) {
 		return
 	}
 
-	response := UploadResponse{
+	response := userService.UploadResponse{
 		URL:      fmt.Sprintf("/uploads/file/avatars/%s", filename),
 		Filename: filename,
 		Size:     file.Size,
@@ -257,7 +258,7 @@ func GetUserByID(c *gin.Context) {
 // UpdateUserByAdmin 管理员更新用户信息
 func UpdateUserByAdmin(c *gin.Context) {
 	userID := c.Param("id")
-	var req UpdateUserProfileRequest
+	var req userService.UpdateUserProfileRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		utils.FailWithMessage(err.Error(), c)
 		return

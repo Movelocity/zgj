@@ -2,6 +2,7 @@ package app
 
 import (
 	"server/service"
+	appService "server/service/app"
 	"server/utils"
 
 	"github.com/gin-gonic/gin"
@@ -39,7 +40,7 @@ func GetConversation(c *gin.Context) {
 // CreateConversation 创建对话
 func CreateConversation(c *gin.Context) {
 	userID := c.GetString("userID")
-	var req CreateConversationRequest
+	var req appService.CreateConversationRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		utils.FailWithMessage(err.Error(), c)
 		return
@@ -59,7 +60,7 @@ func CreateConversation(c *gin.Context) {
 func UpdateConversation(c *gin.Context) {
 	conversationID := c.Param("id")
 	userID := c.GetString("userID")
-	var req UpdateConversationRequest
+	var req appService.UpdateConversationRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		utils.FailWithMessage(err.Error(), c)
 		return
@@ -120,7 +121,7 @@ func GetWorkflow(c *gin.Context) {
 // CreateWorkflow 创建工作流
 func CreateWorkflow(c *gin.Context) {
 	userID := c.GetString("userID")
-	var req CreateWorkflowRequest
+	var req appService.CreateWorkflowRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		utils.FailWithMessage(err.Error(), c)
 		return
@@ -140,7 +141,7 @@ func CreateWorkflow(c *gin.Context) {
 func UpdateWorkflow(c *gin.Context) {
 	workflowID := c.Param("id")
 	userID := c.GetString("userID")
-	var req UpdateWorkflowRequest
+	var req appService.UpdateWorkflowRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		utils.FailWithMessage(err.Error(), c)
 		return
@@ -173,7 +174,7 @@ func DeleteWorkflow(c *gin.Context) {
 func ExecuteWorkflow(c *gin.Context) {
 	workflowID := c.Param("id")
 	userID := c.GetString("userID")
-	var req ExecuteWorkflowRequest
+	var req appService.ExecuteWorkflowRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		utils.FailWithMessage(err.Error(), c)
 		return
@@ -204,7 +205,7 @@ func GetAllWorkflows(c *gin.Context) {
 // AdminUpdateWorkflow 管理员更新工作流
 func AdminUpdateWorkflow(c *gin.Context) {
 	workflowID := c.Param("id")
-	var req UpdateWorkflowRequest
+	var req appService.UpdateWorkflowRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		utils.FailWithMessage(err.Error(), c)
 		return

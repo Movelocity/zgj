@@ -7,7 +7,6 @@ import (
 
 	"server/global"
 	"server/model"
-	"server/types/system"
 )
 
 type systemService struct{}
@@ -15,8 +14,8 @@ type systemService struct{}
 var SystemService = &systemService{}
 
 // GetSystemStats 获取系统统计
-func (s *systemService) GetSystemStats() (*system.SystemStatsResponse, error) {
-	var stats system.SystemStatsResponse
+func (s *systemService) GetSystemStats() (*SystemStatsResponse, error) {
+	var stats SystemStatsResponse
 
 	// 统计总用户数
 	if err := global.DB.Model(&model.User{}).Count(&stats.TotalUsers).Error; err != nil {
@@ -47,7 +46,7 @@ func (s *systemService) GetSystemStats() (*system.SystemStatsResponse, error) {
 }
 
 // GetSystemLogs 获取系统日志
-func (s *systemService) GetSystemLogs(page, pageSize int, level string) (*system.SystemLogsResponse, error) {
+func (s *systemService) GetSystemLogs(page, pageSize int, level string) (*SystemLogsResponse, error) {
 	// 这里应该实现实际的日志查询逻辑
 	// 目前返回模拟数据
 
@@ -55,7 +54,7 @@ func (s *systemService) GetSystemLogs(page, pageSize int, level string) (*system
 	_ = (page - 1) * pageSize
 
 	// 模拟日志数据
-	logs := []system.LogEntry{
+	logs := []LogEntry{
 		{
 			Time:    time.Now(),
 			Level:   "INFO",
@@ -74,7 +73,7 @@ func (s *systemService) GetSystemLogs(page, pageSize int, level string) (*system
 	total := int64(100)
 	totalPages := int(math.Ceil(float64(total) / float64(pageSize)))
 
-	response := &system.SystemLogsResponse{
+	response := &SystemLogsResponse{
 		Logs:       logs,
 		Total:      total,
 		Page:       page,

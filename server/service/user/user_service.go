@@ -10,7 +10,6 @@ import (
 
 	"server/global"
 	"server/model"
-	"server/types/user"
 	"server/utils"
 
 	"gorm.io/gorm"
@@ -64,7 +63,7 @@ func (s *userService) Register(name, phone, password string) error {
 }
 
 // Login 用户登录
-func (s *userService) Login(phone, password string) (string, *user.UserInfo, error) {
+func (s *userService) Login(phone, password string) (string, *UserInfo, error) {
 	// 查找用户
 	var u model.User
 	if err := global.DB.Where("phone = ? AND active = ?", phone, true).First(&u).Error; err != nil {
@@ -89,7 +88,7 @@ func (s *userService) Login(phone, password string) (string, *user.UserInfo, err
 	}
 
 	// 构建用户信息
-	userInfo := &user.UserInfo{
+	userInfo := &UserInfo{
 		ID:        u.ID,
 		Name:      u.Name,
 		Phone:     u.Phone,
@@ -130,7 +129,7 @@ func (s *userService) ResetPassword(phone, newPassword string) error {
 }
 
 // GetUserProfile 获取用户档案
-func (s *userService) GetUserProfile(userID string) (*user.UserProfileResponse, error) {
+func (s *userService) GetUserProfile(userID string) (*UserProfileResponse, error) {
 	// 获取用户信息
 	var u model.User
 	if err := global.DB.First(&u, "id = ?", userID).Error; err != nil {
@@ -154,7 +153,7 @@ func (s *userService) GetUserProfile(userID string) (*user.UserProfileResponse, 
 		json.Unmarshal(profile.Resumes, &resumes)
 	}
 
-	userInfo := user.UserInfo{
+	userInfo := UserInfo{
 		ID:        u.ID,
 		Name:      u.Name,
 		Phone:     u.Phone,
@@ -166,7 +165,7 @@ func (s *userService) GetUserProfile(userID string) (*user.UserProfileResponse, 
 		CreatedAt: u.CreatedAt,
 	}
 
-	response := &user.UserProfileResponse{
+	response := &UserProfileResponse{
 		User:    userInfo,
 		Data:    data,
 		Resumes: resumes,
@@ -176,7 +175,7 @@ func (s *userService) GetUserProfile(userID string) (*user.UserProfileResponse, 
 }
 
 // UpdateUserProfile 更新用户档案
-func (s *userService) UpdateUserProfile(userID string, req user.UpdateUserProfileRequest) error {
+func (s *userService) UpdateUserProfile(userID string, req UpdateUserProfileRequest) error {
 	// 先检查用户是否存在
 	var existingUser model.User
 	if err := global.DB.Where("id = ?", userID).First(&existingUser).Error; err != nil {
@@ -217,7 +216,7 @@ func (s *userService) UpdateUserProfile(userID string, req user.UpdateUserProfil
 }
 
 // UploadResume 上传简历
-func (s *userService) UploadResume(userID string, file *multipart.FileHeader) (*user.UploadResponse, error) {
+func (s *userService) UploadResume(userID string, file *multipart.FileHeader) (*UploadResponse, error) {
 	// 生成文件名和路径
 	filename := utils.GenerateFileName(file.Filename)
 	dst := filepath.Join(global.CONFIG.Local.StorePath, "resumes", filename)
@@ -260,7 +259,7 @@ func (s *userService) UploadResume(userID string, file *multipart.FileHeader) (*
 		return nil, errors.New("简历信息保存失败")
 	}
 
-	response := &user.UploadResponse{
+	response := &UploadResponse{
 		URL:      resume.URL,
 		Filename: filename,
 		Size:     file.Size,
@@ -270,15 +269,15 @@ func (s *userService) UploadResume(userID string, file *multipart.FileHeader) (*
 }
 
 // GetAllUsers 获取所有用户（管理员）
-func (s *userService) GetAllUsers() ([]user.UserInfo, error) {
+func (s *userService) GetAllUsers() ([]UserInfo, error) {
 	var users []model.User
 	if err := global.DB.Find(&users).Error; err != nil {
 		return nil, errors.New("查询用户失败")
 	}
 
-	var userInfos []user.UserInfo
+	var userInfos []UserInfo
 	for _, u := range users {
-		userInfo := user.UserInfo{
+		userInfo := UserInfo{
 			ID:        u.ID,
 			Name:      u.Name,
 			Phone:     u.Phone,
@@ -296,7 +295,7 @@ func (s *userService) GetAllUsers() ([]user.UserInfo, error) {
 }
 
 // GetUserByID 根据ID获取用户
-func (s *userService) GetUserByID(userID string) (*user.UserInfo, error) {
+func (s *userService) GetUserByID(userID string) (*UserInfo, error) {
 	var u model.User
 	if err := global.DB.First(&u, "id = ?", userID).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -305,7 +304,7 @@ func (s *userService) GetUserByID(userID string) (*user.UserInfo, error) {
 		return nil, errors.New("查询用户失败")
 	}
 
-	userInfo := &user.UserInfo{
+	userInfo := &UserInfo{
 		ID:        u.ID,
 		Name:      u.Name,
 		Phone:     u.Phone,
