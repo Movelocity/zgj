@@ -38,6 +38,7 @@ type Pgsql struct {
 type SpugSMS struct {
 	Token  string `mapstructure:"token" json:"token" yaml:"token"`
 	ApiURL string `mapstructure:"api-url" json:"api-url" yaml:"api-url"`
+	Name   string `mapstructure:"name" json:"name" yaml:"name"`
 }
 
 type JWT struct {

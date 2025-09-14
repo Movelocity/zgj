@@ -154,7 +154,7 @@ const Home: React.FC = () => {
                 </Link>
               ) : (
                 <Link to={ROUTES.AUTH}>
-                  <Button variant="outline" className="text-white border-white hover:bg-white hover:text-blue-600">
+                  <Button variant="outline" className="border-white hover:bg-white hover:text-blue-600">
                     免费注册
                   </Button>
                 </Link>

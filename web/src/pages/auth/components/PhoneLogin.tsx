@@ -11,14 +11,13 @@ interface PhoneLoginProps {
 const PhoneLogin: React.FC<PhoneLoginProps> = ({ onSuccess }) => {
   const [formData, setFormData] = useState({
     phone: '',
-    smsCode: '',
-    name: ''
+    smsCode: ''
   });
   const [loading, setLoading] = useState(false);
   const [sendingCode, setSendingCode] = useState(false);
   const [countdown, setCountdown] = useState(0);
   const [error, setError] = useState('');
-  const [step, setStep] = useState<'phone' | 'code'>('phone');
+  const [agreed, setAgreed] = useState(false);
 
   const { auth } = useAuthStore();
   const navigate = useNavigate();
@@ -41,7 +40,6 @@ const PhoneLogin: React.FC<PhoneLoginProps> = ({ onSuccess }) => {
 
     try {
       await authAPI.sendSMS(formData.phone);
-      setStep('code');
       
       // 开始倒计时
       setCountdown(60);
@@ -69,8 +67,18 @@ const PhoneLogin: React.FC<PhoneLoginProps> = ({ onSuccess }) => {
 
   // 验证码登录
   const handleLogin = useCallback(async () => {
+    if (!validatePhone(formData.phone)) {
+      setError('请输入正确的手机号码');
+      return;
+    }
+
     if (!formData.smsCode || formData.smsCode.length !== 6) {
       setError('请输入6位验证码');
+      return;
+    }
+
+    if (!agreed) {
+      setError('请先同意用户协议和隐私政策');
       return;
     }
 
@@ -78,11 +86,10 @@ const PhoneLogin: React.FC<PhoneLoginProps> = ({ onSuccess }) => {
     setError('');
 
     try {
-      // 使用store的auth方法
+      // 使用store的auth方法，不传递name参数，后端将使用手机号作为默认姓名
       await auth({
         phone: formData.phone,
-        sms_code: formData.smsCode,
-        name: formData.name.trim() || undefined
+        sms_code: formData.smsCode
       });
 
       // 成功回调
@@ -95,14 +102,7 @@ const PhoneLogin: React.FC<PhoneLoginProps> = ({ onSuccess }) => {
     } finally {
       setLoading(false);
     }
-  }, [formData, auth, navigate, onSuccess]);
-
-  // 返回手机号输入
-  const handleBackToPhone = () => {
-    setStep('phone');
-    setFormData(prev => ({ ...prev, smsCode: '' }));
-    setError('');
-  };
+  }, [formData, agreed, auth, navigate, onSuccess]);
 
   // 输入处理
   const handleInputChange = (field: keyof typeof formData) => (
@@ -112,129 +112,70 @@ const PhoneLogin: React.FC<PhoneLoginProps> = ({ onSuccess }) => {
     if (error) setError('');
   };
 
-  if (step === 'phone') {
-    return (
-      <div className="space-y-6">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900">手机号登录</h2>
-          <p className="mt-2 text-sm text-gray-600">
-            输入手机号，我们将发送验证码给您
-          </p>
-        </div>
-
-        <div className="space-y-4">
-          <div>
-            <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
-              手机号码
-            </label>
-            <Input
-              id="phone"
-              type="tel"
-              placeholder="请输入手机号码"
-              value={formData.phone}
-              onChange={handleInputChange('phone')}
-              maxLength={11}
-              className="w-full"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
-              姓名（可选）
-            </label>
-            <Input
-              id="name"
-              type="text"
-              placeholder="请输入您的姓名"
-              value={formData.name}
-              onChange={handleInputChange('name')}
-              className="w-full"
-            />
-            <p className="mt-1 text-xs text-gray-500">
-              首次使用时请填写姓名，已注册用户可不填
-            </p>
-          </div>
-
-          {error && (
-            <div className="text-sm text-red-600 bg-red-50 p-3 rounded-md">
-              {error}
-            </div>
-          )}
-
-          <Button
-            onClick={handleSendCode}
-            disabled={!formData.phone || sendingCode}
-            className="w-full"
-          >
-            {sendingCode ? (
-              <>
-                <Loading size="sm" className="mr-2" />
-                发送中...
-              </>
-            ) : (
-              '获取验证码'
-            )}
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <h2 className="text-2xl font-bold text-gray-900">输入验证码</h2>
-        <p className="mt-2 text-sm text-gray-600">
-          验证码已发送至 {formData.phone.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2')}
-        </p>
+        <h2 className="text-2xl font-bold text-gray-900">手机号登录</h2>
       </div>
 
       <div className="space-y-4">
+        {/* 手机号输入 */}
         <div>
-          <label htmlFor="smsCode" className="block text-sm font-medium text-gray-700 mb-2">
-            验证码
-          </label>
           <Input
-            id="smsCode"
-            type="text"
-            placeholder="请输入6位验证码"
-            value={formData.smsCode}
-            onChange={handleInputChange('smsCode')}
-            maxLength={6}
-            className="w-full text-center text-2xl tracking-widest"
+            id="phone"
+            type="tel"
+            placeholder="请输入手机号码"
+            value={formData.phone}
+            onChange={handleInputChange('phone')}
+            maxLength={11}
+            className="w-full"
           />
         </div>
 
+
+        {/* 验证码输入和发送按钮 */}
+        <div>
+          <div className="flex space-x-3">
+            <Input
+              id="smsCode"
+              type="text"
+              placeholder="请输入6位验证码"
+              value={formData.smsCode}
+              onChange={handleInputChange('smsCode')}
+              maxLength={6}
+              className="flex-1"
+            />
+            <Button
+              onClick={countdown > 0 ? handleResendCode : handleSendCode}
+              disabled={!formData.phone || sendingCode || countdown > 0}
+              variant="outline"
+              className="px-4 whitespace-nowrap"
+            >
+              {sendingCode ? (
+                <>
+                  <Loading size="sm" className="mr-1" />
+                  发送中
+                </>
+              ) : countdown > 0 ? (
+                `${countdown}s`
+              ) : (
+                '发送验证码'
+              )}
+            </Button>
+          </div>
+        </div>
+
+        {/* 错误信息 */}
         {error && (
           <div className="text-sm text-red-600 bg-red-50 p-3 rounded-md">
             {error}
           </div>
         )}
 
-        <div className="flex justify-between items-center text-sm">
-          <button
-            onClick={handleBackToPhone}
-            className="text-blue-600 hover:text-blue-500"
-          >
-            ← 返回修改手机号
-          </button>
-          
-          <button
-            onClick={handleResendCode}
-            disabled={countdown > 0}
-            className={`${
-              countdown > 0 
-                ? 'text-gray-400 cursor-not-allowed' 
-                : 'text-blue-600 hover:text-blue-500'
-            }`}
-          >
-            {countdown > 0 ? `${countdown}s后重发` : '重新发送'}
-          </button>
-        </div>
-
+        {/* 登录按钮 */}
         <Button
           onClick={handleLogin}
-          disabled={loading || !formData.smsCode}
+          disabled={loading || !formData.phone || !formData.smsCode || !agreed}
           className="w-full"
         >
           {loading ? (
@@ -246,6 +187,38 @@ const PhoneLogin: React.FC<PhoneLoginProps> = ({ onSuccess }) => {
             '登录'
           )}
         </Button>
+
+        {/* 协议条款 */}
+        <div className="text-center">
+          <label className="flex items-center justify-center space-x-2 text-sm text-gray-600">
+            <input
+              type="checkbox"
+              checked={agreed}
+              onChange={(e) => setAgreed(e.target.checked)}
+              className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+            />
+            <span>
+              我已阅读并同意
+              <a
+                href="/terms"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 hover:text-blue-500 mx-1"
+              >
+                《用户协议》
+              </a>
+              和
+              <a
+                href="/privacy"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 hover:text-blue-500 mx-1"
+              >
+                《隐私政策》
+              </a>
+            </span>
+          </label>
+        </div>
       </div>
     </div>
   );
