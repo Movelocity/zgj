@@ -33,6 +33,11 @@ export const adminAPI = {
     return apiClient.get(`/api/admin/user/${userId}/resumes`, { params });
   },
 
+  // 角色权限管理
+  updateUserRole: (userId: string, role: number): Promise<ApiResponse> => {
+    return apiClient.put(`/api/admin/user/${userId}/role`, { role });
+  },
+
   // 工作流管理
   getAllWorkflows: (): Promise<ApiResponse<Workflow[]>> => {
     return apiClient.get('/api/admin/workflow/all');

@@ -12,12 +12,7 @@ import (
 
 // InitAdminRouter 初始化管理员路由
 func InitAdminRouter(Router *gin.RouterGroup) {
-	// 管理员认证路由（无需认证）
-	AdminAuthRouter := Router.Group("/api/admin/auth")
-	{
-		AdminAuthRouter.POST("/login", user.AdminLogin)   // 管理员登录
-		AdminAuthRouter.POST("/create", user.CreateAdmin) // 创建管理员（仅用于初始化）
-	}
+	// 移除了专门的管理员认证API，管理员使用统一的用户登录系统
 
 	// 用户管理
 	AdminUserRouter := Router.Group("/api/admin/user")
@@ -28,6 +23,7 @@ func InitAdminRouter(Router *gin.RouterGroup) {
 		AdminUserRouter.DELETE("/:id", user.DeleteUser)                 // 删除用户
 		AdminUserRouter.POST("/:id/activate", user.ActivateUser)        // 激活用户
 		AdminUserRouter.POST("/:id/deactivate", user.DeactivateUser)    // 停用用户
+		AdminUserRouter.PUT("/:id/role", user.UpdateUserRole)           // 更新用户角色权限
 		AdminUserRouter.GET("/:id/resumes", resume.GetAdminUserResumes) // 管理员查看用户简历
 	}
 

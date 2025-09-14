@@ -9,33 +9,34 @@
 
 ## 后端实现
 
-### 1. 管理员用户功能
+### 1. 用户权限管理功能
+
+#### 统一用户系统：
+- 所有用户（包括管理员）使用统一的注册和登录流程
+- 通过用户的 `role` 字段区分权限：`666` 普通用户，`888` 管理员
+- 管理员可以通过后台修改用户的角色权限
 
 #### 新增API接口：
-- `POST /api/admin/auth/create` - 创建管理员用户
-- `POST /api/admin/auth/login` - 管理员登录
+- `PUT /api/admin/user/:id/role` - 管理员修改用户角色权限
 
 #### 请求示例：
 
-**创建管理员用户：**
+**修改用户角色权限：**
 ```bash
-curl -X POST http://localhost:8888/api/admin/auth/create \
+# 将用户设置为管理员
+curl -X PUT http://localhost:8888/api/admin/user/USER_ID/role \
   -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_ADMIN_TOKEN" \
   -d '{
-    "name": "管理员",
-    "phone": "13800138000",
-    "password": "123456",
-    "email": "admin@example.com"
+    "role": 888
   }'
-```
 
-**管理员登录：**
-```bash
-curl -X POST http://localhost:8888/api/admin/auth/login \
+# 将用户设置为普通用户
+curl -X PUT http://localhost:8888/api/admin/user/USER_ID/role \
   -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_ADMIN_TOKEN" \
   -d '{
-    "phone": "13800138000",
-    "password": "123456"
+    "role": 666
   }'
 ```
 
@@ -106,21 +107,15 @@ npm run dev
 
 ### 2. 测试管理员功能
 
-1. **创建管理员用户**（仅需执行一次）：
-   ```bash
-   curl -X POST http://localhost:8888/api/admin/auth/create \
-     -H "Content-Type: application/json" \
-     -d '{
-       "name": "系统管理员",
-       "phone": "13800138000",
-       "password": "admin123",
-       "email": "admin@resume-polisher.com"
-     }'
-   ```
+1. **创建管理员用户**（推荐方式）：
+   - 首先通过普通用户注册流程创建用户账号
+   - 然后通过现有管理员修改该用户的角色为管理员（888）
+   - 或者直接在数据库中手动修改用户的 `role` 字段为 888
 
 2. **访问管理员登录页面**：
    - 打开 `http://localhost:5173/admin/auth`
-   - 输入管理员手机号和密码
+   - 输入管理员用户的手机号和密码（使用统一登录系统）
+   - 系统会验证用户角色，只有管理员用户才能登录成功
    - 登录成功后应跳转到 `/administrator`
 
 ### 3. 测试手机号统一登录
@@ -168,11 +163,17 @@ npm run dev
 1. **验证码功能**：目前短信发送功能可能需要配置真实的短信服务，开发环境下可以使用固定验证码进行测试。
 
 2. **安全考虑**：生产环境中应：
-   - 限制管理员创建接口的访问
+   - 严格控制角色权限修改的访问权限
    - 加强密码复杂度要求
    - 实现真实的短信验证码发送
+   - 记录角色权限变更的操作日志
 
-3. **错误处理**：所有接口都包含了完善的错误处理和用户友好的错误提示。
+3. **权限设计**：
+   - 统一的用户系统避免了重复的认证逻辑
+   - 通过角色字段灵活控制用户权限
+   - 管理员可以动态调整用户角色，无需重新创建账号
+
+4. **错误处理**：所有接口都包含了完善的错误处理和用户友好的错误提示。
 
 ## 技术栈
 

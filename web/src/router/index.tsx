@@ -13,6 +13,7 @@ const protectedRoutes = [
   '/resumes',
   '/resume/:id',
   '/profile',
+  '/api-test', // API测试页面需要登录才能访问
 ];
 
 const adminRoutes = [

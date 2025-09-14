@@ -42,3 +42,21 @@ export interface RegisterData {
   sms_code: string;
   nickname?: string;
 }
+
+export interface UserInfo {
+  id: string;
+  name: string;
+  phone: string;
+  email: string;
+  header_img: string;
+  role: number;
+  active: boolean;
+  last_login: string;
+  created_at: string;
+}
+
+export interface UserProfileResponse {
+  user: UserInfo;
+  data: any;
+  resumes: any;
+}

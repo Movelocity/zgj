@@ -6,6 +6,7 @@ import { resumeAPI } from '@/api/resume';
 import { workflowAPI } from '@/api/workflow';
 import { adminAPI } from '@/api/admin';
 import { conversationAPI } from '@/api/conversation';
+import { useAuthStore } from '@/store';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 
@@ -21,17 +22,15 @@ interface TestResult {
 const ApiTest: React.FC = () => {
   const [logs, setLogs] = useState<any[]>([]);
   const [testResults, setTestResults] = useState<TestResult[]>([]);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [testPhone, setTestPhone] = useState('13800138000');
   const [testSmsCode, setTestSmsCode] = useState('1234');
   const [testFile, setTestFile] = useState<File | null>(null);
   const [selectedWorkflowId, setSelectedWorkflowId] = useState('');
+  
+  // 使用全局认证状态
+  const { isAuthenticated, user, logout } = useAuthStore();
 
   useEffect(() => {
-    // 检查登录状态
-    const token = localStorage.getItem('console_token');
-    setIsLoggedIn(!!token);
-    
     // 定期更新日志
     const interval = setInterval(() => {
       setLogs([...debugLogger.getLogs()]);
@@ -87,10 +86,7 @@ const ApiTest: React.FC = () => {
       sms_code: testSmsCode,
       name: '测试用户'
     });
-    if (result.data.token) {
-      localStorage.setItem('console_token', result.data.token);
-      setIsLoggedIn(true);
-    }
+    // 认证成功后会自动更新全局状态，无需手动设置
     return result;
   });
 
@@ -155,11 +151,6 @@ const ApiTest: React.FC = () => {
     setTestResults([]);
   };
 
-  const logout = () => {
-    localStorage.removeItem('console_token');
-    setIsLoggedIn(false);
-  };
-
   return (
     <div className="p-6 max-w-7xl mx-auto">
       <div className="mb-6">
@@ -167,11 +158,11 @@ const ApiTest: React.FC = () => {
         <p className="text-gray-600">测试前后端API对接功能，调试友好的界面</p>
         <div className="mt-4 flex items-center gap-4">
           <span className={`px-3 py-1 rounded-full text-sm ${
-            isLoggedIn ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+            isAuthenticated ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
           }`}>
-            {isLoggedIn ? '✅ 已登录' : '❌ 未登录'}
+            {isAuthenticated ? `✅ 已登录 (${user?.nickname || user?.phone || '用户'})` : '❌ 未登录'}
           </span>
-          {isLoggedIn && (
+          {isAuthenticated && (
             <Button onClick={logout} variant="outline" size="sm">
               登出
             </Button>
@@ -236,7 +227,7 @@ const ApiTest: React.FC = () => {
           </div>
 
           {/* 用户接口测试 */}
-          {isLoggedIn && (
+          {isAuthenticated && (
             <div className="bg-white rounded-lg shadow-sm border p-4">
               <h2 className="text-lg font-semibold mb-4">用户接口测试</h2>
               <div className="grid grid-cols-1 gap-2">
@@ -254,7 +245,7 @@ const ApiTest: React.FC = () => {
           )}
 
           {/* 简历接口测试 */}
-          {isLoggedIn && (
+          {isAuthenticated && (
             <div className="bg-white rounded-lg shadow-sm border p-4">
               <h2 className="text-lg font-semibold mb-4">简历接口测试</h2>
               <div className="grid grid-cols-1 gap-2">
@@ -269,7 +260,7 @@ const ApiTest: React.FC = () => {
           )}
 
           {/* 工作流接口测试 */}
-          {isLoggedIn && (
+          {isAuthenticated && (
             <div className="bg-white rounded-lg shadow-sm border p-4">
               <h2 className="text-lg font-semibold mb-4">工作流接口测试</h2>
               <div className="grid grid-cols-1 gap-2">
@@ -284,7 +275,7 @@ const ApiTest: React.FC = () => {
           )}
 
           {/* 对话接口测试 */}
-          {isLoggedIn && (
+          {isAuthenticated && (
             <div className="bg-white rounded-lg shadow-sm border p-4">
               <h2 className="text-lg font-semibold mb-4">对话接口测试</h2>
               <div className="grid grid-cols-1 gap-2">
@@ -299,7 +290,7 @@ const ApiTest: React.FC = () => {
           )}
 
           {/* 管理员接口测试 */}
-          {isLoggedIn && (
+          {isAuthenticated && (
             <div className="bg-white rounded-lg shadow-sm border p-4">
               <h2 className="text-lg font-semibold mb-4">管理员接口测试</h2>
               <div className="grid grid-cols-1 gap-2">

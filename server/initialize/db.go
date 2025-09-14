@@ -7,6 +7,8 @@ import (
 	"server/global"
 	"server/model"
 
+	"server/utils"
+
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -67,5 +69,58 @@ func InitDB() {
 	}
 
 	global.DB = db
+
+	// 初始化默认数据
+	initDefaultData()
+
 	fmt.Println("数据库初始化成功")
+}
+
+// initDefaultData 初始化默认数据
+func initDefaultData() {
+	// 检查是否已存在管理员用户
+	var adminCount int64
+	global.DB.Model(&model.User{}).Where("role = ?", 888).Count(&adminCount)
+
+	if adminCount == 0 {
+		adminPhone := "13823409379"
+		adminName := "系统管理员"
+		adminPassword := "admin123*"
+		hashedPassword, err := utils.HashPassword(adminPassword)
+		if err != nil {
+			panic(fmt.Errorf("failed to hash password: %s", err))
+		}
+
+		// 生成符合长度要求的ID
+		adminID := utils.GenerateTLID()
+
+		// 创建默认管理员用户
+		defaultAdmin := model.User{
+			ID:       adminID,
+			Name:     adminName,
+			Phone:    adminPhone,
+			Password: hashedPassword, // 默认密码：admin123*
+			Email:    "admin@example.com",
+			Active:   true,
+			Role:     888, // 管理员角色
+		}
+
+		if err := global.DB.Create(&defaultAdmin).Error; err != nil {
+			fmt.Printf("创建默认管理员失败: %v\n", err)
+		} else {
+			fmt.Println("默认管理员创建成功 - 手机号: ", adminPhone, ", 密码: ", adminPassword)
+
+			// 为管理员创建用户档案
+			adminProfile := model.UserProfile{
+				ID:      utils.GenerateTLID(),
+				UserID:  defaultAdmin.ID,
+				Data:    model.JSON("{}"),
+				Resumes: model.JSON("[]"),
+			}
+
+			if err := global.DB.Create(&adminProfile).Error; err != nil {
+				fmt.Printf("创建管理员档案失败: %v\n", err)
+			}
+		}
+	}
 }

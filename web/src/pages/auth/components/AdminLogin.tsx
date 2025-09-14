@@ -28,9 +28,9 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onSuccess }) => {
   const { setUser } = useAuthStore();
   const navigate = useNavigate();
 
-  // 管理员登录API
-  const adminLoginAPI = async (credentials: { phone: string; password: string }): Promise<ApiResponse<AdminLoginResponse>> => {
-    return apiClient.post('/api/admin/auth/login', credentials);
+  // 使用统一的用户登录API，登录后验证用户角色
+  const userLoginAPI = async (credentials: { phone: string; password: string }): Promise<ApiResponse<AdminLoginResponse>> => {
+    return apiClient.post('/api/user/login', credentials);
   };
 
   // 手机号验证
@@ -55,12 +55,18 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onSuccess }) => {
     setError('');
 
     try {
-      const response = await adminLoginAPI({
+      const response = await userLoginAPI({
         phone: formData.phone,
         password: formData.password
       });
 
       if (response.success && response.data) {
+        // 验证用户是否为管理员
+        if (response.data.user.role !== 888) {
+          setError('此账号不是管理员账号，请使用普通用户登录页面');
+          return;
+        }
+
         // 保存token到localStorage
         localStorage.setItem(TOKEN_KEY, response.data.token);
         

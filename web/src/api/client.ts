@@ -124,8 +124,8 @@ apiClient.interceptors.response.use(
     
     // 处理401未授权错误
     if (error.response?.status === 401) {
+      // 只清除 token，不直接重定向，让 authStore 处理
       localStorage.removeItem(TOKEN_KEY);
-      window.location.href = '/auth';
       return Promise.reject(new Error('登录已过期，请重新登录'));
     }
 

@@ -99,16 +99,13 @@ type UserListResponse struct {
 	PageSize int        `json:"page_size"`
 }
 
-// CreateAdminRequest 创建管理员请求
-type CreateAdminRequest struct {
-	Name     string `json:"name" binding:"required"`
-	Phone    string `json:"phone" binding:"required"`
-	Password string `json:"password" binding:"required,min=6"`
-	Email    string `json:"email"`
+// UpdateUserRoleRequest 更新用户角色请求
+type UpdateUserRoleRequest struct {
+	Role int `json:"role" binding:"required,oneof=666 888"`
 }
 
-// AdminLoginRequest 管理员登录请求
-type AdminLoginRequest struct {
-	Phone    string `json:"phone" binding:"required"`
-	Password string `json:"password" binding:"required"`
+// ChangePasswordRequest 修改密码请求
+type ChangePasswordRequest struct {
+	CurrentPassword string `json:"current_password" binding:"required"`
+	NewPassword     string `json:"new_password" binding:"required,min=6"`
 }

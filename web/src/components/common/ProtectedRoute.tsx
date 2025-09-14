@@ -10,13 +10,14 @@ interface ProtectedRouteProps {
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const location = useLocation();
-  const { isAuthenticated, checkAuth, isLoading } = useAuthStore();
+  const { isAuthenticated, checkAuth, isLoading, token } = useAuthStore();
 
   useEffect(() => {
-    if (!isAuthenticated) {
+    // 如果有 token 但未认证，尝试验证
+    if (token && !isAuthenticated) {
       checkAuth();
     }
-  }, [isAuthenticated, checkAuth]);
+  }, [token, isAuthenticated, checkAuth]);
 
   // 如果正在检查认证状态，显示加载中
   if (isLoading) {
@@ -27,8 +28,13 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     );
   }
 
-  // 如果未认证，重定向到登录页面
-  if (!isAuthenticated) {
+  // 如果未认证且没有 token，重定向到登录页面
+  if (!isAuthenticated && !token) {
+    return <Navigate to={ROUTES.AUTH} state={{ from: location }} replace />;
+  }
+
+  // 如果有 token 但认证失败，也重定向到登录页面
+  if (!isAuthenticated && token && !isLoading) {
     return <Navigate to={ROUTES.AUTH} state={{ from: location }} replace />;
   }
 

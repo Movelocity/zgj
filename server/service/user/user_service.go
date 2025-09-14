@@ -129,6 +129,41 @@ func (s *userService) ResetPassword(phone, newPassword string) error {
 	return nil
 }
 
+// ChangePassword 修改密码（需要验证当前密码）
+func (s *userService) ChangePassword(userID string, req ChangePasswordRequest) error {
+	// 查找用户
+	var u model.User
+	if err := global.DB.Where("id = ? AND active = ?", userID, true).First(&u).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return errors.New("用户不存在或已被停用")
+		}
+		return errors.New("数据库查询失败")
+	}
+
+	// 验证当前密码
+	if !utils.CheckPasswordHash(req.CurrentPassword, u.Password) {
+		return errors.New("当前密码错误")
+	}
+
+	// 检查新密码是否与当前密码相同
+	if utils.CheckPasswordHash(req.NewPassword, u.Password) {
+		return errors.New("新密码不能与当前密码相同")
+	}
+
+	// 哈希新密码
+	hashedPassword, err := utils.HashPassword(req.NewPassword)
+	if err != nil {
+		return errors.New("密码加密失败")
+	}
+
+	// 更新密码
+	if err := global.DB.Model(&u).Update("password", hashedPassword).Error; err != nil {
+		return errors.New("密码更新失败")
+	}
+
+	return nil
+}
+
 // GetUserProfile 获取用户档案
 func (s *userService) GetUserProfile(userID string) (*UserProfileResponse, error) {
 	// 获取用户信息
@@ -484,87 +519,26 @@ func (s *userService) LoginOrRegister(phone, name string) (string, *UserInfo, bo
 	return token, userInfo, true, nil
 }
 
-// CreateAdmin 创建管理员用户
-func (s *userService) CreateAdmin(name, phone, password, email string) error {
-	// 检查手机号是否已存在
-	var existUser model.User
-	if err := global.DB.Where("phone = ?", phone).First(&existUser).Error; err == nil {
-		return errors.New("手机号已被使用")
+// UpdateUserRole 更新用户角色权限
+func (s *userService) UpdateUserRole(userID string, role int) error {
+	// 验证角色值是否合法
+	if role != 666 && role != 888 {
+		return errors.New("无效的角色值，只支持 666(普通用户) 或 888(管理员)")
 	}
 
-	// 哈希密码
-	hashedPassword, err := utils.HashPassword(password)
-	if err != nil {
-		return errors.New("密码加密失败")
+	// 检查用户是否存在
+	var user model.User
+	if err := global.DB.Where("id = ?", userID).First(&user).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return errors.New("用户不存在")
+		}
+		return errors.New("查询用户失败")
 	}
 
-	// 创建管理员用户
-	newAdmin := model.User{
-		ID:       utils.GenerateTLID(),
-		Name:     name,
-		Phone:    phone,
-		Password: hashedPassword,
-		Email:    email,
-		Active:   true,
-		Role:     888, // 管理员
-	}
-
-	if err := global.DB.Create(&newAdmin).Error; err != nil {
-		return errors.New("管理员用户创建失败")
-	}
-
-	// 创建用户档案
-	userProfile := model.UserProfile{
-		ID:      utils.GenerateTLID(),
-		UserID:  newAdmin.ID,
-		Data:    model.JSON("{}"),
-		Resumes: model.JSON("[]"),
-	}
-
-	if err := global.DB.Create(&userProfile).Error; err != nil {
-		return errors.New("管理员档案创建失败")
+	// 更新用户角色
+	if err := global.DB.Model(&user).Update("role", role).Error; err != nil {
+		return errors.New("更新用户角色失败")
 	}
 
 	return nil
-}
-
-// AdminLogin 管理员登录
-func (s *userService) AdminLogin(phone, password string) (string, *UserInfo, error) {
-	// 查找管理员用户
-	var u model.User
-	if err := global.DB.Where("phone = ? AND active = ? AND role = ?", phone, true, 888).First(&u).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return "", nil, errors.New("管理员不存在或已被停用")
-		}
-		return "", nil, errors.New("数据库查询失败")
-	}
-
-	// 验证密码
-	if !utils.CheckPasswordHash(password, u.Password) {
-		return "", nil, errors.New("密码错误")
-	}
-
-	// 更新最后登录时间
-	global.DB.Model(&u).Update("last_login", time.Now())
-
-	// 生成JWT token
-	token, err := utils.GenerateToken(u.ID, u.Name, u.Role)
-	if err != nil {
-		return "", nil, errors.New("token生成失败")
-	}
-
-	// 构建用户信息
-	userInfo := &UserInfo{
-		ID:        u.ID,
-		Name:      u.Name,
-		Phone:     u.Phone,
-		Email:     u.Email,
-		HeaderImg: u.HeaderImg,
-		Role:      u.Role,
-		Active:    u.Active,
-		LastLogin: u.LastLogin,
-		CreatedAt: u.CreatedAt,
-	}
-
-	return token, userInfo, nil
 }

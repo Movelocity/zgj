@@ -151,6 +151,24 @@ func UpdateUserProfile(c *gin.Context) {
 	utils.OkWithMessage("更新成功", c)
 }
 
+// ChangePassword 修改密码
+func ChangePassword(c *gin.Context) {
+	userID := c.GetString("userID")
+	var req userService.ChangePasswordRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		utils.FailWithMessage(err.Error(), c)
+		return
+	}
+
+	// 调用服务层
+	if err := service.UserService.ChangePassword(userID, req); err != nil {
+		utils.FailWithMessage(err.Error(), c)
+		return
+	}
+
+	utils.OkWithMessage("密码修改成功", c)
+}
+
 // UnifiedAuth 统一认证接口（自动注册+登录）
 func UnifiedAuth(c *gin.Context) {
 	var req userService.UnifiedAuthRequest
@@ -361,43 +379,24 @@ func DeactivateUser(c *gin.Context) {
 	utils.OkWithMessage("用户已停用", c)
 }
 
-// CreateAdmin 创建管理员用户
-func CreateAdmin(c *gin.Context) {
-	var req userService.CreateAdminRequest
+// UpdateUserRole 更新用户角色权限
+func UpdateUserRole(c *gin.Context) {
+	userID := c.Param("id")
+	var req userService.UpdateUserRoleRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		utils.FailWithMessage(err.Error(), c)
 		return
 	}
 
-	// 调用服务层创建管理员
-	if err := service.UserService.CreateAdmin(req.Name, req.Phone, req.Password, req.Email); err != nil {
-		utils.FailWithMessage(err.Error(), c)
+	// 调用服务层更新用户角色
+	if err := service.UserService.UpdateUserRole(userID, req.Role); err != nil {
+		if err.Error() == "用户不存在" {
+			utils.FailWithNotFound(err.Error(), c)
+		} else {
+			utils.FailWithMessage(err.Error(), c)
+		}
 		return
 	}
 
-	utils.OkWithMessage("管理员创建成功", c)
-}
-
-// AdminLogin 管理员登录
-func AdminLogin(c *gin.Context) {
-	var req userService.AdminLoginRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		utils.FailWithMessage(err.Error(), c)
-		return
-	}
-
-	// 调用服务层
-	token, userInfo, err := service.UserService.AdminLogin(req.Phone, req.Password)
-	if err != nil {
-		utils.FailWithMessage(err.Error(), c)
-		return
-	}
-
-	response := userService.LoginResponse{
-		Token:     token,
-		ExpiresAt: time.Now().Add(global.CONFIG.JWT.ExpiresTime),
-		User:      *userInfo,
-	}
-
-	utils.OkWithData(response, c)
+	utils.OkWithMessage("用户角色更新成功", c)
 }

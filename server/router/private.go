@@ -16,6 +16,7 @@ func InitPrivateRouter(Router *gin.RouterGroup) {
 	{
 		UserRouter.GET("/profile", user.GetUserProfile)      // 获取用户信息
 		UserRouter.PUT("/profile", user.UpdateUserProfile)   // 更新用户信息
+		UserRouter.PUT("/password", user.ChangePassword)     // 修改密码
 		UserRouter.POST("/logout", user.Logout)              // 用户登出
 		UserRouter.POST("/upload_avatar", user.UploadAvatar) // 上传头像
 		UserRouter.POST("/upload_resume", user.UploadResume) // 上传简历

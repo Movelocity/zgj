@@ -86,20 +86,32 @@ export const useAuthStore = create<AuthState>()(
       checkAuth: async () => {
         const token = get().token || localStorage.getItem(TOKEN_KEY);
         if (!token) {
+          set({ isAuthenticated: false, user: null, token: null });
           return false;
         }
 
+        set({ isLoading: true });
+        
         try {
           const response = await authAPI.getCurrentUser();
           const user = response.data;
           set({ 
             isAuthenticated: true, 
             user, 
-            token 
+            token,
+            isLoading: false,
+            error: null
           });
           return true;
         } catch (error) {
-          get().logout();
+          // 清除认证状态，但不重复清除 localStorage（已在 client.ts 中处理）
+          set({ 
+            isAuthenticated: false, 
+            user: null, 
+            token: null, 
+            isLoading: false,
+            error: error instanceof Error ? error.message : '认证失败'
+          });
           return false;
         }
       },
