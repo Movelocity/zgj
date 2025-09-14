@@ -7,6 +7,7 @@ import { workflowAPI } from '@/api/workflow';
 import { adminAPI } from '@/api/admin';
 import { conversationAPI } from '@/api/conversation';
 import { useAuthStore } from '@/store';
+import { showError } from '@/utils/toast';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 
@@ -97,7 +98,7 @@ const ApiTest: React.FC = () => {
   );
   const testUploadAvatar = () => {
     if (!testFile) {
-      alert('请选择一个图片文件');
+      showError('请选择一个图片文件');
       return;
     }
     runTest('上传头像', () => userAPI.uploadAvatar(testFile));
@@ -107,7 +108,7 @@ const ApiTest: React.FC = () => {
   const testGetResumes = () => runTest('获取简历列表', () => resumeAPI.getResumes({ page: 1, pageSize: 10 }));
   const testUploadResume = () => {
     if (!testFile) {
-      alert('请选择一个简历文件');
+      showError('请选择一个简历文件');
       return;
     }
     runTest('上传简历', () => resumeAPI.uploadResume({ file: testFile, name: '测试简历' }));
@@ -123,7 +124,7 @@ const ApiTest: React.FC = () => {
   });
   const testExecuteWorkflow = () => {
     if (!selectedWorkflowId) {
-      alert('请先获取工作流列表');
+      showError('请先获取工作流列表');
       return;
     }
     runTest('执行工作流', () => 

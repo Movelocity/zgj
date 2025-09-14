@@ -3,10 +3,11 @@ import { userAPI } from '@/api/user';
 import { useAuthStore } from '@/store/authStore';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
+import { showSuccess, showError } from '@/utils/toast';
 import type { UserProfileResponse } from '@/types/user';
 
 const Profile: React.FC = () => {
-  const { user } = useAuthStore();
+  const { user, logout } = useAuthStore();
   const [loading, setLoading] = useState(false);
   const [profile, setProfile] = useState<UserProfileResponse | null>(null);
   const [activeTab, setActiveTab] = useState<'profile' | 'password'>('profile');
@@ -49,13 +50,13 @@ const Profile: React.FC = () => {
       setLoading(true);
       const response = await userAPI.updateProfile(profileForm);
       if (response.code === 0) {
-        alert('个人信息更新成功');
+        showSuccess('个人信息更新成功');
         await loadProfile();
       } else {
-        alert(response.msg || '更新失败');
+        showError(response.msg || '更新失败');
       }
     } catch (error) {
-      alert('更新失败，请重试');
+      showError('更新失败，请重试');
       console.error('更新个人信息失败:', error);
     } finally {
       setLoading(false);
@@ -65,12 +66,12 @@ const Profile: React.FC = () => {
   // 修改密码
   const handleChangePassword = async () => {
     if (passwordForm.new_password !== passwordForm.confirm_password) {
-      alert('新密码和确认密码不一致');
+      showError('新密码和确认密码不一致');
       return;
     }
 
     if (passwordForm.new_password.length < 6) {
-      alert('密码长度不能少于6位');
+      showError('密码长度不能少于6位');
       return;
     }
 
@@ -82,17 +83,17 @@ const Profile: React.FC = () => {
       });
       
       if (response.code === 0) {
-        alert('密码修改成功');
+        showSuccess('密码修改成功');
         setPasswordForm({
           current_password: '',
           new_password: '',
           confirm_password: '',
         });
       } else {
-        alert(response.msg || '密码修改失败');
+        showError(response.msg || '密码修改失败');
       }
     } catch (error) {
-      alert('密码修改失败，请重试');
+      showError('密码修改失败，请重试');
       console.error('修改密码失败:', error);
     } finally {
       setLoading(false);
@@ -102,6 +103,10 @@ const Profile: React.FC = () => {
   useEffect(() => {
     loadProfile();
   }, []);
+
+  const handleLogout = () => {
+    logout();
+  };
 
   if (loading && !profile) {
     return (
@@ -202,7 +207,11 @@ const Profile: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="flex justify-end">
+                <div className="flex justify-end gap-4">
+                  <Button variant="outline" onClick={handleLogout}>
+                    退出登录
+                  </Button>
+
                   <Button
                     onClick={handleUpdateProfile}
                     disabled={loading}

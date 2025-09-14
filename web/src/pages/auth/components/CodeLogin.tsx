@@ -70,6 +70,9 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onSuccess }) => {
         
         // 成功回调
         onSuccess?.();
+
+        // 跳转到首页
+        navigate('/');
       } else {
         setError(response.msg || '登录失败');
       }

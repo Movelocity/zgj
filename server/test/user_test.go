@@ -309,3 +309,85 @@ func TestResetPassword(t *testing.T) {
 		assert.Equal(t, 200, w.Code)
 	})
 }
+
+func TestGetUserProfileWithoutProfile(t *testing.T) {
+	app := SetupTestApp()
+	defer CleanupTestApp(app)
+
+	// 创建测试用户
+	userID, token := CreateTestUser(app, "13800138013", "Old User", "password123")
+
+	// 模拟老用户情况：删除用户的profile记录
+	app.DB.Exec("DELETE FROM user_profiles WHERE user_id = ?", userID)
+
+	t.Run("老用户自动创建默认profile", func(t *testing.T) {
+		// 验证用户profile确实被删除了
+		var count int64
+		app.DB.Raw("SELECT COUNT(*) FROM user_profiles WHERE user_id = ?", userID).Scan(&count)
+		assert.Equal(t, int64(0), count)
+
+		// 获取用户信息，应该自动创建默认profile
+		w := MakeRequest(app.Router, "GET", "/api/user/profile", nil, AuthHeaders(token))
+
+		assert.Equal(t, 200, w.Code)
+		response := GetJSONResponse(w)
+		assert.Equal(t, float64(0), response["code"])
+
+		data := response["data"].(map[string]interface{})
+		user := data["user"].(map[string]interface{})
+		assert.Equal(t, userID, user["id"])
+		assert.Equal(t, "13800138013", user["phone"])
+		assert.Equal(t, "Old User", user["name"])
+
+		// 验证返回了默认的data和resumes字段
+		assert.NotNil(t, data["data"])
+		assert.NotNil(t, data["resumes"])
+
+		// 验证数据库中确实创建了profile记录
+		app.DB.Raw("SELECT COUNT(*) FROM user_profiles WHERE user_id = ?", userID).Scan(&count)
+		assert.Equal(t, int64(1), count)
+	})
+
+	t.Run("老用户更新profile时自动创建", func(t *testing.T) {
+		// 创建另一个测试用户
+		userID2, token2 := CreateTestUser(app, "13800138014", "Old User 2", "password123")
+
+		// 删除用户的profile记录
+		app.DB.Exec("DELETE FROM user_profiles WHERE user_id = ?", userID2)
+
+		// 验证profile确实被删除了
+		var count int64
+		app.DB.Raw("SELECT COUNT(*) FROM user_profiles WHERE user_id = ?", userID2).Scan(&count)
+		assert.Equal(t, int64(0), count)
+
+		// 尝试更新用户信息，应该自动创建默认profile
+		updateData := map[string]interface{}{
+			"name": "Updated Old User 2",
+			"data": map[string]interface{}{
+				"skills": []string{"Go", "React"},
+			},
+		}
+
+		w := MakeRequest(app.Router, "PUT", "/api/user/profile", updateData, AuthHeaders(token2))
+
+		assert.Equal(t, 200, w.Code)
+		response := GetJSONResponse(w)
+		assert.Equal(t, float64(0), response["code"])
+
+		// 验证数据库中确实创建了profile记录
+		app.DB.Raw("SELECT COUNT(*) FROM user_profiles WHERE user_id = ?", userID2).Scan(&count)
+		assert.Equal(t, int64(1), count)
+
+		// 验证更新的数据被正确保存
+		w = MakeRequest(app.Router, "GET", "/api/user/profile", nil, AuthHeaders(token2))
+		response = GetJSONResponse(w)
+		data := response["data"].(map[string]interface{})
+		user := data["user"].(map[string]interface{})
+		assert.Equal(t, "Updated Old User 2", user["name"])
+
+		profileData := data["data"].(map[string]interface{})
+		skills := profileData["skills"].([]interface{})
+		assert.Equal(t, "Go", skills[0])
+		assert.Equal(t, "React", skills[1])
+	})
+}

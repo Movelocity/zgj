@@ -94,10 +94,11 @@ export const useAuthStore = create<AuthState>()(
         
         try {
           const response = await authAPI.getCurrentUser();
-          const user = response.data;
+          const data = response.data;
+          console.log("user", data);
           set({ 
             isAuthenticated: true, 
-            user, 
+            user: response.user, 
             token,
             isLoading: false,
             error: null

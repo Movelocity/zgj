@@ -138,7 +138,7 @@ const Home: React.FC = () => {
               </p>
               {isAuthenticated ? (
                 <Link to={ROUTES.SIMPLE_RESUME}>
-                  <Button variant="outline" className="text-white border-white hover:bg-white hover:text-blue-600">
+                  <Button variant="outline" className="border-white hover:bg-white hover:text-blue-600">
                     开始优化
                   </Button>
                 </Link>

@@ -175,7 +175,22 @@ func (s *userService) GetUserProfile(userID string) (*UserProfileResponse, error
 	// 获取用户档案
 	var profile model.UserProfile
 	if err := global.DB.First(&profile, "user_id = ?", userID).Error; err != nil {
-		return nil, errors.New("用户档案不存在")
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			// 用户档案不存在，但用户存在（老用户情况），自动创建默认档案
+			profile = model.UserProfile{
+				ID:      utils.GenerateTLID(),
+				UserID:  userID,
+				Data:    model.JSON("{}"),
+				Resumes: model.JSON("[]"),
+			}
+
+			// 创建默认用户档案
+			if err := global.DB.Create(&profile).Error; err != nil {
+				return nil, errors.New("创建默认用户档案失败")
+			}
+		} else {
+			return nil, errors.New("查询用户档案失败")
+		}
 	}
 
 	// 解析数据
@@ -243,8 +258,29 @@ func (s *userService) UpdateUserProfile(userID string, req UpdateUserProfileRequ
 			return errors.New("数据格式错误")
 		}
 
-		if err := global.DB.Model(&model.UserProfile{}).Where("user_id = ?", userID).Update("data", model.JSON(dataJSON)).Error; err != nil {
-			return errors.New("用户档案更新失败")
+		// 检查用户档案是否存在，不存在则创建
+		var profile model.UserProfile
+		if err := global.DB.First(&profile, "user_id = ?", userID).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				// 用户档案不存在，创建默认档案
+				profile = model.UserProfile{
+					ID:      utils.GenerateTLID(),
+					UserID:  userID,
+					Data:    model.JSON(dataJSON),
+					Resumes: model.JSON("[]"),
+				}
+
+				if err := global.DB.Create(&profile).Error; err != nil {
+					return errors.New("创建默认用户档案失败")
+				}
+			} else {
+				return errors.New("查询用户档案失败")
+			}
+		} else {
+			// 更新现有档案
+			if err := global.DB.Model(&profile).Update("data", model.JSON(dataJSON)).Error; err != nil {
+				return errors.New("用户档案更新失败")
+			}
 		}
 	}
 
@@ -274,7 +310,22 @@ func (s *userService) UploadResume(userID string, file *multipart.FileHeader) (*
 	// 获取现有简历列表
 	var profile model.UserProfile
 	if err := global.DB.First(&profile, "user_id = ?", userID).Error; err != nil {
-		return nil, errors.New("用户档案不存在")
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			// 用户档案不存在，创建默认档案
+			profile = model.UserProfile{
+				ID:      utils.GenerateTLID(),
+				UserID:  userID,
+				Data:    model.JSON("{}"),
+				Resumes: model.JSON("[]"),
+			}
+
+			// 创建默认用户档案
+			if err := global.DB.Create(&profile).Error; err != nil {
+				return nil, errors.New("创建默认用户档案失败")
+			}
+		} else {
+			return nil, errors.New("查询用户档案失败")
+		}
 	}
 
 	var resumes []model.Resume
