@@ -1,5 +1,5 @@
 import React from 'react';
-import { ButtonHTMLAttributes } from 'react';
+import type { ButtonHTMLAttributes } from 'react';
 import Loading from './Loading';
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {

@@ -4,12 +4,14 @@ import { lazy } from 'react';
 // 懒加载页面组件
 const Home = lazy(() => import('@/pages/home/Home'));
 const Auth = lazy(() => import('@/pages/auth/Auth'));
+const AdminAuth = lazy(() => import('@/pages/auth/AdminAuth'));
 const SimpleResume = lazy(() => import('@/pages/resume/SimpleResume'));
 const JobResume = lazy(() => import('@/pages/resume/JobResume'));
 const ResumeList = lazy(() => import('@/pages/resume/ResumeList'));
 const ResumeDetail = lazy(() => import('@/pages/resume/ResumeDetail'));
 const Profile = lazy(() => import('@/pages/profile/Profile'));
 const Administrator = lazy(() => import('@/pages/admin/Administrator'));
+const ApiTest = lazy(() => import('@/pages/test/ApiTest'));
 const NotFound = lazy(() => import('@/pages/error/NotFound'));
 const ServerError = lazy(() => import('@/pages/error/ServerError'));
 
@@ -22,6 +24,10 @@ export const routes = [
   {
     path: '/auth',
     element: <Auth />,
+  },
+  {
+    path: '/admin/auth',
+    element: <AdminAuth />,
   },
   {
     path: '/simple-resume',
@@ -46,6 +52,10 @@ export const routes = [
   {
     path: '/administrator',
     element: <Administrator />,
+  },
+  {
+    path: '/api-test',
+    element: <ApiTest />,
   },
   {
     path: '/500',

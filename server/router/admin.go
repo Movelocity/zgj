@@ -12,6 +12,13 @@ import (
 
 // InitAdminRouter 初始化管理员路由
 func InitAdminRouter(Router *gin.RouterGroup) {
+	// 管理员认证路由（无需认证）
+	AdminAuthRouter := Router.Group("/api/admin/auth")
+	{
+		AdminAuthRouter.POST("/login", user.AdminLogin)   // 管理员登录
+		AdminAuthRouter.POST("/create", user.CreateAdmin) // 创建管理员（仅用于初始化）
+	}
+
 	// 用户管理
 	AdminUserRouter := Router.Group("/api/admin/user")
 	{

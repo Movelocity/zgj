@@ -360,3 +360,44 @@ func DeactivateUser(c *gin.Context) {
 
 	utils.OkWithMessage("用户已停用", c)
 }
+
+// CreateAdmin 创建管理员用户
+func CreateAdmin(c *gin.Context) {
+	var req userService.CreateAdminRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		utils.FailWithMessage(err.Error(), c)
+		return
+	}
+
+	// 调用服务层创建管理员
+	if err := service.UserService.CreateAdmin(req.Name, req.Phone, req.Password, req.Email); err != nil {
+		utils.FailWithMessage(err.Error(), c)
+		return
+	}
+
+	utils.OkWithMessage("管理员创建成功", c)
+}
+
+// AdminLogin 管理员登录
+func AdminLogin(c *gin.Context) {
+	var req userService.AdminLoginRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		utils.FailWithMessage(err.Error(), c)
+		return
+	}
+
+	// 调用服务层
+	token, userInfo, err := service.UserService.AdminLogin(req.Phone, req.Password)
+	if err != nil {
+		utils.FailWithMessage(err.Error(), c)
+		return
+	}
+
+	response := userService.LoginResponse{
+		Token:     token,
+		ExpiresAt: time.Now().Add(global.CONFIG.JWT.ExpiresTime),
+		User:      *userInfo,
+	}
+
+	utils.OkWithData(response, c)
+}

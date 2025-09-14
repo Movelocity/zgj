@@ -16,10 +16,12 @@ export const ADMIN_ROLE = 888;
 export const ROUTES = {
   HOME: '/',
   AUTH: '/auth',
+  ADMIN_AUTH: '/admin/auth',
   SIMPLE_RESUME: '/simple-resume',
   JOB_RESUME: '/job-resume',
   PROFILE: '/profile',
   ADMINISTRATOR: '/administrator',
+  API_TEST: '/api-test',
 } as const;
 
 export const SMS_CONFIG = {

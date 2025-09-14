@@ -80,6 +80,17 @@ const Home: React.FC = () => {
                 </>
               )}
             </div>
+            
+            {/* 开发环境下显示API测试链接 */}
+            {import.meta.env.DEV && (
+              <div className="mt-8 text-center">
+                <Link to={ROUTES.API_TEST}>
+                  <Button variant="outline" size="sm" className="text-gray-500 border-gray-300">
+                    🔧 API 测试页面 (开发模式)
+                  </Button>
+                </Link>
+              </div>
+            )}
           </div>
         </div>
       </div>

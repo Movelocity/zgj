@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type { Resume, ResumeUploadData } from '@/types/resume';
-import type { PaginationParams, LoadingState } from '@/types/global';
+import type { PaginationParams } from '@/types/global';
 import { resumeAPI } from '@/api/resume';
 
 interface ResumeState {
@@ -40,7 +40,7 @@ const initialState = {
   },
 };
 
-export const useResumeStore = create<ResumeState>((set, get) => ({
+export const useResumeStore = create<ResumeState>((set) => ({
   ...initialState,
 
   fetchResumes: async (params?: PaginationParams) => {

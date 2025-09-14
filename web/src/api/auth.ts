@@ -25,6 +25,6 @@ export const authAPI = {
 
   // 获取当前用户信息
   getCurrentUser: (): Promise<ApiResponse<User>> => {
-    return apiClient.get('/api/user/info');
+    return apiClient.get('/api/user/profile');
   },
 };

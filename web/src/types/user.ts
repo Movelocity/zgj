@@ -33,6 +33,7 @@ export interface LoginCredentials {
 export interface AuthData {
   phone: string;
   sms_code: string;
+  name?: string; // 可选，首次注册时提供
 }
 
 export interface RegisterData {

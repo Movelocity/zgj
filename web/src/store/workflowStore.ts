@@ -42,7 +42,7 @@ const initialState = {
   },
 };
 
-export const useWorkflowStore = create<WorkflowState>((set, get) => ({
+export const useWorkflowStore = create<WorkflowState>((set) => ({
   ...initialState,
 
   fetchWorkflows: async () => {
@@ -86,7 +86,7 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
   fetchExecutionHistory: async (params?: PaginationParams) => {
     set({ isLoading: true, error: null });
     try {
-      const response = await workflowAPI.getExecutionHistory(params);
+      const response = await workflowAPI.getUserWorkflowHistory(params);
       const { list, total, page, pageSize, totalPages } = response.data;
       
       set({
@@ -105,7 +105,7 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
   getExecutionResult: async (executionId: string) => {
     set({ isLoading: true, error: null });
     try {
-      const response = await workflowAPI.getExecutionResult(executionId);
+      const response = await workflowAPI.getExecutionDetail(executionId);
       set({
         currentExecution: response.data,
         isLoading: false,

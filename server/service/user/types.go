@@ -98,3 +98,17 @@ type UserListResponse struct {
 	Page     int        `json:"page"`
 	PageSize int        `json:"page_size"`
 }
+
+// CreateAdminRequest 创建管理员请求
+type CreateAdminRequest struct {
+	Name     string `json:"name" binding:"required"`
+	Phone    string `json:"phone" binding:"required"`
+	Password string `json:"password" binding:"required,min=6"`
+	Email    string `json:"email"`
+}
+
+// AdminLoginRequest 管理员登录请求
+type AdminLoginRequest struct {
+	Phone    string `json:"phone" binding:"required"`
+	Password string `json:"password" binding:"required"`
+}

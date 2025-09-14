@@ -483,3 +483,88 @@ func (s *userService) LoginOrRegister(phone, name string) (string, *UserInfo, bo
 
 	return token, userInfo, true, nil
 }
+
+// CreateAdmin 创建管理员用户
+func (s *userService) CreateAdmin(name, phone, password, email string) error {
+	// 检查手机号是否已存在
+	var existUser model.User
+	if err := global.DB.Where("phone = ?", phone).First(&existUser).Error; err == nil {
+		return errors.New("手机号已被使用")
+	}
+
+	// 哈希密码
+	hashedPassword, err := utils.HashPassword(password)
+	if err != nil {
+		return errors.New("密码加密失败")
+	}
+
+	// 创建管理员用户
+	newAdmin := model.User{
+		ID:       utils.GenerateTLID(),
+		Name:     name,
+		Phone:    phone,
+		Password: hashedPassword,
+		Email:    email,
+		Active:   true,
+		Role:     888, // 管理员
+	}
+
+	if err := global.DB.Create(&newAdmin).Error; err != nil {
+		return errors.New("管理员用户创建失败")
+	}
+
+	// 创建用户档案
+	userProfile := model.UserProfile{
+		ID:      utils.GenerateTLID(),
+		UserID:  newAdmin.ID,
+		Data:    model.JSON("{}"),
+		Resumes: model.JSON("[]"),
+	}
+
+	if err := global.DB.Create(&userProfile).Error; err != nil {
+		return errors.New("管理员档案创建失败")
+	}
+
+	return nil
+}
+
+// AdminLogin 管理员登录
+func (s *userService) AdminLogin(phone, password string) (string, *UserInfo, error) {
+	// 查找管理员用户
+	var u model.User
+	if err := global.DB.Where("phone = ? AND active = ? AND role = ?", phone, true, 888).First(&u).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return "", nil, errors.New("管理员不存在或已被停用")
+		}
+		return "", nil, errors.New("数据库查询失败")
+	}
+
+	// 验证密码
+	if !utils.CheckPasswordHash(password, u.Password) {
+		return "", nil, errors.New("密码错误")
+	}
+
+	// 更新最后登录时间
+	global.DB.Model(&u).Update("last_login", time.Now())
+
+	// 生成JWT token
+	token, err := utils.GenerateToken(u.ID, u.Name, u.Role)
+	if err != nil {
+		return "", nil, errors.New("token生成失败")
+	}
+
+	// 构建用户信息
+	userInfo := &UserInfo{
+		ID:        u.ID,
+		Name:      u.Name,
+		Phone:     u.Phone,
+		Email:     u.Email,
+		HeaderImg: u.HeaderImg,
+		Role:      u.Role,
+		Active:    u.Active,
+		LastLogin: u.LastLogin,
+		CreatedAt: u.CreatedAt,
+	}
+
+	return token, userInfo, nil
+}

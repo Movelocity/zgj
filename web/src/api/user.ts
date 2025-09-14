@@ -14,10 +14,10 @@ export const userAPI = {
   },
 
   // 上传头像
-  uploadAvatar: (file: File): Promise<ApiResponse<{ avatar_url: string }>> => {
+  uploadAvatar: (file: File): Promise<ApiResponse<{ url: string; filename: string; size: number }>> => {
     const formData = new FormData();
     formData.append('file', file);
-    return apiClient.post('/api/file/upload/avatar', formData, {
+    return apiClient.post('/api/user/upload_avatar', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
