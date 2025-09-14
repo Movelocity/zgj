@@ -1,5 +1,5 @@
 import { lazy } from 'react';
-import { RouteObject } from 'react-router-dom';
+// import { RouteObject } from 'react-router-dom';
 
 // 懒加载页面组件
 const Home = lazy(() => import('@/pages/home/Home'));

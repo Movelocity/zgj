@@ -1,6 +1,6 @@
 import apiClient from './client';
-import { UserProfile } from '@/types/user';
-import { ApiResponse } from '@/types/global';
+import type { UserProfile } from '@/types/user';
+import type { ApiResponse } from '@/types/global';
 
 export const userAPI = {
   // 获取用户资料

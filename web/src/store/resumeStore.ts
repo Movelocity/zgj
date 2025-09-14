@@ -1,6 +1,6 @@
 import { create } from 'zustand';
-import { Resume, ResumeUploadData } from '@/types/resume';
-import { PaginationParams, LoadingState } from '@/types/global';
+import type { Resume, ResumeUploadData } from '@/types/resume';
+import type { PaginationParams, LoadingState } from '@/types/global';
 import { resumeAPI } from '@/api/resume';
 
 interface ResumeState {

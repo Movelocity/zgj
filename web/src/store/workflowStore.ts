@@ -1,6 +1,6 @@
 import { create } from 'zustand';
-import { Workflow, WorkflowExecution } from '@/types/workflow';
-import { PaginationParams } from '@/types/global';
+import type { Workflow, WorkflowExecution } from '@/types/workflow';
+import type { PaginationParams } from '@/types/global';
 import { workflowAPI } from '@/api/workflow';
 
 interface WorkflowState {

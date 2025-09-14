@@ -1,6 +1,6 @@
 import apiClient from './client';
-import { LoginCredentials, AuthData, User } from '@/types/user';
-import { ApiResponse } from '@/types/global';
+import type { LoginCredentials, AuthData, User } from '@/types/user';
+import type { ApiResponse } from '@/types/global';
 
 export const authAPI = {
   // 登录

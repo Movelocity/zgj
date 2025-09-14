@@ -1,6 +1,7 @@
-import axios, { AxiosResponse, AxiosError } from 'axios';
+import axios from 'axios';
+import type { AxiosResponse, AxiosError } from 'axios';
 import { API_BASE_URL, TOKEN_KEY } from '@/utils/constants';
-import { ApiResponse } from '@/types/global';
+import type { ApiResponse } from '@/types/global';
 
 // 创建axios实例
 const apiClient = axios.create({
@@ -28,7 +29,7 @@ apiClient.interceptors.request.use(
 // 响应拦截器
 apiClient.interceptors.response.use(
   (response: AxiosResponse<ApiResponse>) => {
-    return response.data;
+    return response;
   },
   (error: AxiosError<ApiResponse>) => {
     // 处理401未授权错误

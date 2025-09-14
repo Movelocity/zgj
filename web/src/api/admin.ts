@@ -1,7 +1,7 @@
 import apiClient from './client';
-import { User } from '@/types/user';
-import { Workflow } from '@/types/workflow';
-import { ApiResponse, PaginationParams, PaginationResponse } from '@/types/global';
+import type { User } from '@/types/user';
+import type { Workflow } from '@/types/workflow';
+import type { ApiResponse, PaginationParams, PaginationResponse } from '@/types/global';
 
 export const adminAPI = {
   // 用户管理

@@ -1,8 +1,8 @@
 // API相关类型定义
-import { ApiResponse, PaginationParams, PaginationResponse } from './global';
-import { User, UserProfile, LoginCredentials, AuthData } from './user';
-import { Resume, ResumeUploadData, ResumeOptimizationRequest } from './resume';
-import { Workflow, WorkflowExecution } from './workflow';
+import type { ApiResponse, PaginationParams, PaginationResponse } from './global';
+import type { User, UserProfile, LoginCredentials, AuthData } from './user';
+import type { Resume, ResumeUploadData, ResumeOptimizationRequest } from './resume';
+import type { Workflow, WorkflowExecution } from './workflow';
 
 // 认证API
 export interface AuthAPI {

@@ -1,6 +1,6 @@
 import apiClient from './client';
-import { Workflow, WorkflowExecution } from '@/types/workflow';
-import { ApiResponse, PaginationParams, PaginationResponse } from '@/types/global';
+import type { Workflow, WorkflowExecution } from '@/types/workflow';
+import type { ApiResponse, PaginationParams, PaginationResponse } from '@/types/global';
 
 export const workflowAPI = {
   // 获取工作流列表

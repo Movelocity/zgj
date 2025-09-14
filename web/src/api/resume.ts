@@ -1,6 +1,6 @@
 import apiClient from './client';
-import { Resume, ResumeUploadData, ResumeOptimizationRequest } from '@/types/resume';
-import { ApiResponse, PaginationParams, PaginationResponse } from '@/types/global';
+import type { Resume, ResumeUploadData, ResumeOptimizationRequest } from '@/types/resume';
+import type { ApiResponse, PaginationParams, PaginationResponse } from '@/types/global';
 
 export const resumeAPI = {
   // 获取简历列表
