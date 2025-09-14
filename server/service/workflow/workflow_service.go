@@ -106,17 +106,11 @@ func (s *workflowService) GetWorkflowHistory(workflowID, page, pageSize string) 
 			workflowName = execution.Workflow.Name
 		}
 
-		resumeName := ""
-		if execution.Resume != nil && execution.Resume.ID != "" {
-			resumeName = execution.Resume.Name
-		}
-
 		executionInfo := WorkflowExecutionInfo{
 			ID:            execution.ID,
 			WorkflowID:    execution.WorkflowID,
 			WorkflowName:  workflowName,
 			ResumeID:      execution.ResumeID,
-			ResumeName:    resumeName,
 			Inputs:        inputs,
 			Outputs:       outputs,
 			Status:        execution.Status,
@@ -187,17 +181,11 @@ func (s *workflowService) GetUserWorkflowHistory(userID, page, pageSize string) 
 			workflowName = execution.Workflow.Name
 		}
 
-		resumeName := ""
-		if execution.Resume != nil && execution.Resume.ID != "" {
-			resumeName = execution.Resume.Name
-		}
-
 		executionInfo := WorkflowExecutionInfo{
 			ID:            execution.ID,
 			WorkflowID:    execution.WorkflowID,
 			WorkflowName:  workflowName,
 			ResumeID:      execution.ResumeID,
-			ResumeName:    resumeName,
 			Inputs:        inputs,
 			Outputs:       outputs,
 			Status:        execution.Status,
@@ -246,11 +234,6 @@ func (s *workflowService) GetExecutionDetail(executionID string) (*WorkflowExecu
 		workflowName = execution.Workflow.Name
 	}
 
-	resumeName := ""
-	if execution.Resume != nil && execution.Resume.ID != "" {
-		resumeName = execution.Resume.Name
-	}
-
 	userName := ""
 	if execution.User.ID != "" {
 		userName = execution.User.Name
@@ -263,7 +246,6 @@ func (s *workflowService) GetExecutionDetail(executionID string) (*WorkflowExecu
 		UserID:        execution.UserID,
 		UserName:      userName,
 		ResumeID:      execution.ResumeID,
-		ResumeName:    resumeName,
 		Inputs:        inputs,
 		Outputs:       outputs,
 		Status:        execution.Status,

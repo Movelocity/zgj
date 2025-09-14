@@ -8,7 +8,6 @@ type WorkflowExecutionInfo struct {
 	WorkflowID    string      `json:"workflow_id"`
 	WorkflowName  string      `json:"workflow_name"`
 	ResumeID      string      `json:"resume_id"`
-	ResumeName    string      `json:"resume_name"`
 	Inputs        interface{} `json:"inputs"`
 	Outputs       interface{} `json:"outputs"`
 	Status        string      `json:"status"`

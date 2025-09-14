@@ -514,6 +514,7 @@ func (s *appService) callWorkflowAPI(apiURL, apiKey, userID string, inputs map[s
 		ResponseMode: "blocking", // 只支持blocking模式
 		User:         userID,
 	}
+	fmt.Println("callWorkflowAPI", requestBody)
 
 	// 序列化请求体
 	jsonData, err := json.Marshal(requestBody)
@@ -535,6 +536,8 @@ func (s *appService) callWorkflowAPI(apiURL, apiKey, userID string, inputs map[s
 	client := &http.Client{
 		Timeout: 60 * time.Second, // 设置60秒超时
 	}
+
+	fmt.Println("request workflow", req)
 
 	resp, err := client.Do(req)
 	if err != nil {

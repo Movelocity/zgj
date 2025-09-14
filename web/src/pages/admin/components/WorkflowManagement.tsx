@@ -211,19 +211,19 @@ const WorkflowManagement: React.FC = () => {
                       <div className="flex">
                         <Button
                           variant="text"
+                          onClick={() => handleEdit(workflow)}
+                          title="编辑"
+                        >
+                          编辑
+                        </Button>
+                        <Button
+                          variant="text"
                           onClick={() => handleDebug(workflow)}
                           className="text-green-600 hover:text-green-900"
                           title="调试工作流"
                         >
                           <FiPlay className="mr-1" size={14} />
                           调试
-                        </Button>
-                        <Button
-                          variant="text"
-                          onClick={() => handleEdit(workflow)}
-                          title="编辑"
-                        >
-                          编辑
                         </Button>
                         <Button
                           variant="text"
