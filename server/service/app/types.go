@@ -33,6 +33,7 @@ type UpdateWorkflowRequest struct {
 	Description string      `json:"description"`
 	Inputs      interface{} `json:"inputs"`
 	Outputs     interface{} `json:"outputs"`
+	Enabled     bool        `json:"enabled"`
 	IsPublic    bool        `json:"is_public"`
 }
 
@@ -59,6 +60,23 @@ type WorkflowResponse struct {
 	Inputs      interface{} `json:"inputs"`
 	Outputs     interface{} `json:"outputs"`
 	Used        int64       `json:"used"`
+	IsPublic    bool        `json:"is_public"`
+	CreatedAt   time.Time   `json:"created_at"`
+	UpdatedAt   time.Time   `json:"updated_at"`
+}
+
+// AdminWorkflowResponse 管理员工作流响应（包含所有字段）
+type AdminWorkflowResponse struct {
+	ID          string      `json:"id"`
+	ApiURL      string      `json:"api_url"`
+	ApiKey      string      `json:"api_key"`
+	Name        string      `json:"name"`
+	Description string      `json:"description"`
+	CreatorID   string      `json:"creator_id"`
+	Inputs      interface{} `json:"inputs"`
+	Outputs     interface{} `json:"outputs"`
+	Used        int64       `json:"used"`
+	Enabled     bool        `json:"enabled"`
 	IsPublic    bool        `json:"is_public"`
 	CreatedAt   time.Time   `json:"created_at"`
 	UpdatedAt   time.Time   `json:"updated_at"`

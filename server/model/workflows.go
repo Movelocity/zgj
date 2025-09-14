@@ -21,6 +21,7 @@ type Workflow struct {
 	Outputs     JSON      `gorm:"type:jsonb" json:"outputs"`
 	Used        int64     `gorm:"default:0" json:"used"`
 	IsPublic    bool      `gorm:"default:false" json:"is_public"`
+	Enabled     bool      `gorm:"default:true" json:"enabled"`
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
 	Creator     User      `gorm:"foreignKey:CreatorID" json:"-"`

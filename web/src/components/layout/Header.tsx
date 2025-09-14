@@ -1,11 +1,12 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuthStore } from '@/store';
-import { ROUTES } from '@/utils/constants';
+import { ROUTES, ADMIN_ROLE } from '@/utils/constants';
 import Button from '@/components/ui/Button';
 import { 
   FaUser as UserIcon, 
-  FaFileAlt as DocumentTextIcon
+  FaFileAlt as DocumentTextIcon,
+  FaCog as SettingsIcon
 } from 'react-icons/fa';
 
 const Header: React.FC = () => {
@@ -57,6 +58,14 @@ const Header: React.FC = () => {
           <div className="flex items-center space-x-4">
             {isAuthenticated ? (
               <div className="flex items-center space-x-2">
+                {/* 管理员入口 */}
+                {user?.role === ADMIN_ROLE && (
+                  <Link to={ROUTES.ADMINISTRATOR}>
+                    <Button variant="ghost" size="sm" icon={<SettingsIcon className="h-4 w-4" />} className="ring-0 focus:ring-0">
+                      管理后台
+                    </Button>
+                  </Link>
+                )}
                 {/* 用户菜单 */}
                 <Link to={ROUTES.PROFILE}>
                   <Button variant="ghost" size="sm" icon={<UserIcon className="h-4 w-4" />} className="ring-0 focus:ring-0">

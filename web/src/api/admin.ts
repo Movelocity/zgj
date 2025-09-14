@@ -1,6 +1,6 @@
 import apiClient from './client';
 import type { User } from '@/types/user';
-import type { Workflow } from '@/types/workflow';
+import type { Workflow, CreateWorkflowRequest, UpdateWorkflowRequest } from '@/types/workflow';
 import type { ApiResponse, PaginationParams, PaginationResponse } from '@/types/global';
 
 export const adminAPI = {
@@ -48,8 +48,20 @@ export const adminAPI = {
     return apiClient.get('/api/admin/workflow/all');
   },
 
-  updateWorkflowAsAdmin: (id: string, data: Partial<Workflow>): Promise<ApiResponse<Workflow>> => {
+  createWorkflow: (data: CreateWorkflowRequest): Promise<ApiResponse<Workflow>> => {
+    return apiClient.post('/api/workflow', data);
+  },
+
+  updateWorkflow: (id: string, data: UpdateWorkflowRequest): Promise<ApiResponse<Workflow>> => {
+    return apiClient.put(`/api/workflow/${id}`, data);
+  },
+
+  updateWorkflowAsAdmin: (id: string, data: UpdateWorkflowRequest): Promise<ApiResponse<Workflow>> => {
     return apiClient.put(`/api/admin/workflow/${id}`, data);
+  },
+
+  deleteWorkflow: (id: string): Promise<ApiResponse> => {
+    return apiClient.delete(`/api/workflow/${id}`);
   },
 
   // 文件管理

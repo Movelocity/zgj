@@ -383,13 +383,13 @@ func (s *appService) ExecuteWorkflow(workflowID, userID string, inputs map[strin
 }
 
 // GetAllWorkflows 获取所有工作流（管理员）
-func (s *appService) GetAllWorkflows() ([]WorkflowResponse, error) {
+func (s *appService) GetAllWorkflows() ([]AdminWorkflowResponse, error) {
 	var workflows []model.Workflow
 	if err := global.DB.Order("updated_at desc").Find(&workflows).Error; err != nil {
 		return nil, errors.New("查询工作流失败")
 	}
 
-	var responses []WorkflowResponse
+	var responses []AdminWorkflowResponse
 	for _, workflow := range workflows {
 		var inputs, outputs interface{}
 		if len(workflow.Inputs) > 0 {
@@ -399,13 +399,17 @@ func (s *appService) GetAllWorkflows() ([]WorkflowResponse, error) {
 			json.Unmarshal(workflow.Outputs, &outputs)
 		}
 
-		response := WorkflowResponse{
+		response := AdminWorkflowResponse{
 			ID:          workflow.ID,
+			ApiURL:      workflow.ApiURL,
+			ApiKey:      workflow.ApiKey,
 			Name:        workflow.Name,
 			Description: workflow.Description,
+			CreatorID:   workflow.CreatorID,
 			Inputs:      inputs,
 			Outputs:     outputs,
 			Used:        workflow.Used,
+			Enabled:     workflow.Enabled,
 			IsPublic:    workflow.IsPublic,
 			CreatedAt:   workflow.CreatedAt,
 			UpdatedAt:   workflow.UpdatedAt,
@@ -454,6 +458,7 @@ func (s *appService) AdminUpdateWorkflow(workflowID string, req UpdateWorkflowRe
 		}
 		updates["outputs"] = model.JSON(outputsJSON)
 	}
+	updates["enabled"] = req.Enabled
 	updates["is_public"] = req.IsPublic
 
 	if err := global.DB.Model(&workflow).Updates(updates).Error; err != nil {
