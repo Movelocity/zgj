@@ -12,7 +12,6 @@ func GenerateTLID() string {
 	timestamp := time.Now().UnixMilli()
 
 	// 生成随机数部分，确保唯一性
-	rand.Seed(time.Now().UnixNano())
 	randomPart := rand.Intn(999999)
 
 	// 组合成20位的字符串ID

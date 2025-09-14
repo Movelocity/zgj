@@ -3,6 +3,7 @@ package utils
 import (
 	"fmt"
 	"math/rand"
+	"net/http"
 	"server/global"
 	"time"
 )
@@ -25,6 +26,13 @@ func SendSMS(phone, code string) error {
 
 	// 模拟发送短信
 	fmt.Printf("向 %s 发送验证码: %s\n", phone, code)
+	// GET https://push.spug.cc/send/Lo5Ngm7lPvjGRAW0?key1=职管加&key2=<6位验证码数字>&key3=<15:有效时间15分钟>
+	spugUrl := fmt.Sprintf("https://push.spug.cc/send/Lo5Ngm7lPvjGRAW0?key1=职管加&key2=%s&key3=%s&targers=%s", code, "15", phone)
+	response, err := http.Get(spugUrl)
+	if err != nil {
+		return err
+	}
+	defer response.Body.Close()
 
 	return nil
 }
