@@ -60,6 +60,8 @@ func InitDB() {
 		&model.UserProfile{},
 		&model.Conversation{},
 		&model.Workflow{},
+		&model.ResumeRecord{},
+		&model.WorkflowExecution{},
 	); err != nil {
 		panic(fmt.Errorf("failed to migrate database: %s", err))
 	}

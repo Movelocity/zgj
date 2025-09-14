@@ -75,3 +75,26 @@ type UploadResponse struct {
 	Filename string `json:"filename"`
 	Size     int64  `json:"size"`
 }
+
+// UnifiedAuthRequest 统一认证请求
+type UnifiedAuthRequest struct {
+	Phone   string `json:"phone" binding:"required"`
+	SmsCode string `json:"sms_code" binding:"required"`
+	Name    string `json:"name"` // 可选，首次注册时使用
+}
+
+// UnifiedAuthResponse 统一认证响应
+type UnifiedAuthResponse struct {
+	Token     string    `json:"token"`
+	ExpiresAt time.Time `json:"expires_at"`
+	User      UserInfo  `json:"user"`
+	IsNewUser bool      `json:"is_new_user"` // 标识是否为新注册用户
+}
+
+// UserListResponse 用户列表响应
+type UserListResponse struct {
+	List     []UserInfo `json:"list"`
+	Total    int64      `json:"total"`
+	Page     int        `json:"page"`
+	PageSize int        `json:"page_size"`
+}

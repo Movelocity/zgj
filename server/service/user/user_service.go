@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"mime/multipart"
 	"path/filepath"
+	"strconv"
 	"time"
 
 	"server/global"
@@ -268,11 +269,34 @@ func (s *userService) UploadResume(userID string, file *multipart.FileHeader) (*
 	return response, nil
 }
 
-// GetAllUsers 获取所有用户（管理员）
-func (s *userService) GetAllUsers() ([]UserInfo, error) {
+// GetAllUsers 获取所有用户（管理员）- 支持分页
+func (s *userService) GetAllUsers(page, pageSize string) ([]UserInfo, int64, error) {
+	pageInt, _ := strconv.Atoi(page)
+	pageSizeInt, _ := strconv.Atoi(pageSize)
+
+	if pageInt <= 0 {
+		pageInt = 1
+	}
+	if pageSizeInt <= 0 || pageSizeInt > 100 {
+		pageSizeInt = 10
+	}
+
+	offset := (pageInt - 1) * pageSizeInt
+
 	var users []model.User
-	if err := global.DB.Find(&users).Error; err != nil {
-		return nil, errors.New("查询用户失败")
+	var total int64
+
+	// 查询总数
+	if err := global.DB.Model(&model.User{}).Count(&total).Error; err != nil {
+		return nil, 0, errors.New("查询用户总数失败")
+	}
+
+	// 分页查询
+	if err := global.DB.Order("created_at DESC").
+		Limit(pageSizeInt).
+		Offset(offset).
+		Find(&users).Error; err != nil {
+		return nil, 0, errors.New("查询用户失败")
 	}
 
 	var userInfos []UserInfo
@@ -291,7 +315,7 @@ func (s *userService) GetAllUsers() ([]UserInfo, error) {
 		userInfos = append(userInfos, userInfo)
 	}
 
-	return userInfos, nil
+	return userInfos, total, nil
 }
 
 // GetUserByID 根据ID获取用户
@@ -363,4 +387,99 @@ func (s *userService) SetUserActive(userID string, active bool) error {
 		return errors.New("更新用户状态失败")
 	}
 	return nil
+}
+
+// LoginOrRegister 统一认证接口 - 自动登录或注册
+func (s *userService) LoginOrRegister(phone, name string) (string, *UserInfo, bool, error) {
+	// 尝试查找现有用户
+	var existingUser model.User
+	err := global.DB.Where("phone = ?", phone).First(&existingUser).Error
+
+	if err == nil {
+		// 用户存在，执行登录逻辑
+		if !existingUser.Active {
+			return "", nil, false, errors.New("用户已被停用")
+		}
+
+		// 更新最后登录时间
+		global.DB.Model(&existingUser).Update("last_login", time.Now())
+
+		// 生成JWT token
+		token, err := utils.GenerateToken(existingUser.ID, existingUser.Name, existingUser.Role)
+		if err != nil {
+			return "", nil, false, errors.New("token生成失败")
+		}
+
+		// 构建用户信息
+		userInfo := &UserInfo{
+			ID:        existingUser.ID,
+			Name:      existingUser.Name,
+			Phone:     existingUser.Phone,
+			Email:     existingUser.Email,
+			HeaderImg: existingUser.HeaderImg,
+			Role:      existingUser.Role,
+			Active:    existingUser.Active,
+			LastLogin: existingUser.LastLogin,
+			CreatedAt: existingUser.CreatedAt,
+		}
+
+		return token, userInfo, false, nil
+	}
+
+	if !errors.Is(err, gorm.ErrRecordNotFound) {
+		return "", nil, false, errors.New("数据库查询失败")
+	}
+
+	// 用户不存在，自动注册
+	if name == "" {
+		name = "用户" + phone[len(phone)-4:] // 使用手机号后4位作为默认用户名
+	}
+
+	// 创建新用户（无需密码）
+	hashedDefaultPassword, _ := utils.HashPassword("123456") // 设置默认密码，用户可后续修改
+	newUser := model.User{
+		ID:       utils.GenerateTLID(),
+		Name:     name,
+		Phone:    phone,
+		Password: hashedDefaultPassword,
+		Active:   true,
+		Role:     666, // 普通用户
+	}
+
+	if err := global.DB.Create(&newUser).Error; err != nil {
+		return "", nil, false, errors.New("用户创建失败")
+	}
+
+	// 创建用户档案
+	userProfile := model.UserProfile{
+		ID:      utils.GenerateTLID(),
+		UserID:  newUser.ID,
+		Data:    model.JSON("{}"),
+		Resumes: model.JSON("[]"),
+	}
+
+	if err := global.DB.Create(&userProfile).Error; err != nil {
+		return "", nil, false, errors.New("用户档案创建失败")
+	}
+
+	// 生成JWT token
+	token, err := utils.GenerateToken(newUser.ID, newUser.Name, newUser.Role)
+	if err != nil {
+		return "", nil, false, errors.New("token生成失败")
+	}
+
+	// 构建用户信息
+	userInfo := &UserInfo{
+		ID:        newUser.ID,
+		Name:      newUser.Name,
+		Phone:     newUser.Phone,
+		Email:     newUser.Email,
+		HeaderImg: newUser.HeaderImg,
+		Role:      newUser.Role,
+		Active:    newUser.Active,
+		LastLogin: newUser.LastLogin,
+		CreatedAt: newUser.CreatedAt,
+	}
+
+	return token, userInfo, true, nil
 }

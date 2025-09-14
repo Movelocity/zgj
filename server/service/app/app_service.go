@@ -3,6 +3,7 @@ package app
 import (
 	"encoding/json"
 	"errors"
+	"time"
 
 	"server/global"
 	"server/model"
@@ -314,6 +315,8 @@ func (s *appService) DeleteWorkflow(workflowID, userID string) error {
 
 // ExecuteWorkflow 执行工作流
 func (s *appService) ExecuteWorkflow(workflowID, userID string, inputs map[string]interface{}) (*ExecuteWorkflowResponse, error) {
+	startTime := time.Now()
+
 	// 获取工作流信息
 	var workflow model.Workflow
 	if err := global.DB.Where("id = ? AND (creator_id = ? OR is_public = ?)", workflowID, userID, true).First(&workflow).Error; err != nil {
@@ -323,16 +326,58 @@ func (s *appService) ExecuteWorkflow(workflowID, userID string, inputs map[strin
 		return nil, errors.New("查询工作流失败")
 	}
 
-	// 增加使用次数
-	global.DB.Model(&workflow).Update("used", gorm.Expr("used + ?", 1))
+	// 获取关联的简历ID（如果有）
+	resumeID := ""
+	if resumeIDValue, exists := inputs["resume_id"]; exists {
+		if resumeIDStr, ok := resumeIDValue.(string); ok {
+			resumeID = resumeIDStr
+		}
+	}
 
 	// 这里应该实现实际的工作流执行逻辑
 	// 目前返回模拟结果
-	response := &ExecuteWorkflowResponse{
+	var response *ExecuteWorkflowResponse
+	var status string
+	var errorMessage string
+
+	// 模拟执行过程
+	time.Sleep(100 * time.Millisecond) // 模拟执行时间
+
+	response = &ExecuteWorkflowResponse{
 		Success: true,
-		Data:    map[string]interface{}{"result": "工作流执行成功"},
+		Data:    map[string]interface{}{"result": "工作流执行成功", "processed_content": "优化后的简历内容"},
 		Message: "执行成功",
 	}
+	status = "success"
+
+	// 计算执行时间
+	executionTime := int(time.Since(startTime).Milliseconds())
+
+	// 记录执行历史（异步执行，不影响主流程）
+	go func() {
+		// 这里需要导入workflow服务，但为了避免循环依赖，我们直接在这里实现
+		inputsJSON, _ := json.Marshal(inputs)
+		outputsJSON, _ := json.Marshal(response.Data)
+
+		execution := model.WorkflowExecution{
+			ID:            utils.GenerateTLID(),
+			WorkflowID:    workflowID,
+			UserID:        userID,
+			ResumeID:      resumeID,
+			Inputs:        model.JSON(inputsJSON),
+			Outputs:       model.JSON(outputsJSON),
+			Status:        status,
+			ErrorMessage:  errorMessage,
+			ExecutionTime: executionTime,
+		}
+
+		global.DB.Create(&execution)
+
+		// 只有成功时才增加使用次数
+		if status == "success" {
+			global.DB.Model(&workflow).UpdateColumn("used", gorm.Expr("used + ?", 1))
+		}
+	}()
 
 	return response, nil
 }

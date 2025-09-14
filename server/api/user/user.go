@@ -3,6 +3,7 @@ package user
 import (
 	"fmt"
 	"path/filepath"
+	"strconv"
 	"time"
 
 	"server/global"
@@ -150,6 +151,37 @@ func UpdateUserProfile(c *gin.Context) {
 	utils.OkWithMessage("更新成功", c)
 }
 
+// UnifiedAuth 统一认证接口（自动注册+登录）
+func UnifiedAuth(c *gin.Context) {
+	var req userService.UnifiedAuthRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		utils.FailWithMessage("请求参数错误", c)
+		return
+	}
+
+	// 验证短信验证码
+	if !utils.VerifySMSCode(req.Phone, req.SmsCode) {
+		utils.FailWithMessage("验证码错误或已过期", c)
+		return
+	}
+
+	// 调用统一认证服务
+	token, userInfo, isNewUser, err := service.UserService.LoginOrRegister(req.Phone, req.Name)
+	if err != nil {
+		utils.FailWithMessage(err.Error(), c)
+		return
+	}
+
+	response := userService.UnifiedAuthResponse{
+		Token:     token,
+		ExpiresAt: time.Now().Add(global.CONFIG.JWT.ExpiresTime),
+		User:      *userInfo,
+		IsNewUser: isNewUser,
+	}
+
+	utils.OkWithData(response, c)
+}
+
 // Logout 用户登出
 func Logout(c *gin.Context) {
 	// 这里可以将token加入黑名单，或者删除相关缓存
@@ -225,16 +257,29 @@ func UploadResume(c *gin.Context) {
 	utils.OkWithData(resumeInfo, c)
 }
 
-// GetAllUsers 获取所有用户（管理员）
+// GetAllUsers 获取所有用户（管理员）- 支持分页
 func GetAllUsers(c *gin.Context) {
+	page := c.DefaultQuery("page", "1")
+	pageSize := c.DefaultQuery("page_size", "10")
+
 	// 调用服务层
-	users, err := service.UserService.GetAllUsers()
+	users, total, err := service.UserService.GetAllUsers(page, pageSize)
 	if err != nil {
 		utils.FailWithMessage(err.Error(), c)
 		return
 	}
 
-	utils.OkWithData(users, c)
+	pageInt, _ := strconv.Atoi(page)
+	pageSizeInt, _ := strconv.Atoi(pageSize)
+
+	response := userService.UserListResponse{
+		List:     users,
+		Total:    total,
+		Page:     pageInt,
+		PageSize: pageSizeInt,
+	}
+
+	utils.OkWithData(response, c)
 }
 
 // GetUserByID 根据ID获取用户（管理员）
