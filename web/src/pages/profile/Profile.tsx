@@ -14,8 +14,8 @@ const Profile: React.FC = () => {
   
   // 个人信息表单
   const [profileForm, setProfileForm] = useState({
-    name: '',
-    email: '',
+    name: user?.name || '',
+    email: user?.email || '',
   });
 
   // 修改密码表单

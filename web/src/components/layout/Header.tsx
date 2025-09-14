@@ -60,7 +60,7 @@ const Header: React.FC = () => {
                 {/* 用户菜单 */}
                 <Link to={ROUTES.PROFILE}>
                   <Button variant="ghost" size="sm" icon={<UserIcon className="h-4 w-4" />} className="ring-0 focus:ring-0">
-                    {user?.nickname || user?.phone}
+                    {user?.name || user?.phone}
                   </Button>
                 </Link>
               </div>

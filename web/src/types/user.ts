@@ -1,13 +1,13 @@
 // 用户相关类型定义
-export interface User {
-  id: string;
-  phone: string;
-  nickname?: string;
-  avatar?: string;
-  role: number;
-  created_at: string;
-  updated_at: string;
-}
+// export interface User {
+//   id: string;
+//   phone: string;
+//   nickname?: string;
+//   avatar?: string;
+//   role: number;
+//   created_at: string;
+//   updated_at: string;
+// }
 
 export interface UserProfile {
   id: string;
@@ -43,7 +43,7 @@ export interface RegisterData {
   nickname?: string;
 }
 
-export interface UserInfo {
+export interface User {
   id: string;
   name: string;
   phone: string;
@@ -56,7 +56,7 @@ export interface UserInfo {
 }
 
 export interface UserProfileResponse {
-  user: UserInfo;
-  data: any;
-  resumes: any;
+  user: User;
+  data: Record<string, any>;
+  resumes: any[];
 }
