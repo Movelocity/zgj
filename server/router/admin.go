@@ -24,6 +24,7 @@ func InitAdminRouter(Router *gin.RouterGroup) {
 		AdminUserRouter.POST("/:id/activate", user.ActivateUser)        // 激活用户
 		AdminUserRouter.POST("/:id/deactivate", user.DeactivateUser)    // 停用用户
 		AdminUserRouter.PUT("/:id/role", user.UpdateUserRole)           // 更新用户角色权限
+		AdminUserRouter.PUT("/:id/password", user.AdminChangePassword)  // 管理员修改用户密码
 		AdminUserRouter.GET("/:id/resumes", resume.GetAdminUserResumes) // 管理员查看用户简历
 	}
 

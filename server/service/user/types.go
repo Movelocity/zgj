@@ -109,3 +109,8 @@ type ChangePasswordRequest struct {
 	CurrentPassword string `json:"current_password" binding:"required"`
 	NewPassword     string `json:"new_password" binding:"required,min=6"`
 }
+
+// AdminChangePasswordRequest 管理员修改用户密码请求
+type AdminChangePasswordRequest struct {
+	NewPassword string `json:"new_password" binding:"required,min=6"`
+}

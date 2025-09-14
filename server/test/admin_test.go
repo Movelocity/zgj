@@ -179,6 +179,91 @@ func TestAdminUserAPIs(t *testing.T) {
 
 		assert.Equal(t, 404, w.Code)
 	})
+
+	t.Run("管理员修改用户密码", func(t *testing.T) {
+		// 创建一个新用户用于密码修改测试
+		testUserID, _ := CreateTestUser(app, "13800138040", "Password Test User", "oldpassword123")
+
+		// 管理员修改用户密码
+		passwordData := map[string]interface{}{
+			"new_password": "newpassword456",
+		}
+
+		url := fmt.Sprintf("/api/admin/user/%s/password", testUserID)
+		w := MakeRequest(app.Router, "PUT", url, passwordData, AuthHeaders(adminToken))
+
+		assert.Equal(t, 200, w.Code)
+		response := GetJSONResponse(w)
+		assert.Equal(t, float64(0), response["code"])
+		assert.Equal(t, "用户密码修改成功", response["msg"])
+
+		// 验证用户可以用新密码登录
+		loginData := map[string]interface{}{
+			"phone":    "13800138040",
+			"password": "newpassword456",
+		}
+
+		w = MakeRequest(app.Router, "POST", "/api/user/login", loginData, nil)
+		assert.Equal(t, 200, w.Code)
+		response = GetJSONResponse(w)
+		assert.Equal(t, float64(0), response["code"])
+
+		// 验证不能用旧密码登录
+		oldLoginData := map[string]interface{}{
+			"phone":    "13800138040",
+			"password": "oldpassword123",
+		}
+
+		w = MakeRequest(app.Router, "POST", "/api/user/login", oldLoginData, nil)
+		assert.NotEqual(t, 200, w.Code) // 应该登录失败
+	})
+
+	t.Run("管理员修改不存在用户的密码", func(t *testing.T) {
+		passwordData := map[string]interface{}{
+			"new_password": "newpassword456",
+		}
+
+		url := "/api/admin/user/non-existent-id/password"
+		w := MakeRequest(app.Router, "PUT", url, passwordData, AuthHeaders(adminToken))
+
+		assert.Equal(t, 404, w.Code)
+	})
+
+	t.Run("管理员修改密码时密码过短", func(t *testing.T) {
+		// 创建一个新用户用于测试
+		testUserID, _ := CreateTestUser(app, "13800138041", "Short Password Test User", "password123")
+
+		passwordData := map[string]interface{}{
+			"new_password": "123", // 少于6位
+		}
+
+		url := fmt.Sprintf("/api/admin/user/%s/password", testUserID)
+		w := MakeRequest(app.Router, "PUT", url, passwordData, AuthHeaders(adminToken))
+
+		assert.NotEqual(t, 200, w.Code) // 应该验证失败
+	})
+
+	t.Run("普通用户无法修改其他用户密码", func(t *testing.T) {
+		// 创建两个普通用户
+		user1ID, user1Token := CreateTestUser(app, "13800138042", "User 1", "password123")
+		user2ID, _ := CreateTestUser(app, "13800138043", "User 2", "password123")
+
+		passwordData := map[string]interface{}{
+			"new_password": "newpassword456",
+		}
+
+		// 用户1尝试修改用户2的密码
+		url := fmt.Sprintf("/api/admin/user/%s/password", user2ID)
+		w := MakeRequest(app.Router, "PUT", url, passwordData, AuthHeaders(user1Token))
+
+		assert.Equal(t, 403, w.Code) // 权限不足
+
+		// 用户1尝试修改自己的密码也应该失败（因为这是管理员接口）
+		url = fmt.Sprintf("/api/admin/user/%s/password", user1ID)
+		w = MakeRequest(app.Router, "PUT", url, passwordData, AuthHeaders(user1Token))
+
+		assert.Equal(t, 403, w.Code) // 权限不足
+	})
 }
 
 func TestAdminSystemAPIs(t *testing.T) {

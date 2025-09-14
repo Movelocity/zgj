@@ -400,3 +400,25 @@ func UpdateUserRole(c *gin.Context) {
 
 	utils.OkWithMessage("用户角色更新成功", c)
 }
+
+// AdminChangePassword 管理员修改用户密码
+func AdminChangePassword(c *gin.Context) {
+	userID := c.Param("id")
+	var req userService.AdminChangePasswordRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		utils.FailWithMessage(err.Error(), c)
+		return
+	}
+
+	// 调用服务层修改用户密码
+	if err := service.UserService.AdminChangePassword(userID, req.NewPassword); err != nil {
+		if err.Error() == "用户不存在" {
+			utils.FailWithNotFound(err.Error(), c)
+		} else {
+			utils.FailWithMessage(err.Error(), c)
+		}
+		return
+	}
+
+	utils.OkWithMessage("用户密码修改成功", c)
+}

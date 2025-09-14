@@ -542,3 +542,28 @@ func (s *userService) UpdateUserRole(userID string, role int) error {
 
 	return nil
 }
+
+// AdminChangePassword 管理员修改用户密码（不需要原密码）
+func (s *userService) AdminChangePassword(userID string, newPassword string) error {
+	// 查找用户
+	var u model.User
+	if err := global.DB.Where("id = ?", userID).First(&u).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return errors.New("用户不存在")
+		}
+		return errors.New("数据库查询失败")
+	}
+
+	// 哈希新密码
+	hashedPassword, err := utils.HashPassword(newPassword)
+	if err != nil {
+		return errors.New("密码加密失败")
+	}
+
+	// 更新密码
+	if err := global.DB.Model(&u).Update("password", hashedPassword).Error; err != nil {
+		return errors.New("密码更新失败")
+	}
+
+	return nil
+}
