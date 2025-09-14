@@ -15,12 +15,11 @@ const Auth: React.FC = () => {
         
         {/* 页面底部信息 */}
         <div className="text-center text-sm text-gray-500 space-y-2">
-          <p>登录即表示您同意我们的服务条款和隐私政策</p>
           <button
-            onClick={() => navigate(ROUTES.ADMIN_AUTH)}
-            className="text-blue-600 hover:text-blue-500"
+            onClick={() => navigate(ROUTES.CODE_AUTH)}
+            className="text-blue-600 hover:text-blue-500 cursor-pointer"
           >
-            管理员登录
+            账号密码登录
           </button>
         </div>
       </div>

@@ -1,3 +1,4 @@
+import { ROUTES } from '@/utils/constants';
 import React from 'react';
 import { Link } from 'react-router-dom';
 
@@ -36,6 +37,14 @@ const Footer: React.FC = () => {
                   简历管理
                 </Link>
               </li>
+              {/* 开发环境下显示API测试链接 */}
+              {import.meta.env.DEV && (
+                <li>
+                  <Link to={ROUTES.API_TEST} className="hover:text-white">
+                    API 测试页面 (开发模式)
+                  </Link>
+                </li>
+              )}
             </ul>
           </div>
 

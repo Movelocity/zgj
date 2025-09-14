@@ -59,14 +59,9 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onSuccess }) => {
         phone: formData.phone,
         password: formData.password
       });
+      console.log(response);
 
-      if (response.success && response.data) {
-        // 验证用户是否为管理员
-        if (response.data.user.role !== 888) {
-          setError('此账号不是管理员账号，请使用普通用户登录页面');
-          return;
-        }
-
+      if (response.status === 200 && response.data) {
         // 保存token到localStorage
         localStorage.setItem(TOKEN_KEY, response.data.token);
         
@@ -75,9 +70,6 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onSuccess }) => {
         
         // 成功回调
         onSuccess?.();
-        
-        // 跳转到管理员页面
-        navigate(ROUTES.ADMINISTRATOR);
       } else {
         setError(response.message || '登录失败');
       }
@@ -169,9 +161,9 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onSuccess }) => {
       <div className="text-center">
         <button
           onClick={() => navigate(ROUTES.AUTH)}
-          className="text-sm text-blue-600 hover:text-blue-500"
+          className="text-sm text-blue-600 hover:text-blue-500 cursor-pointer"
         >
-          普通用户登录
+          手机验证码登录
         </button>
       </div>
     </div>

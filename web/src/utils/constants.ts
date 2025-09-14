@@ -16,7 +16,7 @@ export const ADMIN_ROLE = 888;
 export const ROUTES = {
   HOME: '/',
   AUTH: '/auth',
-  ADMIN_AUTH: '/admin/auth',
+  CODE_AUTH: '/code-auth',
   SIMPLE_RESUME: '/simple-resume',
   JOB_RESUME: '/job-resume',
   PROFILE: '/profile',

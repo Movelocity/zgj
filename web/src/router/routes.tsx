@@ -4,7 +4,7 @@ import { lazy } from 'react';
 // 懒加载页面组件
 const Home = lazy(() => import('@/pages/home/Home'));
 const Auth = lazy(() => import('@/pages/auth/Auth'));
-const AdminAuth = lazy(() => import('@/pages/auth/AdminAuth'));
+const CodeAuth = lazy(() => import('@/pages/auth/CodeAuth'));
 const SimpleResume = lazy(() => import('@/pages/resume/SimpleResume'));
 const JobResume = lazy(() => import('@/pages/resume/JobResume'));
 const ResumeList = lazy(() => import('@/pages/resume/ResumeList'));
@@ -26,8 +26,8 @@ export const routes = [
     element: <Auth />,
   },
   {
-    path: '/admin/auth',
-    element: <AdminAuth />,
+    path: '/code-auth',
+    element: <CodeAuth />,
   },
   {
     path: '/simple-resume',
