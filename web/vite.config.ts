@@ -20,7 +20,7 @@ export default defineConfig({
         manualChunks: {
           vendor: ['react', 'react-dom'],
           router: ['react-router-dom'],
-          ui: ['@headlessui/react', '@heroicons/react'],
+          ui: ['@headlessui/react', 'react-icons'],
         },
       },
     },

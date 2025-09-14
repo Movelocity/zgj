@@ -4,9 +4,9 @@ import { useAuthStore } from '@/store';
 import { ROUTES } from '@/utils/constants';
 import Button from '@/components/ui/Button';
 import { 
-  UserIcon, 
-  DocumentTextIcon
-} from '@heroicons/react/24/outline';
+  FaUser as UserIcon, 
+  FaFileAlt as DocumentTextIcon
+} from 'react-icons/fa';
 
 const Header: React.FC = () => {
   // const navigate = useNavigate();

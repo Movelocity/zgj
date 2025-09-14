@@ -1,0 +1,18 @@
+---
+description: Frontend development guide
+globs: *.tsx
+alwaysApply: true
+---
+
+## Acknowledgement
+Icons: react-icons
+Common UI: @/components/ui
+All API definition: @/types/api
+
+## How to use Toast
+```
+import { showSuccess, showError, showWarning, showInfo } from '@/utils/toast';
+
+// usage
+// showInfo: (message: string, duration?: number) => void;
+```

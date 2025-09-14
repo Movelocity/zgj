@@ -4,11 +4,11 @@ import { useAuthStore } from '@/store';
 import { ROUTES } from '@/utils/constants';
 import Button from '@/components/ui/Button';
 import { 
-  DocumentTextIcon, 
-  SparklesIcon, 
-  UserGroupIcon,
-  CheckCircleIcon 
-} from '@heroicons/react/24/outline';
+  FaFileAlt as DocumentTextIcon, 
+  FaStar as SparklesIcon, 
+  FaUsers as UserGroupIcon,
+  FaCheckCircle as CheckCircleIcon 
+} from 'react-icons/fa';
 
 const Home: React.FC = () => {
   const { isAuthenticated } = useAuthStore();
