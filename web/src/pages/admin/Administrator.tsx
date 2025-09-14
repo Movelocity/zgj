@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { FiSettings, FiUsers } from 'react-icons/fi';
-import { WorkflowManagement } from './components';
+import { WorkflowManagement, UserManagement } from './components';
 
 type TabType = 'workflows' | 'users';
 
@@ -17,13 +17,7 @@ const Administrator: React.FC = () => {
       case 'workflows':
         return <WorkflowManagement />;
       case 'users':
-        return (
-          <div className="bg-white rounded-lg shadow p-8">
-            <p className="text-center text-gray-600">
-              用户管理功能开发中...
-            </p>
-          </div>
-        );
+        return <UserManagement />;
       default:
         return null;
     }

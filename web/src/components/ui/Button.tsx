@@ -3,7 +3,7 @@ import type { ButtonHTMLAttributes } from 'react';
 import Loading from './Loading';
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
+  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger' | 'text';
   size?: 'sm' | 'md' | 'lg';
   loading?: boolean;
   icon?: React.ReactNode;
@@ -29,6 +29,7 @@ const Button: React.FC<ButtonProps> = ({
     outline: 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50',
     ghost: 'text-gray-700 hover:bg-gray-100',
     danger: 'bg-red-600 text-white hover:bg-red-700',
+    text: 'text-gray-700 hover:text-blue-600',
   };
   
   const sizeClasses = {

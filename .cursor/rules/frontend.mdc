@@ -5,6 +5,7 @@ alwaysApply: true
 ---
 
 ## Acknowledgement
+Package management: pnpm
 Icons: react-icons
 Common UI: @/components/ui
 All API definition: @/types/api

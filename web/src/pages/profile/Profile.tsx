@@ -1,33 +1,17 @@
 import React, { useState } from 'react';
-import { useAuthStore } from '@/store/authStore';
-import { ADMIN_ROLE } from '@/utils/constants';
-import { ProfileInfo, ChangePassword, UserList } from './components';
+import { ProfileInfo, ChangePassword } from './components';
 
-type TabType = 'profile' | 'password' | 'users';
+type TabType = 'profile' | 'password';
 
 const Profile: React.FC = () => {
-  const { user } = useAuthStore();
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<TabType>('profile');
   
-  // 检查是否是管理员
-  const isAdmin = user?.role === ADMIN_ROLE;
-
   // 获取可用的标签页
-  const getAvailableTabs = () => {
-    const tabs = [
-      { key: 'profile' as TabType, label: '个人信息' },
-      { key: 'password' as TabType, label: '修改密码' },
-    ];
-    
-    if (isAdmin) {
-      tabs.push({ key: 'users' as TabType, label: '用户管理' });
-    }
-    
-    return tabs;
-  };
-
-  const availableTabs = getAvailableTabs();
+  const availableTabs = [
+    { key: 'profile' as TabType, label: '个人信息' },
+    { key: 'password' as TabType, label: '修改密码' },
+  ];
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -63,10 +47,6 @@ const Profile: React.FC = () => {
 
             {activeTab === 'password' && (
               <ChangePassword loading={loading} setLoading={setLoading} />
-            )}
-
-            {activeTab === 'users' && isAdmin && (
-              <UserList loading={loading} setLoading={setLoading} />
             )}
           </div>
         </div>

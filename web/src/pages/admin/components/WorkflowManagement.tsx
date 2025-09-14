@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FiPlus, FiEdit, FiTrash2, FiEye, FiToggleLeft, FiToggleRight } from 'react-icons/fi';
+import { FiPlus } from 'react-icons/fi';
 import { adminAPI } from '@/api/admin';
 import { showSuccess, showError } from '@/utils/toast';
 import type { Workflow } from '@/types/workflow';
@@ -49,12 +49,12 @@ const WorkflowManagement: React.FC = () => {
     setModalOpen(true);
   };
 
-  // 查看工作流
-  const handleView = (workflow: Workflow) => {
-    setModalMode('view');
-    setSelectedWorkflow(workflow);
-    setModalOpen(true);
-  };
+  // // 查看工作流
+  // const handleView = (workflow: Workflow) => {
+  //   setModalMode('view');
+  //   setSelectedWorkflow(workflow);
+  //   setModalOpen(true);
+  // };
 
   // 删除工作流
   const handleDelete = async (workflow: Workflow) => {
@@ -108,8 +108,7 @@ const WorkflowManagement: React.FC = () => {
       {/* 头部操作栏 */}
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">工作流管理</h2>
-          <p className="text-gray-600 mt-1">管理系统中的所有工作流配置</p>
+          <h2 className="text-2xl font-bold text-gray-900">工作流API配置</h2>
         </div>
         <Button
           onClick={handleCreate}
@@ -194,46 +193,39 @@ const WorkflowManagement: React.FC = () => {
                       {new Date(workflow.created_at).toLocaleDateString()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <div className="flex space-x-2">
-                        <Button
-                          variant="outline"
+                      <div className="flex">
+                        {/* <Button
+                          variant="text"
                           onClick={() => handleView(workflow)}
-                          className="text-blue-600 hover:text-blue-900"
                           title="查看详情"
                         >
-                          <FiEye className="w-4 h-4" />
-                        </Button>
+                          查看详情
+                        </Button> */}
                         <Button
-                          variant="outline"
+                          variant="text"
                           onClick={() => handleEdit(workflow)}
-                          className="text-indigo-600 hover:text-indigo-900"
                           title="编辑"
                         >
-                          <FiEdit className="w-4 h-4" />
+                          编辑
                         </Button>
                         <Button
-                          variant="outline"
+                          variant="text"
                           onClick={() => handleToggleEnabled(workflow)}
-                          className={`${
-                            workflow.enabled 
-                              ? 'text-orange-600 hover:text-orange-900' 
-                              : 'text-green-600 hover:text-green-900'
-                          }`}
                           title={workflow.enabled ? '禁用' : '启用'}
                         >
                           {workflow.enabled ? (
-                            <FiToggleRight className="w-4 h-4" />
+                            '启用'
                           ) : (
-                            <FiToggleLeft className="w-4 h-4" />
+                            '禁用'
                           )}
                         </Button>
                         <Button
-                          variant="outline"
+                          variant="text"
                           onClick={() => handleDelete(workflow)}
                           className="text-red-600 hover:text-red-900"
                           title="删除"
                         >
-                          <FiTrash2 className="w-4 h-4" />
+                          删除
                         </Button>
                       </div>
                     </td>
