@@ -193,7 +193,7 @@ Authorization: Bearer <token>
 
 ### 12. 获取特定对话
 ```http
-GET /api/conversation/{id}
+GET /api/conversation/:id
 Authorization: Bearer <token>
 ```
 
@@ -225,7 +225,7 @@ Content-Type: application/json
 
 ### 14. 更新对话
 ```http
-PUT /api/conversation/{id}
+PUT /api/conversation/:id
 Authorization: Bearer <token>
 Content-Type: application/json
 
@@ -238,7 +238,7 @@ Content-Type: application/json
 
 ### 15. 删除对话
 ```http
-DELETE /api/conversation/{id}
+DELETE /api/conversation/:id
 Authorization: Bearer <token>
 ```
 
@@ -254,7 +254,7 @@ Authorization: Bearer <token>
 
 ### 17. 获取特定工作流
 ```http
-GET /api/workflow/{id}
+GET /api/workflow/:id
 Authorization: Bearer <token>
 ```
 
@@ -295,7 +295,7 @@ Content-Type: application/json
 
 ### 19. 更新工作流
 ```http
-PUT /api/workflow/{id}
+PUT /api/workflow/:id
 Authorization: Bearer <token>
 Content-Type: application/json
 
@@ -308,13 +308,13 @@ Content-Type: application/json
 
 ### 20. 删除工作流
 ```http
-DELETE /api/workflow/{id}
+DELETE /api/workflow/:id
 Authorization: Bearer <token>
 ```
 
 ### 21. 执行工作流
 ```http
-POST /api/workflow/{id}/execute
+POST /api/workflow/:id/execute
 Authorization: Bearer <token>
 Content-Type: application/json
 
@@ -349,11 +349,11 @@ Content-Type: application/json
 
 ### 用户管理
 - `GET /api/admin/user` - 获取所有用户
-- `GET /api/admin/user/{id}` - 获取特定用户
-- `PUT /api/admin/user/{id}` - 更新用户信息
-- `DELETE /api/admin/user/{id}` - 删除用户
-- `POST /api/admin/user/{id}/activate` - 激活用户
-- `POST /api/admin/user/{id}/deactivate` - 停用用户
+- `GET /api/admin/user/:id` - 获取特定用户
+- `PUT /api/admin/user/:id` - 更新用户信息
+- `DELETE /api/admin/user/:id` - 删除用户
+- `POST /api/admin/user/:id/activate` - 激活用户
+- `POST /api/admin/user/:id/deactivate` - 停用用户
 
 ### 系统管理
 - `GET /api/admin/system/stats` - 获取系统统计
@@ -361,7 +361,7 @@ Content-Type: application/json
 
 ### 工作流管理
 - `GET /api/admin/workflow/all` - 获取所有工作流
-- `PUT /api/admin/workflow/{id}` - 管理员更新工作流
+- `PUT /api/admin/workflow/:id` - 管理员更新工作流
 
 ---
 
@@ -449,5 +449,6 @@ axios.interceptors.response.use(
 
 ---
 
-📝 **更新时间**: 2024年1月
+📝 **更新时间**: 2025年9月14日
+📋 **更新内容**: 基于控制台路由验证，统一路由格式为 `:id` 形式
 🔗 **项目地址**: [Resume Polisher](https://github.com/your-repo)
