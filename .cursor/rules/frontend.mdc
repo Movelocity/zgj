@@ -17,3 +17,6 @@ import { showSuccess, showError, showWarning, showInfo } from '@/utils/toast';
 // usage
 // showInfo: (message: string, duration?: number) => void;
 ```
+
+## Misc
+- use `bg-black/50` instead of `bg-opacity-50` in modal background

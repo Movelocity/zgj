@@ -88,3 +88,31 @@ type ExecuteWorkflowResponse struct {
 	Data    map[string]interface{} `json:"data"`
 	Message string                 `json:"message"`
 }
+
+// WorkflowAPIRequest 工作流API请求结构体
+type WorkflowAPIRequest struct {
+	Inputs       map[string]interface{} `json:"inputs"`
+	ResponseMode string                 `json:"response_mode"`
+	User         string                 `json:"user"`
+}
+
+// WorkflowAPIResponse 工作流API响应结构体
+type WorkflowAPIResponse struct {
+	WorkflowRunID string          `json:"workflow_run_id"`
+	TaskID        string          `json:"task_id"`
+	Data          WorkflowAPIData `json:"data"`
+}
+
+// WorkflowAPIData 工作流API响应数据部分
+type WorkflowAPIData struct {
+	ID          string                 `json:"id"`
+	WorkflowID  string                 `json:"workflow_id"`
+	Status      string                 `json:"status"`
+	Outputs     map[string]interface{} `json:"outputs"`
+	Error       *string                `json:"error"`
+	ElapsedTime float64                `json:"elapsed_time"`
+	TotalTokens int                    `json:"total_tokens"`
+	TotalSteps  int                    `json:"total_steps"`
+	CreatedAt   int64                  `json:"created_at"`
+	FinishedAt  int64                  `json:"finished_at"`
+}

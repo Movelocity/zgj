@@ -1,8 +1,12 @@
 package app
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"io"
+	"net/http"
 	"time"
 
 	"server/global"
@@ -334,21 +338,55 @@ func (s *appService) ExecuteWorkflow(workflowID, userID string, inputs map[strin
 		}
 	}
 
-	// 这里应该实现实际的工作流执行逻辑
-	// 目前返回模拟结果
+	// 实现实际的工作流执行逻辑
 	var response *ExecuteWorkflowResponse
 	var status string
 	var errorMessage string
 
-	// 模拟执行过程
-	time.Sleep(100 * time.Millisecond) // 模拟执行时间
-
-	response = &ExecuteWorkflowResponse{
-		Success: true,
-		Data:    map[string]interface{}{"result": "工作流执行成功", "processed_content": "优化后的简历内容"},
-		Message: "执行成功",
+	// 调用远程工作流API
+	apiResponse, err := s.callWorkflowAPI(workflow.ApiURL, workflow.ApiKey, userID, inputs)
+	if err != nil {
+		errorMessage = err.Error()
+		status = "failed"
+		response = &ExecuteWorkflowResponse{
+			Success: false,
+			Data:    map[string]interface{}{},
+			Message: fmt.Sprintf("工作流执行失败: %s", err.Error()),
+		}
+	} else {
+		// 根据API响应状态判断结果
+		if apiResponse.Data.Status == "succeeded" {
+			status = "success"
+			response = &ExecuteWorkflowResponse{
+				Success: true,
+				Data: map[string]interface{}{
+					"workflow_run_id": apiResponse.WorkflowRunID,
+					"task_id":         apiResponse.TaskID,
+					"outputs":         apiResponse.Data.Outputs,
+					"elapsed_time":    apiResponse.Data.ElapsedTime,
+					"total_tokens":    apiResponse.Data.TotalTokens,
+					"total_steps":     apiResponse.Data.TotalSteps,
+				},
+				Message: "工作流执行成功",
+			}
+		} else {
+			status = "failed"
+			errorMsg := "未知错误"
+			if apiResponse.Data.Error != nil {
+				errorMsg = *apiResponse.Data.Error
+			}
+			errorMessage = errorMsg
+			response = &ExecuteWorkflowResponse{
+				Success: false,
+				Data: map[string]interface{}{
+					"workflow_run_id": apiResponse.WorkflowRunID,
+					"task_id":         apiResponse.TaskID,
+					"status":          apiResponse.Data.Status,
+				},
+				Message: fmt.Sprintf("工作流执行失败: %s", errorMsg),
+			}
+		}
 	}
-	status = "success"
 
 	// 计算执行时间
 	executionTime := int(time.Since(startTime).Milliseconds())
@@ -466,4 +504,60 @@ func (s *appService) AdminUpdateWorkflow(workflowID string, req UpdateWorkflowRe
 	}
 
 	return nil
+}
+
+// callWorkflowAPI 调用远程工作流API
+func (s *appService) callWorkflowAPI(apiURL, apiKey, userID string, inputs map[string]interface{}) (*WorkflowAPIResponse, error) {
+	// 构建请求体
+	requestBody := WorkflowAPIRequest{
+		Inputs:       inputs,
+		ResponseMode: "blocking", // 只支持blocking模式
+		User:         userID,
+	}
+
+	// 序列化请求体
+	jsonData, err := json.Marshal(requestBody)
+	if err != nil {
+		return nil, fmt.Errorf("序列化请求数据失败: %w", err)
+	}
+
+	// 创建HTTP请求
+	req, err := http.NewRequest("POST", apiURL, bytes.NewBuffer(jsonData))
+	if err != nil {
+		return nil, fmt.Errorf("创建HTTP请求失败: %w", err)
+	}
+
+	// 设置请求头
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", apiKey))
+
+	// 创建HTTP客户端并发送请求
+	client := &http.Client{
+		Timeout: 60 * time.Second, // 设置60秒超时
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("发送HTTP请求失败: %w", err)
+	}
+	defer resp.Body.Close()
+
+	// 读取响应体
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("读取响应体失败: %w", err)
+	}
+
+	// 检查HTTP状态码
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("API请求失败，状态码: %d, 响应: %s", resp.StatusCode, string(body))
+	}
+
+	// 解析响应
+	var apiResponse WorkflowAPIResponse
+	if err := json.Unmarshal(body, &apiResponse); err != nil {
+		return nil, fmt.Errorf("解析响应数据失败: %w, 响应内容: %s", err, string(body))
+	}
+
+	return &apiResponse, nil
 }

@@ -29,7 +29,7 @@ export const workflowAPI = {
   },
 
   // 执行工作流
-  executeWorkflow: (id: string, inputs: any): Promise<ApiResponse<WorkflowExecution>> => {
+  executeWorkflow: (id: string, inputs: any): Promise<ApiResponse<any>> => {
     return apiClient.post(`/api/workflow/${id}/execute`, { inputs });
   },
 

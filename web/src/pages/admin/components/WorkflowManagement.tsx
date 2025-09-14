@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { FiPlus } from 'react-icons/fi';
+import { FiPlus, FiPlay } from 'react-icons/fi';
 import { adminAPI } from '@/api/admin';
 import { showSuccess, showError } from '@/utils/toast';
 import type { Workflow } from '@/types/workflow';
 import { Button } from '@/components/ui';
 import WorkflowModal from './WorkflowModal';
+import WorkflowDebugModal from '@/components/modals/WorkflowDebugModal';
 
 const WorkflowManagement: React.FC = () => {
   const [workflows, setWorkflows] = useState<Workflow[]>([]);
@@ -12,6 +13,8 @@ const WorkflowManagement: React.FC = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<'create' | 'edit' | 'view'>('create');
   const [selectedWorkflow, setSelectedWorkflow] = useState<Workflow | null>(null);
+  const [debugModalOpen, setDebugModalOpen] = useState(false);
+  const [debugWorkflow, setDebugWorkflow] = useState<Workflow | null>(null);
 
   // 获取工作流列表
   const fetchWorkflows = async () => {
@@ -94,6 +97,12 @@ const WorkflowManagement: React.FC = () => {
     }
   };
 
+  // 调试工作流
+  const handleDebug = (workflow: Workflow) => {
+    setDebugWorkflow(workflow);
+    setDebugModalOpen(true);
+  };
+
   // 模态框关闭回调
   const handleModalClose = (refresh?: boolean) => {
     setModalOpen(false);
@@ -101,6 +110,12 @@ const WorkflowManagement: React.FC = () => {
     if (refresh) {
       fetchWorkflows();
     }
+  };
+
+  // 调试模态框关闭回调
+  const handleDebugModalClose = () => {
+    setDebugModalOpen(false);
+    setDebugWorkflow(null);
   };
 
   return (
@@ -194,13 +209,15 @@ const WorkflowManagement: React.FC = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <div className="flex">
-                        {/* <Button
+                        <Button
                           variant="text"
-                          onClick={() => handleView(workflow)}
-                          title="查看详情"
+                          onClick={() => handleDebug(workflow)}
+                          className="text-green-600 hover:text-green-900"
+                          title="调试工作流"
                         >
-                          查看详情
-                        </Button> */}
+                          <FiPlay className="mr-1" size={14} />
+                          调试
+                        </Button>
                         <Button
                           variant="text"
                           onClick={() => handleEdit(workflow)}
@@ -243,6 +260,14 @@ const WorkflowManagement: React.FC = () => {
           mode={modalMode}
           workflow={selectedWorkflow}
           onClose={handleModalClose}
+        />
+      )}
+
+      {/* 调试模态框 */}
+      {debugModalOpen && debugWorkflow && (
+        <WorkflowDebugModal
+          workflow={debugWorkflow}
+          onClose={handleDebugModalClose}
         />
       )}
     </div>
