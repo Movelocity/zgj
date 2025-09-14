@@ -42,14 +42,14 @@ const Toast: React.FC<ToastProps> = ({ toast, onRemove }) => {
     switch (toast.type) {
       case 'error':
         return {
-          bg: 'bg-red-50 border-red-200',
+          bg: 'bg-red-50/80 border-red-200',
           icon: '❌',
           iconBg: 'bg-red-100',
           text: 'text-red-800'
         };
       case 'warn':
         return {
-          bg: 'bg-yellow-50 border-yellow-200',
+          bg: 'bg-yellow-50/80 border-yellow-200',
           icon: '⚠️',
           iconBg: 'bg-yellow-100',
           text: 'text-yellow-800'
@@ -59,14 +59,14 @@ const Toast: React.FC<ToastProps> = ({ toast, onRemove }) => {
         // 如果消息包含成功相关词汇，使用绿色主题
         if (toast.message.includes('成功') || toast.message.includes('完成')) {
           return {
-            bg: 'bg-green-50 border-green-200',
+            bg: 'bg-green-50/80 border-green-200',
             icon: '✅',
             iconBg: 'bg-green-100',
             text: 'text-green-800'
           };
         }
         return {
-          bg: 'bg-blue-50 border-blue-200',
+          bg: 'bg-blue-50/80 border-blue-200',
           icon: 'ℹ️',
           iconBg: 'bg-blue-100',
           text: 'text-blue-800'
@@ -89,8 +89,8 @@ const Toast: React.FC<ToastProps> = ({ toast, onRemove }) => {
       `}
       role="alert"
     >
-      <div className="flex items-start">
-        <div className={`${styles.iconBg} rounded-full p-1 mr-3 flex-shrink-0`}>
+      <div className="flex items-center">
+        <div className={`rounded-full mr-3 flex-shrink-0`}>
           <span className="text-sm">{styles.icon}</span>
         </div>
         <div className="flex-1 min-w-0">

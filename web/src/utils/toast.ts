@@ -5,7 +5,8 @@ import { useToastStore } from '@/store/toastStore';
  * 这些函数可以在任何地方调用，不需要在React组件中使用
  */
 
-let toastStore: ReturnType<typeof useToastStore> | null = null;
+type ToastStore = ReturnType<typeof useToastStore.getState>;
+let toastStore: ToastStore | null = null;
 
 /**
  * 初始化Toast工具函数
@@ -18,11 +19,11 @@ export const initToast = () => {
 /**
  * 获取Toast store实例
  */
-const getToastStore = () => {
+const getToastStore = (): ToastStore => {
   if (!toastStore) {
     toastStore = useToastStore.getState();
   }
-  return toastStore;
+  return toastStore as ToastStore;
 };
 
 /**

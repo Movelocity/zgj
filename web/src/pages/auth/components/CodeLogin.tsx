@@ -30,7 +30,7 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onSuccess }) => {
 
   // 使用统一的用户登录API，登录后验证用户角色
   const userLoginAPI = async (credentials: { phone: string; password: string }): Promise<ApiResponse<AdminLoginResponse>> => {
-    return apiClient.post('/api/user/login', credentials).then(res => res.data);
+    return apiClient.post('/api/user/login', credentials);
   };
 
   // 手机号验证

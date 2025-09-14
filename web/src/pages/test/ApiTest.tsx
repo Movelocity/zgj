@@ -161,7 +161,7 @@ const ApiTest: React.FC = () => {
           <span className={`px-3 py-1 rounded-full text-sm ${
             isAuthenticated ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
           }`}>
-            {isAuthenticated ? `✅ 已登录 (${user?.nickname || user?.phone || '用户'})` : '❌ 未登录'}
+            {isAuthenticated ? `✅ 已登录 (${user?.name || user?.phone || '用户'})` : '❌ 未登录'}
           </span>
           {isAuthenticated && (
             <Button onClick={logout} variant="outline" size="sm">

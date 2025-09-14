@@ -25,6 +25,13 @@ const Profile: React.FC = () => {
     confirm_password: '',
   });
 
+  // 密码可见性状态
+  const [passwordVisibility, setPasswordVisibility] = useState({
+    current_password: false,
+    new_password: false,
+    confirm_password: false,
+  });
+
   // 加载用户资料
   const loadProfile = async () => {
     try {
@@ -107,6 +114,34 @@ const Profile: React.FC = () => {
   const handleLogout = () => {
     logout();
   };
+
+  // 切换密码可见性
+  const togglePasswordVisibility = (field: keyof typeof passwordVisibility) => {
+    setPasswordVisibility(prev => ({
+      ...prev,
+      [field]: !prev[field]
+    }));
+  };
+
+  // 眼睛图标组件
+  const EyeIcon = ({ visible, onClick }: { visible: boolean; onClick: () => void }) => (
+    <button
+      type="button"
+      onClick={onClick}
+      className="text-gray-400 hover:text-gray-600 focus:outline-none"
+    >
+      {visible ? (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+        </svg>
+      ) : (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" />
+        </svg>
+      )}
+    </button>
+  );
 
   if (loading && !profile) {
     return (
@@ -233,10 +268,16 @@ const Profile: React.FC = () => {
                       当前密码
                     </label>
                     <Input
-                      type="password"
+                      type={passwordVisibility.current_password ? "text" : "password"}
                       value={passwordForm.current_password}
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPasswordForm({ ...passwordForm, current_password: e.target.value })}
                       placeholder="请输入当前密码"
+                      rightIcon={
+                        <EyeIcon
+                          visible={passwordVisibility.current_password}
+                          onClick={() => togglePasswordVisibility('current_password')}
+                        />
+                      }
                     />
                   </div>
                   
@@ -245,10 +286,16 @@ const Profile: React.FC = () => {
                       新密码
                     </label>
                     <Input
-                      type="password"
+                      type={passwordVisibility.new_password ? "text" : "password"}
                       value={passwordForm.new_password}
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPasswordForm({ ...passwordForm, new_password: e.target.value })}
                       placeholder="请输入新密码（至少6位）"
+                      rightIcon={
+                        <EyeIcon
+                          visible={passwordVisibility.new_password}
+                          onClick={() => togglePasswordVisibility('new_password')}
+                        />
+                      }
                     />
                   </div>
                   
@@ -257,10 +304,16 @@ const Profile: React.FC = () => {
                       确认新密码
                     </label>
                     <Input
-                      type="password"
+                      type={passwordVisibility.confirm_password ? "text" : "password"}
                       value={passwordForm.confirm_password}
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPasswordForm({ ...passwordForm, confirm_password: e.target.value })}
                       placeholder="请再次输入新密码"
+                      rightIcon={
+                        <EyeIcon
+                          visible={passwordVisibility.confirm_password}
+                          onClick={() => togglePasswordVisibility('confirm_password')}
+                        />
+                      }
                     />
                   </div>
                 </div>

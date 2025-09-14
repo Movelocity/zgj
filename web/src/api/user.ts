@@ -10,7 +10,7 @@ export const userAPI = {
 
   // 更新用户资料
   updateProfile: (data: Partial<UserProfile>): Promise<ApiResponse<UserProfile>> => {
-    return apiClient.put('/api/user/profile', data).then(res => res.data);
+    return apiClient.put('/api/user/profile', data);
   },
 
   // 上传头像

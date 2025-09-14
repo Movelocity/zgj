@@ -107,7 +107,8 @@ apiClient.interceptors.response.use(
       duration
     });
     
-    return response;
+    // 统一返回API响应格式，确保类型一致性
+    return response.data as any;
   },
   (error: AxiosError<ApiResponse>) => {
     const duration = error.config ? Date.now() - (error.config as any)._requestStartTime : 0;
