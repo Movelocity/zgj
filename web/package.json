@@ -6,8 +6,10 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:prod": "tsc -b && vite build --mode production",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "deploy": "npm run build:prod && echo 'Frontend built successfully. Run server to serve static files.'"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.8",

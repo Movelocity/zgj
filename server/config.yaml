@@ -1,11 +1,19 @@
 server:
   port: 8888
   mode: "debug" # release/debug/test
+  static-path: "../web/dist" # 前端静态文件路径
 
 cors:
   mode: "strict-whitelist"
   whitelist:
+    # 开发环境 - Vite 开发服务器
     - allow-origin: "http://localhost:3000"
+      allow-methods: "POST, GET, OPTIONS, DELETE, PUT"
+      allow-headers: "Content-Type,AccessToken,X-CSRF-Token, Authorization, Token,X-Token,X-User-Id,user_id"
+      expose-headers: "Content-Length, Access-Control-Allow-Origin, Access-Control-Allow-Headers, Content-Type, New-Token, New-Expires-At"
+      allow-credentials: true
+    # 生产环境 - 同源请求（前端由同一服务器提供）
+    - allow-origin: "http://localhost:8888"
       allow-methods: "POST, GET, OPTIONS, DELETE, PUT"
       allow-headers: "Content-Type,AccessToken,X-CSRF-Token, Authorization, Token,X-Token,X-User-Id,user_id"
       expose-headers: "Content-Length, Access-Control-Allow-Origin, Access-Control-Allow-Headers, Content-Type, New-Token, New-Expires-At"

@@ -5,8 +5,9 @@ import (
 )
 
 type Server struct {
-	Port string `mapstructure:"port" json:"port" yaml:"port"`
-	Mode string `mapstructure:"mode" json:"mode" yaml:"mode"`
+	Port       string `mapstructure:"port" json:"port" yaml:"port"`
+	Mode       string `mapstructure:"mode" json:"mode" yaml:"mode"`
+	StaticPath string `mapstructure:"static-path" json:"static-path" yaml:"static-path"`
 }
 
 type CORS struct {
