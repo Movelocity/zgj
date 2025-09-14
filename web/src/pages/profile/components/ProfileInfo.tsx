@@ -4,7 +4,7 @@ import { useAuthStore } from '@/store/authStore';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import { showSuccess, showError } from '@/utils/toast';
-import type { UserProfileResponse } from '@/types/user';
+// import type { UserProfileResponse } from '@/types/user';
 
 interface ProfileInfoProps {
   loading: boolean;
@@ -13,7 +13,7 @@ interface ProfileInfoProps {
 
 const ProfileInfo: React.FC<ProfileInfoProps> = ({ loading, setLoading }) => {
   const { user, logout } = useAuthStore();
-  const [profile, setProfile] = useState<UserProfileResponse | null>(null);
+  // const [profile, setProfile] = useState<UserProfileResponse | null>(null);
   
   // 个人信息表单
   const [profileForm, setProfileForm] = useState({
@@ -27,7 +27,7 @@ const ProfileInfo: React.FC<ProfileInfoProps> = ({ loading, setLoading }) => {
       setLoading(true);
       const response = await userAPI.getProfile();
       if (response.code === 0) {
-        setProfile(response.data);
+        // setProfile(response.data);
         setProfileForm({
           name: response.data.user.name || '',
           email: response.data.user.email || '',
@@ -102,6 +102,7 @@ const ProfileInfo: React.FC<ProfileInfoProps> = ({ loading, setLoading }) => {
           </label>
           <Input
             type="email"
+            disabled={true}
             value={profileForm.email}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setProfileForm({ ...profileForm, email: e.target.value })}
             placeholder="请输入邮箱"
@@ -122,7 +123,7 @@ const ProfileInfo: React.FC<ProfileInfoProps> = ({ loading, setLoading }) => {
       </div>
 
       <div className="flex justify-end gap-4">
-        <Button variant="outline" onClick={handleLogout}>
+        <Button variant="danger" onClick={handleLogout}>
           退出登录
         </Button>
 

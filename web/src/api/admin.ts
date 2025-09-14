@@ -38,6 +38,11 @@ export const adminAPI = {
     return apiClient.put(`/api/admin/user/${userId}/role`, { role });
   },
 
+  // 管理员修改用户密码
+  adminChangePassword: (userId: string, newPassword: string): Promise<ApiResponse> => {
+    return apiClient.put(`/api/admin/user/${userId}/password`, { new_password: newPassword });
+  },
+
   // 工作流管理
   getAllWorkflows: (): Promise<ApiResponse<Workflow[]>> => {
     return apiClient.get('/api/admin/workflow/all');

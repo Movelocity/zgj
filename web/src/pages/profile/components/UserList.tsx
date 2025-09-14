@@ -4,7 +4,8 @@ import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import { showSuccess, showError } from '@/utils/toast';
 import type { User } from '@/types/user';
-import type { PaginationResponse } from '@/types/global';
+import { EditUserModal, ChangeRoleModal, ChangePasswordModal } from '@/components/modals';
+// import type { PaginationResponse } from '@/types/global';
 
 interface UserListProps {
   loading: boolean;
@@ -20,6 +21,11 @@ const UserList: React.FC<UserListProps> = ({ loading, setLoading }) => {
   });
   const [searchKeyword, setSearchKeyword] = useState('');
   const [searchInput, setSearchInput] = useState('');
+  
+  // 模态框状态
+  const [editUserModal, setEditUserModal] = useState({ isOpen: false, user: null as User | null });
+  const [changeRoleModal, setChangeRoleModal] = useState({ isOpen: false, user: null as User | null });
+  const [changePasswordModal, setChangePasswordModal] = useState({ isOpen: false, user: null as User | null });
 
   // 加载用户列表
   const loadUsers = async (page = 1, keyword = searchKeyword) => {
@@ -112,6 +118,41 @@ const UserList: React.FC<UserListProps> = ({ loading, setLoading }) => {
   // 翻页
   const handlePageChange = (page: number) => {
     loadUsers(page);
+  };
+
+  // 编辑用户信息
+  const handleEditUser = (user: User) => {
+    setEditUserModal({ isOpen: true, user });
+  };
+
+  // 修改用户角色
+  const handleChangeRole = (user: User) => {
+    setChangeRoleModal({ isOpen: true, user });
+  };
+
+  // 修改用户密码
+  const handleChangePassword = (user: User) => {
+    setChangePasswordModal({ isOpen: true, user });
+  };
+
+  // 模态框关闭处理
+  const handleModalClose = (modalType: 'edit' | 'role' | 'password') => {
+    switch (modalType) {
+      case 'edit':
+        setEditUserModal({ isOpen: false, user: null });
+        break;
+      case 'role':
+        setChangeRoleModal({ isOpen: false, user: null });
+        break;
+      case 'password':
+        setChangePasswordModal({ isOpen: false, user: null });
+        break;
+    }
+  };
+
+  // 模态框成功处理（重新加载用户列表）
+  const handleModalSuccess = () => {
+    loadUsers(pagination.current);
   };
 
   // 获取用户角色显示名称
@@ -255,6 +296,33 @@ const UserList: React.FC<UserListProps> = ({ loading, setLoading }) => {
                       <Button
                         variant="outline"
                         size="sm"
+                        onClick={() => handleEditUser(user)}
+                        disabled={loading}
+                        className="text-blue-600 hover:text-blue-700"
+                      >
+                        编辑
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleChangeRole(user)}
+                        disabled={loading}
+                        className="text-purple-600 hover:text-purple-700"
+                      >
+                        角色
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleChangePassword(user)}
+                        disabled={loading}
+                        className="text-orange-600 hover:text-orange-700"
+                      >
+                        密码
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
                         onClick={() => handleToggleUserStatus(user.id, user.active)}
                         disabled={loading}
                         className={user.active ? 'text-red-600 hover:text-red-700' : 'text-green-600 hover:text-green-700'}
@@ -309,6 +377,30 @@ const UserList: React.FC<UserListProps> = ({ loading, setLoading }) => {
           </Button>
         </div>
       )}
+
+      {/* 编辑用户信息模态框 */}
+      <EditUserModal
+        user={editUserModal.user}
+        isOpen={editUserModal.isOpen}
+        onClose={() => handleModalClose('edit')}
+        onSuccess={handleModalSuccess}
+      />
+
+      {/* 修改用户角色模态框 */}
+      <ChangeRoleModal
+        user={changeRoleModal.user}
+        isOpen={changeRoleModal.isOpen}
+        onClose={() => handleModalClose('role')}
+        onSuccess={handleModalSuccess}
+      />
+
+      {/* 修改用户密码模态框 */}
+      <ChangePasswordModal
+        user={changePasswordModal.user}
+        isOpen={changePasswordModal.isOpen}
+        onClose={() => handleModalClose('password')}
+        onSuccess={handleModalSuccess}
+      />
     </div>
   );
 };
