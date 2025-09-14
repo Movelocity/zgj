@@ -121,7 +121,7 @@ export const useAuthStore = create<AuthState>()(
       },
 
       setUser: (user: User) => {
-        set({ user });
+        set({ user: user, isAuthenticated: true });
       },
     }),
     {

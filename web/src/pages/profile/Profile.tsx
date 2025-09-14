@@ -52,7 +52,7 @@ const Profile: React.FC = () => {
         alert('个人信息更新成功');
         await loadProfile();
       } else {
-        alert(response.message || '更新失败');
+        alert(response.msg || '更新失败');
       }
     } catch (error) {
       alert('更新失败，请重试');
@@ -89,7 +89,7 @@ const Profile: React.FC = () => {
           confirm_password: '',
         });
       } else {
-        alert(response.message || '密码修改失败');
+        alert(response.msg || '密码修改失败');
       }
     } catch (error) {
       alert('密码修改失败，请重试');

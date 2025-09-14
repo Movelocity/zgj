@@ -30,7 +30,7 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onSuccess }) => {
 
   // 使用统一的用户登录API，登录后验证用户角色
   const userLoginAPI = async (credentials: { phone: string; password: string }): Promise<ApiResponse<AdminLoginResponse>> => {
-    return apiClient.post('/api/user/login', credentials);
+    return apiClient.post('/api/user/login', credentials).then(res => res.data);
   };
 
   // 手机号验证
@@ -61,7 +61,7 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onSuccess }) => {
       });
       console.log(response);
 
-      if (response.status === 200 && response.data) {
+      if (response.code === 0 && response.data) {
         // 保存token到localStorage
         localStorage.setItem(TOKEN_KEY, response.data.token);
         
@@ -71,7 +71,7 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onSuccess }) => {
         // 成功回调
         onSuccess?.();
       } else {
-        setError(response.message || '登录失败');
+        setError(response.msg || '登录失败');
       }
     } catch (err: any) {
       setError(err.response?.data?.message || '登录失败，请检查账号密码');
@@ -98,17 +98,11 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onSuccess }) => {
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <h2 className="text-2xl font-bold text-gray-900">管理员登录</h2>
-        <p className="mt-2 text-sm text-gray-600">
-          请使用管理员账号登录系统
-        </p>
+        <h2 className="text-2xl font-bold text-gray-900">账号密码登录</h2>
       </div>
 
       <div className="space-y-4">
         <div>
-          <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
-            手机号码
-          </label>
           <Input
             id="phone"
             type="tel"
@@ -122,9 +116,6 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onSuccess }) => {
         </div>
 
         <div>
-          <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-            密码
-          </label>
           <Input
             id="password"
             type="password"

@@ -1,9 +1,8 @@
 // 全局类型定义
 export interface ApiResponse<T = any> {
-  status: number;
   code: number;
-  message: string;
   data: T;
+  msg: string;
 }
 
 export interface PaginationParams {
