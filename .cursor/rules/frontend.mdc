@@ -5,6 +5,7 @@ alwaysApply: true
 ---
 
 ## Acknowledgement
+Frontend is at: <project_root>/web/, while backend is at <project_root>/server
 Package management: pnpm
 Icons: react-icons
 Common UI: @/components/ui
