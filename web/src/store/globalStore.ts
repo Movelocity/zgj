@@ -44,6 +44,9 @@ interface GlobalState {
   theme: 'light' | 'dark';
   toggleTheme: () => void;
   setTheme: (theme: 'light' | 'dark') => void;
+
+  showBanner: boolean;
+  setShowBanner: (show: boolean) => void;
 }
 
 let toastId = 0;
@@ -124,5 +127,10 @@ export const useGlobalStore = create<GlobalState>((set, get) => ({
   
   setTheme: (theme) => {
     set({ theme });
+  },
+
+  showBanner: true,
+  setShowBanner: (show) => {
+    set({ showBanner: show });
   },
 }));

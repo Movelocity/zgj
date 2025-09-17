@@ -5,27 +5,21 @@ import { ROUTES, ADMIN_ROLE } from '@/utils/constants';
 import Button from '@/components/ui/Button';
 import { 
   FaUser as UserIcon, 
-  FaFileAlt as DocumentTextIcon,
   FaCog as SettingsIcon
 } from 'react-icons/fa';
 
 const Header: React.FC = () => {
-  // const navigate = useNavigate();
   const { isAuthenticated, user } = useAuthStore();
 
-  // const handleLogout = () => {
-  //   logout();
-  //   navigate(ROUTES.HOME);
-  // };
-
   return (
-    <header className="bg-white shadow-md">
+    <header className="fixed top-0 w-full bg-white shadow-sm z-[1000]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
+        <div className="flex justify-between items-center h-14">
           {/* Logo */}
           <div className="flex items-center">
             <Link to={ROUTES.HOME} className="flex items-center space-x-2">
-              <DocumentTextIcon className="h-8 w-8 text-blue-600" />
+              {/* <DocumentTextIcon className="h-8 w-8 text-blue-600" /> */}
+              <img src="/favicon.ico" alt="职管加" className="h-8 w-8" />
               <span className="text-xl font-bold text-gray-900">职管加</span>
             </Link>
           </div>
