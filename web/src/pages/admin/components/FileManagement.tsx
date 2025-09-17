@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import axios from 'axios';
 import { 
   FiUpload, 
   FiDownload, 
@@ -15,16 +16,17 @@ import { adminAPI } from '@/api/admin';
 import { showSuccess, showError, showInfo } from '@/utils/toast';
 import Button from '@/components/ui/Button';
 import { Modal } from '@/components/modals';
+import { API_BASE_URL, TOKEN_KEY } from '@/utils/constants';
 
 interface FileInfo {
   id: string;
   name: string;
   original_name: string;
-  path: string;
+  // path: string; // 严格禁止这种用法 ！！！
   size: number;
   type: string;
   mime_type: string;
-  user_id: number;
+  user_id: string;
   user_name: string;
   created_at: string;
   updated_at: string;
@@ -65,7 +67,7 @@ const FileManagement: React.FC = () => {
       };
       
       const response = await adminAPI.getFiles(params);
-      if (response.code === 200) {
+      if (response.code === 0) {
         setFiles(response.data.list || []);
         setTotal(response.data.total || 0);
       }
@@ -80,7 +82,7 @@ const FileManagement: React.FC = () => {
   const loadStats = async () => {
     try {
       const response = await adminAPI.getFileStats();
-      if (response.code === 200) {
+      if (response.code === 0) {
         setStats(response.data);
       }
     } catch (error) {
@@ -97,7 +99,7 @@ const FileManagement: React.FC = () => {
       setUploading(true);
       const response = await adminAPI.uploadFile(files[0]);
       
-      if (response.code === 200) {
+      if (response.code === 0) {
         showSuccess('文件上传成功');
         loadFiles();
         loadStats();
@@ -207,6 +209,37 @@ const FileManagement: React.FC = () => {
   }, [currentPage, fileType, searchKeyword]);
 
   const totalPages = Math.ceil(total / pageSize);
+
+  const downloadFile = async (file: FileInfo) => {
+    try {
+      // 下载文件需要鉴权，所以先下载到浏览器，再下给用户
+      // 使用 axios 直接请求，指定 responseType 为 blob 来正确处理二进制数据
+      const response = await axios.get(`${API_BASE_URL}/api/files/${file.id}/preview?as_attachment=true`, {
+        responseType: 'blob',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem(TOKEN_KEY)}`
+        }
+      });
+      
+      // 创建 blob 对象
+      const blob = new Blob([response.data], { type: file.mime_type });
+      const url = URL.createObjectURL(blob);
+      
+      // 创建下载链接并触发下载
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = file.name;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      showSuccess('文件下载成功');
+    } catch (error) {
+      console.error('文件下载失败:', error);
+      showError('文件下载失败');
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -358,7 +391,7 @@ const FileManagement: React.FC = () => {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => window.open(file.path, '_blank')}
+                      onClick={() => downloadFile(file)}
                       className="text-blue-600 hover:text-blue-800"
                     >
                       <FiDownload className="w-4 h-4" />

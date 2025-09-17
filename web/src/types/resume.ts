@@ -3,7 +3,6 @@ export interface Resume {
   id: string;
   user_id: string;
   name: string;
-  file_path: string;
   file_type: string;
   file_size: number;
   original_name: string;

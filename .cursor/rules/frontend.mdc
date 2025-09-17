@@ -21,3 +21,4 @@ import { showSuccess, showError, showWarning, showInfo } from '@/utils/toast';
 
 ## Misc
 - use `bg-black/50` instead of `bg-opacity-50` in modal background
+- api response.code == 0 means success, there is nothing to do with 200 status

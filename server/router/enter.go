@@ -15,7 +15,7 @@ func InitRoutes(r *gin.Engine) {
 	// 私有路由（需要认证）
 	PrivateGroup := r.Group("")
 	PrivateGroup.Use(middleware.JWTAuth())
-	InitPrivateRouter(PrivateGroup)
+	InitPrivateRouter(PrivateGroup, PublicGroup) // 后续重构，目前的用法太死板了
 
 	// 管理员路由
 	AdminGroup := r.Group("")

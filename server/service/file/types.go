@@ -38,12 +38,11 @@ type FileListResponse struct {
 	PageSize int        `json:"page_size"`
 }
 
-// FileInfo 文件信息
+// FileInfo 文件信息，严格禁止使用在id外耦合路径！
 type FileInfo struct {
 	ID           string    `json:"id"`
 	Name         string    `json:"name"`
 	OriginalName string    `json:"original_name"`
-	Path         string    `json:"path"`
 	Size         int64     `json:"size"`
 	Type         string    `json:"type"`
 	MimeType     string    `json:"mime_type"`

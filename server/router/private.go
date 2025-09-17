@@ -11,9 +11,9 @@ import (
 )
 
 // InitPrivateRouter 初始化私有路由
-func InitPrivateRouter(Router *gin.RouterGroup) {
+func InitPrivateRouter(privateRouter *gin.RouterGroup, publicRouter *gin.RouterGroup) {
 	// 用户相关
-	UserRouter := Router.Group("/api/user")
+	UserRouter := privateRouter.Group("/api/user")
 	{
 		UserRouter.GET("/profile", user.GetUserProfile)      // 获取用户信息
 		UserRouter.PUT("/profile", user.UpdateUserProfile)   // 更新用户信息
@@ -24,7 +24,7 @@ func InitPrivateRouter(Router *gin.RouterGroup) {
 	}
 
 	// 对话相关
-	ConversationRouter := Router.Group("/api/conversation")
+	ConversationRouter := privateRouter.Group("/api/conversation")
 	{
 		ConversationRouter.GET("", app.GetConversations)          // 获取对话列表
 		ConversationRouter.GET("/:id", app.GetConversation)       // 获取特定对话
@@ -34,7 +34,7 @@ func InitPrivateRouter(Router *gin.RouterGroup) {
 	}
 
 	// 工作流相关
-	WorkflowRouter := Router.Group("/api/workflow")
+	WorkflowRouter := privateRouter.Group("/api/workflow")
 	{
 		WorkflowRouter.GET("", app.GetWorkflows)                        // 获取工作流列表
 		WorkflowRouter.GET("/:id", app.GetWorkflow)                     // 获取特定工作流
@@ -47,19 +47,19 @@ func InitPrivateRouter(Router *gin.RouterGroup) {
 	}
 
 	// 工作流执行历史
-	ExecutionRouter := Router.Group("/api/execution")
+	ExecutionRouter := privateRouter.Group("/api/execution")
 	{
 		ExecutionRouter.GET("/:id", workflow.GetExecutionDetail) // 获取执行详情
 	}
 
 	// 用户工作流历史
-	UserWorkflowRouter := Router.Group("/api/user/workflow_history")
+	UserWorkflowRouter := privateRouter.Group("/api/user/workflow_history")
 	{
 		UserWorkflowRouter.GET("", workflow.GetUserWorkflowHistory) // 获取用户工作流使用历史
 	}
 
 	// 简历管理相关
-	ResumeRouter := Router.Group("/api/user/resumes")
+	ResumeRouter := privateRouter.Group("/api/user/resumes")
 	{
 		ResumeRouter.GET("", resume.GetUserResumes)       // 获取用户简历列表
 		ResumeRouter.GET("/:id", resume.GetResumeByID)    // 获取特定简历详情
@@ -69,10 +69,15 @@ func InitPrivateRouter(Router *gin.RouterGroup) {
 	}
 
 	// 文件管理相关（新的统一文件接口）
-	FileRouter := Router.Group("/api/files")
+	FileRouter := privateRouter.Group("/api/files")
 	{
-		FileRouter.POST("/upload", file.UploadFile)      // 上传文件
-		FileRouter.GET("/:id/preview", file.PreviewFile) // 预览/下载文件
-		FileRouter.GET("/:id/info", file.GetFileInfo)    // 获取文件信息
+		FileRouter.POST("/upload", file.UploadFile) // 上传文件
+		// FileRouter.GET("/:id/preview", file.PreviewFile) // 预览/下载文件
+		// FileRouter.GET("/:id/info", file.GetFileInfo)    // 获取文件信息
+	}
+	FilePublicRouter := publicRouter.Group("/api/files")
+	{
+		FilePublicRouter.GET("/:id/preview", file.PreviewFile) // 预览/下载文件
+		FilePublicRouter.GET("/:id/info", file.GetFileInfo)    // 获取文件信息
 	}
 }

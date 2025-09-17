@@ -192,14 +192,14 @@ func (s *fileService) GetFileList(page, pageSize, fileType string) (*FileListRes
 			ID:           file.ID,
 			Name:         file.GetFileName(),
 			OriginalName: file.OriginalName,
-			Path:         "/files/" + file.ID + "/preview",
-			Size:         file.Size,
-			Type:         fileType,
-			MimeType:     file.MimeType,
-			UserID:       file.CreatedBy,
-			UserName:     file.User.Name,
-			CreatedAt:    file.CreatedAt,
-			UpdatedAt:    file.UpdatedAt,
+			// Path:         "/files/" + file.ID + "/preview",  // 严格禁止这种用法 ！！！
+			Size:      file.Size,
+			Type:      fileType,
+			MimeType:  file.MimeType,
+			UserID:    file.CreatedBy,
+			UserName:  file.User.Name,
+			CreatedAt: file.CreatedAt,
+			UpdatedAt: file.UpdatedAt,
 		})
 	}
 
