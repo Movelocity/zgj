@@ -31,12 +31,12 @@ pgsql:
   log-mode: "info" # silent/error/warn/info
 
 spug-sms:
-  token: "Lo5Ngm7lPvjGRAW0"
+  token: ""
   api-url: "https://api.spug.cc/api/sms/"
-  name: "职管加"
+  name: ""
 
 jwt:
-  signing-key: "fPiMcrpgB1qv98PSsmnwY6L9zSvkNbRj7EaNUi8M87k3XQTfiXdeFw5I"
+  signing-key: "fPiMcrpgB1qv98PSsmnwY6L9zRvkNbRj7EaNUi8M87k3XQTfiXdeFw5I"
   expires-time: "168h" # 7天
   buffer-time: "24h"   # 1天
   issuer: "CLOUD"
@@ -59,3 +59,9 @@ log:
   director: "log"
   show-line: true
   encode-level: "LowercaseColorLevelEncoder" # LowercaseLevelEncoder/LowercaseColorLevelEncoder/CapitalLevelEncoder/CapitalColorLevelEncoder
+
+admin:
+  phone: "18888888888"
+  name: "系统管理员"
+  password: "admin123*"
+  email: "admin@example.com"

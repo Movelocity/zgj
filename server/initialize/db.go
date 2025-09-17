@@ -83,10 +83,9 @@ func initDefaultData() {
 	global.DB.Model(&model.User{}).Where("role = ?", 888).Count(&adminCount)
 
 	if adminCount == 0 {
-		adminPhone := "13823409379"
-		adminName := "系统管理员"
-		adminPassword := "admin123*"
-		hashedPassword, err := utils.HashPassword(adminPassword)
+		// 从配置文件读取管理员信息
+		adminConfig := global.CONFIG.Admin
+		hashedPassword, err := utils.HashPassword(adminConfig.Password)
 		if err != nil {
 			panic(fmt.Errorf("failed to hash password: %s", err))
 		}
@@ -97,10 +96,10 @@ func initDefaultData() {
 		// 创建默认管理员用户
 		defaultAdmin := model.User{
 			ID:       adminID,
-			Name:     adminName,
-			Phone:    adminPhone,
-			Password: hashedPassword, // 默认密码：admin123*
-			Email:    "admin@example.com",
+			Name:     adminConfig.Name,
+			Phone:    adminConfig.Phone,
+			Password: hashedPassword,
+			Email:    adminConfig.Email,
 			Active:   true,
 			Role:     888, // 管理员角色
 		}
@@ -108,7 +107,7 @@ func initDefaultData() {
 		if err := global.DB.Create(&defaultAdmin).Error; err != nil {
 			fmt.Printf("创建默认管理员失败: %v\n", err)
 		} else {
-			fmt.Println("默认管理员创建成功 - 手机号: ", adminPhone, ", 密码: ", adminPassword)
+			fmt.Println("默认管理员创建成功 - 手机号: ", adminConfig.Phone, ", 密码: ", adminConfig.Password)
 
 			// 为管理员创建用户档案
 			adminProfile := model.UserProfile{

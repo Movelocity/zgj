@@ -154,7 +154,6 @@ const PhoneLogin: React.FC<PhoneLoginProps> = ({ onSuccess }) => {
               {sendingCode ? (
                 <>
                   <Loading size="sm" className="mr-1" />
-                  发送中
                 </>
               ) : countdown > 0 ? (
                 `${countdown}s`

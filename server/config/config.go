@@ -70,6 +70,13 @@ type Log struct {
 	EncodeLevel string `mapstructure:"encode-level" json:"encode-level" yaml:"encode-level"`
 }
 
+type Admin struct {
+	Phone    string `mapstructure:"phone" json:"phone" yaml:"phone"`
+	Name     string `mapstructure:"name" json:"name" yaml:"name"`
+	Password string `mapstructure:"password" json:"password" yaml:"password"`
+	Email    string `mapstructure:"email" json:"email" yaml:"email"`
+}
+
 type Config struct {
 	Server  Server  `mapstructure:"server" json:"server" yaml:"server"`
 	CORS    CORS    `mapstructure:"cors" json:"cors" yaml:"cors"`
@@ -79,4 +86,5 @@ type Config struct {
 	Local   Local   `mapstructure:"local" json:"local" yaml:"local"`
 	Upload  Upload  `mapstructure:"upload" json:"upload" yaml:"upload"`
 	Log     Log     `mapstructure:"log" json:"log" yaml:"log"`
+	Admin   Admin   `mapstructure:"admin" json:"admin" yaml:"admin"`
 }
