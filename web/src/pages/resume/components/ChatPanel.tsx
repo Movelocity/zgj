@@ -2,6 +2,7 @@
 import { useState, useRef, useEffect } from 'react';
 import Button from '@/components/ui/Button';
 import { Send, Bot, User, Lightbulb } from 'lucide-react';
+import { FiMessageSquare } from 'react-icons/fi';
 
 interface Message {
   id: string;
@@ -10,7 +11,6 @@ interface Message {
   timestamp: Date;
   suggestions?: string[];
 }
-
 
 export default function ChatPanel() {
   const [messages, setMessages] = useState<Message[]>([
@@ -99,10 +99,6 @@ export default function ChatPanel() {
     setInputValue(suggestion);
   };
 
-  // const handleQuickSuggestion = (suggestion: string) => {
-  //   onSuggestionApply?.(suggestion, 'general');
-  // };
-
   return (
     <div className="bg-white rounded-lg shadow-sm h-full flex flex-col">
       <div className="p-4 border-b border-gray-200">
@@ -110,125 +106,112 @@ export default function ChatPanel() {
           <Bot className="w-5 h-5 mr-2 text-blue-600" />
           简历专家
         </div>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-sm text-gray-600 mt-1">
           与AI专家对话，实时优化您的简历
         </p>
       </div>
 
-      <div className="flex-1 flex flex-col p-4 pt-0 space-y-4">
-        {/* 消息区域 */}
-        <div className="flex-1 pr-4" ref={scrollRef}>
-          <div className="space-y-4">
-            {messages.map((message) => (
-              <div key={message.id} className="space-y-2">
-                <div
-                  className={`flex ${
-                    message.type === 'user' ? 'justify-end' : 'justify-start'
-                  }`}
-                >
-                  <div
-                    className={`max-w-[85%] rounded-lg p-3 ${
-                      message.type === 'user'
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-gray-100 text-gray-800'
-                    }`}
-                  >
-                    <div className="flex items-start space-x-2">
-                      {message.type === 'assistant' && (
-                        <Bot className="w-4 h-4 mt-0.5 text-blue-600" />
-                      )}
-                      {message.type === 'user' && (
-                        <User className="w-4 h-4 mt-0.5" />
-                      )}
-                      <p className="text-sm leading-relaxed">{message.content}</p>
-                    </div>
-                  </div>
+      <div className="flex-1 p-4 overflow-y-auto space-y-4" ref={scrollRef}>
+        {messages.map((message) => (
+          <div key={message.id} className="space-y-2">
+            <div
+              className={`flex ${
+                message.type === 'user' ? 'justify-end' : 'justify-start'
+              }`}
+            >
+              <div
+                className={`max-w-[85%] rounded-lg p-3 ${
+                  message.type === 'user'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-100'
+                }`}
+              >
+                <div className="flex items-start space-x-2">
+                  {message.type === 'assistant' && (
+                    <Bot className="w-4 h-4 mt-0.5 text-blue-600" />
+                  )}
+                  {message.type === 'user' && (
+                    <User className="w-4 h-4 mt-0.5" />
+                  )}
+                  <p className="text-sm leading-relaxed">{message.content}</p>
                 </div>
-
-                {/* 快捷建议 */}
-                {message.suggestions && message.suggestions.length > 0 && (
-                  <div className="flex flex-wrap gap-2 ml-6">
-                    {message.suggestions.map((suggestion, index) => (
-                      <Button
-                        key={index}
-                        variant="outline"
-                        size="sm"
-                        className="text-xs h-7"
-                        onClick={() => handleSuggestionClick(suggestion)}
-                      >
-                        <Lightbulb className="w-3 h-3 mr-1" />
-                        {suggestion}
-                      </Button>
-                    ))}
-                  </div>
-                )}
               </div>
-            ))}
+            </div>
 
-            {/* 打字指示器 */}
-            {isTyping && (
-              <div className="flex justify-start">
-                <div className="bg-gray-100 rounded-lg p-3 max-w-[85%]">
-                  <div className="flex items-center space-x-2">
-                    <Bot className="w-4 h-4 text-blue-600" />
-                    <div className="flex space-x-1">
-                      <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce"></div>
-                      <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
-                      <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
-                    </div>
-                  </div>
-                </div>
+            {/* 快捷建议 */}
+            {message.suggestions && message.suggestions.length > 0 && (
+              <div className="flex flex-wrap gap-2 ml-6">
+                {message.suggestions.map((suggestion, index) => (
+                  <Button
+                    key={index}
+                    icon={<Lightbulb className="w-3 h-3 mr-1" />}
+                    variant="outline"
+                    size="xs"
+                    onClick={() => handleSuggestionClick(suggestion)}
+                  >
+                    {suggestion}
+                  </Button>
+                ))}
               </div>
             )}
           </div>
-        </div>
+        ))}
 
-        {/* 输入区域 */}
-        <div className="border-t pt-4">
-          <div className="flex space-x-2">
-            <input
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              placeholder="输入您的问题或需求..."
-              onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-              className="flex-1"
-            />
-            <Button 
-              onClick={handleSendMessage}
-              disabled={!inputValue.trim() || isTyping}
-              size="sm"
-            >
-              <Send className="w-4 h-4" />
-            </Button>
+        {/* 打字指示器 */}
+        {isTyping && (
+          <div className="flex justify-start">
+            <div className="bg-gray-100 rounded-lg p-3 max-w-[85%]">
+              <div className="flex items-center space-x-2">
+                <FiMessageSquare className="w-4 h-4 text-blue-600" />
+                <div className="flex space-x-1">
+                  <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce"></div>
+                  <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                  <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                </div>
+              </div>
+            </div>
           </div>
-          
-          {/* 常用快捷操作 */}
-          <div className="mt-3 flex flex-wrap gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-xs h-7"
-              onClick={() => handleSuggestionClick('请帮我整体检查简历')}
-            >
-              整体检查
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-xs h-7"
-              onClick={() => handleSuggestionClick('突出我的核心竞争力')}
-            >
-              突出优势
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-xs h-7"
-              onClick={() => handleSuggestionClick('针对特定岗位优化')}
-            >
-              岗位匹配
-            </Button>
-          </div>
+        )}
+      </div>
+
+      <div className="p-4 border-t border-gray-200">
+        <div className="flex space-x-2">
+          <input
+            type="text"
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            placeholder="输入您的问题或需求..."
+            onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+            className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <button 
+            onClick={handleSendMessage}
+            disabled={!inputValue.trim() || isTyping}
+            className="px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Send className="w-4 h-4" />
+          </button>
+        </div>
+        
+        <div className="mt-3 flex flex-wrap gap-2">
+          <button 
+            className="text-xs px-2 py-1 text-gray-600 hover:bg-gray-100 rounded transition-colors"
+            onClick={() => handleSuggestionClick('请帮我整体检查简历')}
+          >
+            整体检查
+          </button>
+          <button 
+            className="text-xs px-2 py-1 text-gray-600 hover:bg-gray-100 rounded transition-colors"
+            onClick={() => handleSuggestionClick('突出我的核心竞争力')}
+          >
+            突出优势
+          </button>
+          <button 
+            className="text-xs px-2 py-1 text-gray-600 hover:bg-gray-100 rounded transition-colors"
+            onClick={() => handleSuggestionClick('针对特定岗位优化')}
+          >
+            岗位匹配
+          </button>
         </div>
       </div>
     </div>

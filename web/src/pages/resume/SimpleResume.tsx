@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { FiUpload, FiFileText, FiStar, FiCheckCircle, FiX, FiFolder } from 'react-icons/fi';
 import Button from "@/components/ui/Button"
 import type { OptimizationResult } from './types';
-import { ResumeEditor } from './ResumeEditor';
+import { ResumeDetails } from './ResumeDetails';
 
 const HistoryResumeSelector: React.FC<{
   onSelect: (file: File) => void;
@@ -253,7 +253,7 @@ const SimpleResume: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       {/* 编辑页面 */}
       {showEditor ? (
-        <ResumeEditor
+        <ResumeDetails
           onExit={() => setShowEditor(false)}
         />
       ) : (
