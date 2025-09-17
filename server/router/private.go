@@ -2,6 +2,7 @@ package router
 
 import (
 	"server/api/app"
+	"server/api/file"
 	"server/api/resume"
 	"server/api/user"
 	"server/api/workflow"
@@ -65,5 +66,13 @@ func InitPrivateRouter(Router *gin.RouterGroup) {
 		ResumeRouter.PUT("/:id", resume.UpdateResume)     // 更新简历信息
 		ResumeRouter.DELETE("/:id", resume.DeleteResume)  // 删除简历
 		ResumeRouter.POST("/upload", resume.UploadResume) // 上传简历（新版本）
+	}
+
+	// 文件管理相关（新的统一文件接口）
+	FileRouter := Router.Group("/api/files")
+	{
+		FileRouter.POST("/upload", file.UploadFile)      // 上传文件
+		FileRouter.GET("/:id/preview", file.PreviewFile) // 预览/下载文件
+		FileRouter.GET("/:id/info", file.GetFileInfo)    // 获取文件信息
 	}
 }

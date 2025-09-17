@@ -67,15 +67,16 @@ export const adminAPI = {
   // 文件管理
   getFileStats: (): Promise<ApiResponse<{ 
     total_files: number; 
+    total_resumes: number;
+    total_avatars: number;
     total_size: number; 
-    resume_count: number;
-    avatar_count: number;
-    storage_usage: string;
+    storage_path: string;
+    storage_used: number;
   }>> => {
     return apiClient.get('/api/admin/files/stats');
   },
 
-  getFiles: (params?: PaginationParams & { type?: string }): Promise<ApiResponse<PaginationResponse<any>>> => {
+  getFiles: (params?: { page?: number; page_size?: number; type?: string }): Promise<ApiResponse<{ list: any[]; total: number; page: number; page_size: number }>> => {
     return apiClient.get('/api/admin/files', { params });
   },
 
@@ -85,6 +86,18 @@ export const adminAPI = {
 
   batchDeleteFiles: (fileIds: string[]): Promise<ApiResponse> => {
     return apiClient.post('/api/admin/files/batch_delete', { file_ids: fileIds });
+  },
+
+  // 上传文件（管理员）
+  uploadFile: (file: File, userID?: string): Promise<ApiResponse<any>> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('user', userID || '1'); // 默认使用管理员ID
+    return apiClient.post('/api/files/upload', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
   },
 
   // 系统管理
@@ -99,5 +112,10 @@ export const adminAPI = {
   // 数据迁移
   migrateResumeData: (): Promise<ApiResponse> => {
     return apiClient.post('/api/admin/migration/resume');
+  },
+
+  // 文件数据迁移
+  migrateFileData: (): Promise<ApiResponse> => {
+    return apiClient.post('/api/admin/migration/files');
   },
 };

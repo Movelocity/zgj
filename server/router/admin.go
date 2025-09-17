@@ -55,5 +55,6 @@ func InitAdminRouter(Router *gin.RouterGroup) {
 	AdminMigrationRouter := Router.Group("/api/admin/migration")
 	{
 		AdminMigrationRouter.POST("/resume", resume.MigrateResumeData) // 迁移简历数据
+		AdminMigrationRouter.POST("/files", file.MigrateFiles)         // 迁移文件数据
 	}
 }

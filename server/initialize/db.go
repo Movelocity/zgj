@@ -64,6 +64,7 @@ func InitDB() {
 		&model.Workflow{},
 		&model.ResumeRecord{},
 		&model.WorkflowExecution{},
+		&model.File{},
 	); err != nil {
 		panic(fmt.Errorf("failed to migrate database: %s", err))
 	}

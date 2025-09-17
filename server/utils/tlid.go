@@ -8,12 +8,14 @@ import (
 
 // GenerateTLID 生成时间有序ID
 func GenerateTLID() string {
-	// 使用当前时间的毫秒级时间戳
-	timestamp := time.Now().UnixMilli()
+	now := time.Now()
+
+	// 生成日期部分 (yyyymmdd)
+	dateStr := now.Format("200601021504")
 
 	// 生成随机数部分，确保唯一性
-	randomPart := rand.Intn(999999)
+	randomPart := rand.Intn(99999999)
 
-	// 组合成20位的字符串ID
-	return fmt.Sprintf("%d%06d", timestamp, randomPart)
+	// 组合成 yyyymmdd-timestamp-rand 格式
+	return fmt.Sprintf("%s%08d", dateStr, randomPart)
 }
