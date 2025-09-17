@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { FiUpload, FiFileText, FiStar, FiCheckCircle, FiArrowLeft, FiX, FiFolder, FiMessageSquare, FiEdit } from 'react-icons/fi';
+import Button from "@/components/ui/Button"
 
 interface OptimizationResult {
   totalChanges: number;
@@ -187,16 +188,17 @@ const SimpleResume: React.FC = () => {
       {showEditor ? (
         <div className="h-screen flex flex-col">
           {/* 头部导航 */}
-          <div className="bg-white border-b p-4 shadow-sm">
+          <div className="bg-white border-b border-gray-200 p-4 shadow-sm">
             <div className="max-w-7xl mx-auto flex items-center justify-between">
               <div className="flex items-center">
-                <button 
+                <Button 
                   onClick={handleBackToUpload}
-                  className="mr-4 p-2 hover:bg-gray-100 rounded-md transition-colors"
+                  variant="outline"
+                  className="mr-4 p-2"
+                  icon={<FiArrowLeft className="w-4 h-4 mr-2" />}
                 >
-                  <FiArrowLeft className="w-4 h-4 mr-2" />
                   返回
-                </button>
+                </Button>
                 <div className="flex items-center">
                   <FiStar className="w-6 h-6 text-blue-600 mr-2" />
                   <h1 className="text-xl">简历编辑</h1>
@@ -213,12 +215,12 @@ const SimpleResume: React.FC = () => {
                     <span className="text-sm text-green-700">编辑中</span>
                   </div>
                 )}
-                <button className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors">
+                <Button variant="outline">
                   导出PDF
-                </button>
-                <button className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
-                  保存简历
-                </button>
+                </Button>
+                  <Button variant="primary">
+                    保存简历
+                </Button>
               </div>
             </div>
           </div>
@@ -226,7 +228,7 @@ const SimpleResume: React.FC = () => {
           {/* 编辑区域 */}
           <div className="flex-1 flex">
             {/* 左侧优化后简历 (7/10) */}
-            <div className="w-[70%] border-r bg-white">
+            <div className="w-[70%] border-r border-gray-200 bg-white">
               <div className="h-full overflow-y-auto">
                 <div className="p-8 max-w-4xl mx-auto">
                   {/* 编辑提示 */}
@@ -245,21 +247,23 @@ const SimpleResume: React.FC = () => {
                         </div>
                       </div>
                       {!isEditing ? (
-                        <button 
+                        <Button 
                           onClick={handleStartEditing}
-                          className="px-3 py-1 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors flex items-center"
+                          variant="outline"
+                          className='w-full'
                         >
                           <FiEdit className="w-4 h-4 mr-2" />
                           编辑简历
-                        </button>
+                        </Button>
                       ) : (
-                        <button 
+                        <Button 
                           onClick={handleStopEditing}
-                          className="px-3 py-1 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors flex items-center"
+                          variant="outline"
+                          className='w-full'
                         >
                           <FiCheckCircle className="w-4 h-4 mr-2" />
                           完成编辑
-                        </button>
+                        </Button>
                       )}
                     </div>
                   </div>
@@ -376,7 +380,7 @@ const SimpleResume: React.FC = () => {
             {/* 右侧AI对话界面 (3/10) */}
             <div className="w-[30%] p-4 bg-gray-50">
               <div className="bg-white rounded-lg shadow-sm h-full flex flex-col">
-                <div className="p-4 border-b">
+                <div className="p-4 border-b border-gray-200">
                   <div className="flex items-center text-lg font-medium">
                     <FiMessageSquare className="w-5 h-5 mr-2 text-blue-600" />
                     简历专家
@@ -418,7 +422,7 @@ const SimpleResume: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="p-4 border-t">
+                <div className="p-4 border-t border-gray-200">
                   <div className="flex space-x-2">
                     <input
                       type="text"
@@ -624,12 +628,13 @@ const SimpleResume: React.FC = () => {
                         </div>
                       </div>
 
-                      <button 
-                        className="w-full py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors" 
+                      <Button 
+                        variant="primary"
                         onClick={handleViewResults}
+                        className='w-full'
                       >
                         查看优化结果
-                      </button>
+                      </Button>
                     </div>
                   )}
                 </div>
@@ -652,7 +657,7 @@ const SimpleResume: React.FC = () => {
                     {historicalResumes.map((file, index) => (
                       <div
                         key={index}
-                        className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
+                        className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
                         onClick={() => handleSelectHistoricalResume(file)}
                       >
                         <div className="flex items-center space-x-3">
