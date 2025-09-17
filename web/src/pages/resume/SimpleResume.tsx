@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { FiUpload, FiFileText, FiStar, FiCheckCircle, FiX, FiFolder } from 'react-icons/fi';
+import { Sparkles } from 'lucide-react';
 import Button from "@/components/ui/Button"
 import type { OptimizationResult } from './types';
 import { ResumeDetails } from './ResumeDetails';
@@ -15,7 +16,7 @@ const HistoryResumeSelector: React.FC<{
   ]);
   
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+    <div className="h-screen fixed inset-0 bg-black/50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
         <div className="text-center mb-4">
           <div className="flex items-center justify-center mb-2">
@@ -261,8 +262,8 @@ const SimpleResume: React.FC = () => {
           <div className="max-w-2xl mx-auto pt-20">
             <div className="text-center mb-8">
               <div className="flex items-center justify-center mb-4">
-                <FiStar className="w-8 h-8 text-blue-600 mr-2" />
-                <h1 className="text-3xl">AI简历优化器</h1>
+                <Sparkles className="w-8 h-8 text-blue-600 mr-2" />
+                <h1 className="text-3xl">AI简历优化</h1>
               </div>
               <p className="text-gray-600">
                 上传您的简历，让AI为您智能优化内容和格式

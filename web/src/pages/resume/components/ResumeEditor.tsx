@@ -196,42 +196,6 @@ export default function ResumeEditor({
     <div className="h-full bg-white">
       <div className="h-full">{/** scroll area */}
         <div className="p-8 max-w-4xl mx-auto">
-          {/* 编辑提示 */}
-          {/* <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <Sparkles className="w-5 h-5 text-blue-600 mr-2" />
-                <div>
-                  <p className="font-medium text-blue-800">AI 已优化您的简历</p>
-                  <p className="text-sm text-blue-600">
-                    {isEditing 
-                      ? '点击文字直接编辑，黄色高亮为 AI 优化内容'
-                      : '黄色高亮部分为 AI 优化内容，点击"编辑简历"开始编辑'
-                    }
-                  </p>
-                </div>
-              </div>
-              {!isEditing ? (
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={onStartEditing}
-                >
-                  <Edit3 className="w-4 h-4 mr-2" />
-                  编辑简历
-                </Button>
-              ) : (
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={handleStopEditing}
-                >
-                  <Check className="w-4 h-4 mr-2" />
-                  完成编辑
-                </Button>
-              )}
-            </div>
-          </div> */}
 
           {/* 个人信息头部 */}
           <div className="border-b-2 border-blue-600 pb-6 mb-6 p-4 -m-4 rounded-lg">

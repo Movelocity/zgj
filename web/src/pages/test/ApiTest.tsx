@@ -153,7 +153,7 @@ const ApiTest: React.FC = () => {
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
+    <div className="p-6 max-w-7xl mx-auto pt-20">
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">API 测试页面</h1>
         <p className="text-gray-600">测试前后端API对接功能，调试友好的界面</p>

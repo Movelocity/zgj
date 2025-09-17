@@ -1,7 +1,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import Button from '@/components/ui/Button';
-import { Send, Bot, User, Lightbulb } from 'lucide-react';
+import { Send, Bot, Lightbulb } from 'lucide-react';
 import { FiMessageSquare } from 'react-icons/fi';
 
 interface Message {
@@ -120,19 +120,13 @@ export default function ChatPanel() {
               }`}
             >
               <div
-                className={`max-w-[85%] rounded-lg p-3 ${
+                className={`max-w-[90%] rounded-lg p-3 ${
                   message.type === 'user'
                     ? 'bg-blue-600 text-white'
                     : 'bg-gray-100'
                 }`}
               >
                 <div className="flex items-start space-x-2">
-                  {message.type === 'assistant' && (
-                    <Bot className="w-4 h-4 mt-0.5 text-blue-600" />
-                  )}
-                  {message.type === 'user' && (
-                    <User className="w-4 h-4 mt-0.5" />
-                  )}
                   <p className="text-sm leading-relaxed">{message.content}</p>
                 </div>
               </div>
