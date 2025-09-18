@@ -6,8 +6,8 @@ export interface ApiResponse<T = any> {
 }
 
 export interface PaginationParams {
-  page: number;
-  pageSize: number;
+  page?: number;
+  page_size?: number;
 }
 
 export interface PaginationResponse<T> {

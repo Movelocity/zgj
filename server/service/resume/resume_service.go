@@ -5,15 +5,15 @@ import (
 	"errors"
 	"fmt"
 	"mime/multipart"
-	"path/filepath"
 	"strconv"
 	"time"
 
+	"gorm.io/gorm"
+
 	"server/global"
 	"server/model"
+	fileService "server/service/file"
 	"server/utils"
-
-	"gorm.io/gorm"
 )
 
 type resumeService struct{}
@@ -59,9 +59,7 @@ func (s *resumeService) GetUserResumes(userID string, page, pageSize string) ([]
 			Version:          resume.Version,
 			Name:             resume.Name,
 			OriginalFilename: resume.OriginalFilename,
-			FilePath:         resume.FilePath,
-			FileSize:         resume.FileSize,
-			FileType:         resume.FileType,
+			FileID:           resume.FileID,
 			Status:           resume.Status,
 			CreatedAt:        resume.CreatedAt,
 			UpdatedAt:        resume.UpdatedAt,
@@ -94,9 +92,7 @@ func (s *resumeService) GetResumeByID(userID, resumeID string) (*ResumeDetailInf
 		Version:          resume.Version,
 		Name:             resume.Name,
 		OriginalFilename: resume.OriginalFilename,
-		FilePath:         resume.FilePath,
-		FileSize:         resume.FileSize,
-		FileType:         resume.FileType,
+		FileID:           resume.FileID,
 		TextContent:      resume.TextContent,
 		StructuredData:   structuredData,
 		Status:           resume.Status,
@@ -168,23 +164,14 @@ func (s *resumeService) DeleteResume(userID, resumeID string) error {
 
 // UploadResume 上传简历到新的简历表
 func (s *resumeService) UploadResume(userID string, file *multipart.FileHeader) (*UploadResumeResponse, error) {
-	// 生成文件名和路径
-	filename := utils.GenerateFileName(file.Filename)
-	dst := filepath.Join(global.CONFIG.Local.StorePath, "resumes", filename)
-
-	// 保存文件
-	if err := utils.UploadFile(file, dst); err != nil {
-		return nil, errors.New("文件保存失败")
+	// 使用统一文件服务上传文件
+	uploadedFile, err := fileService.FileService.UploadFile(userID, file)
+	if err != nil {
+		return nil, err
 	}
 
 	// 生成简历编号
 	resumeNumber := s.generateResumeNumber(userID)
-
-	// 获取文件类型
-	fileType := filepath.Ext(file.Filename)
-	if fileType != "" {
-		fileType = fileType[1:] // 去掉点号
-	}
 
 	// 创建简历记录
 	resume := model.ResumeRecord{
@@ -194,10 +181,49 @@ func (s *resumeService) UploadResume(userID string, file *multipart.FileHeader) 
 		Version:          1,
 		Name:             file.Filename,
 		OriginalFilename: file.Filename,
-		FilePath:         fmt.Sprintf("/uploads/file/resumes/%s", filename),
-		FileSize:         file.Size,
-		FileType:         fileType,
+		FileID:           uploadedFile.ID, // 使用文件ID而不是路径
 		Status:           "active",
+	}
+
+	if err := global.DB.Create(&resume).Error; err != nil {
+		// 如果创建简历记录失败，删除已上传的文件
+		fileService.FileService.DeleteFile(uploadedFile.ID)
+		return nil, errors.New("简历记录创建失败")
+	}
+
+	response := &UploadResumeResponse{
+		ID:           resume.ID,
+		ResumeNumber: resume.ResumeNumber,
+		URL:          fmt.Sprintf("/api/files/%s/preview", uploadedFile.ID), // 使用文件预览API
+		Filename:     uploadedFile.Name,
+		Size:         file.Size,
+	}
+
+	return response, nil
+}
+
+// CreateTextResume 创建纯文本简历
+func (s *resumeService) CreateTextResume(userID, name, textContent string) (*UploadResumeResponse, error) {
+	if name == "" {
+		return nil, errors.New("简历名称不能为空")
+	}
+	if textContent == "" {
+		return nil, errors.New("简历内容不能为空")
+	}
+
+	// 生成简历编号
+	resumeNumber := s.generateResumeNumber(userID)
+
+	// 创建简历记录（无文件）
+	resume := model.ResumeRecord{
+		ID:           utils.GenerateTLID(),
+		UserID:       userID,
+		ResumeNumber: resumeNumber,
+		Version:      1,
+		Name:         name,
+		FileID:       "", // 纯文本简历，无文件
+		TextContent:  textContent,
+		Status:       "active",
 	}
 
 	if err := global.DB.Create(&resume).Error; err != nil {
@@ -207,9 +233,9 @@ func (s *resumeService) UploadResume(userID string, file *multipart.FileHeader) 
 	response := &UploadResumeResponse{
 		ID:           resume.ID,
 		ResumeNumber: resume.ResumeNumber,
-		URL:          resume.FilePath,
-		Filename:     filename,
-		Size:         file.Size,
+		URL:          "", // 纯文本简历无URL
+		Filename:     name,
+		Size:         int64(len(textContent)),
 	}
 
 	return response, nil
@@ -271,8 +297,7 @@ func (s *resumeService) MigrateOldResumeData() error {
 				Version:          1,
 				Name:             oldResume.Name,
 				OriginalFilename: oldResume.Name,
-				FilePath:         oldResume.URL,
-				FileSize:         oldResume.Size,
+				FileID:           "", // 需要先创建文件记录再设置FileID
 				Status:           "active",
 				CreatedAt:        oldResume.CreatedAt,
 				UpdatedAt:        oldResume.UpdatedAt,

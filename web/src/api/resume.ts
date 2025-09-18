@@ -1,15 +1,23 @@
 import apiClient from './client';
-import type { Resume, ResumeUploadData, ResumeOptimizationRequest } from '@/types/resume';
-import type { ApiResponse, PaginationParams, PaginationResponse } from '@/types/global';
+import type { 
+  ResumeDetail, 
+  ResumeUploadData, 
+  ResumeUploadResponse,
+  ResumeListResponse,
+  ResumeUpdateRequest,
+  ResumeOptimizationRequest,
+  CreateTextResumeData
+} from '@/types/resume';
+import type { ApiResponse, PaginationParams } from '@/types/global';
 
 export const resumeAPI = {
   // 获取简历列表
-  getResumes: (params?: PaginationParams): Promise<ApiResponse<PaginationResponse<Resume>>> => {
+  getResumes: (params?: PaginationParams): Promise<ApiResponse<ResumeListResponse>> => {
     return apiClient.get('/api/user/resumes', { params });
   },
 
-  // 上传简历
-  uploadResume: (data: ResumeUploadData): Promise<ApiResponse<Resume>> => {
+  // 上传简历 - 使用新的简历专用接口
+  uploadResume: (data: ResumeUploadData): Promise<ApiResponse<ResumeUploadResponse>> => {
     const formData = new FormData();
     formData.append('file', data.file);
     if (data.name) {
@@ -22,8 +30,13 @@ export const resumeAPI = {
     });
   },
 
+  // 创建纯文本简历
+  createTextResume: (data: CreateTextResumeData): Promise<ApiResponse<ResumeUploadResponse>> => {
+    return apiClient.post('/api/user/resumes/create_text', data);
+  },
+
   // 获取简历详情
-  getResume: (id: string): Promise<ApiResponse<Resume>> => {
+  getResume: (id: string): Promise<ApiResponse<ResumeDetail>> => {
     return apiClient.get(`/api/user/resumes/${id}`);
   },
 
@@ -33,7 +46,7 @@ export const resumeAPI = {
   },
 
   // 更新简历信息
-  updateResume: (id: string, data: { name: string }): Promise<ApiResponse<Resume>> => {
+  updateResume: (id: string, data: ResumeUpdateRequest): Promise<ApiResponse> => {
     return apiClient.put(`/api/user/resumes/${id}`, data);
   },
 

@@ -11,7 +11,6 @@ const ResumeList = lazy(() => import('@/pages/resume/ResumeList'));
 const ResumeDetail = lazy(() => import('@/pages/resume/ResumeDetail'));
 const Profile = lazy(() => import('@/pages/profile/Profile'));
 const Administrator = lazy(() => import('@/pages/admin/Administrator'));
-const ApiTest = lazy(() => import('@/pages/test/ApiTest'));
 const NotFound = lazy(() => import('@/pages/error/NotFound'));
 const ServerError = lazy(() => import('@/pages/error/ServerError'));
 
@@ -52,10 +51,6 @@ export const routes = [
   {
     path: '/administrator',
     element: <Administrator />,
-  },
-  {
-    path: '/api-test',
-    element: <ApiTest />,
   },
   {
     path: '/500',

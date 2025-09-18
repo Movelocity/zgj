@@ -99,6 +99,29 @@ func UploadResume(c *gin.Context) {
 	utils.OkWithData(response, c)
 }
 
+// CreateTextResume 创建纯文本简历
+func CreateTextResume(c *gin.Context) {
+	userID := c.GetString("userID")
+
+	var req struct {
+		Name        string `json:"name" binding:"required"`
+		TextContent string `json:"text_content" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		utils.FailWithMessage("请求参数错误", c)
+		return
+	}
+
+	response, err := resume.ResumeService.CreateTextResume(userID, req.Name, req.TextContent)
+	if err != nil {
+		utils.FailWithMessage(err.Error(), c)
+		return
+	}
+
+	utils.OkWithData(response, c)
+}
+
 // GetAdminUserResumes 管理员查看用户简历
 func GetAdminUserResumes(c *gin.Context) {
 	userID := c.Param("id")

@@ -12,15 +12,14 @@ type ResumeRecord struct {
 	Version          int       `gorm:"default:1" json:"version"`                       // 版本号
 	Name             string    `gorm:"size:255;not null" json:"name"`                  // 简历名称
 	OriginalFilename string    `gorm:"size:255" json:"original_filename"`              // 原始文件名
-	FilePath         string    `gorm:"size:500" json:"file_path"`                      // 文件存储路径
-	FileSize         int64     `json:"file_size"`                                      // 文件大小
-	FileType         string    `gorm:"size:50" json:"file_type"`                       // 文件类型
+	FileID           string    `gorm:"type:varchar(20);index" json:"file_id"`          // 关联文件ID，引用files表，可为空（纯文本简历）
 	TextContent      string    `gorm:"type:text" json:"text_content"`                  // 纯文本内容
 	StructuredData   JSON      `gorm:"type:jsonb" json:"structured_data"`              // 结构化数据
 	Status           string    `gorm:"size:20;default:'active'" json:"status"`         // 状态 (active/deleted)
 	CreatedAt        time.Time `json:"created_at"`
 	UpdatedAt        time.Time `json:"updated_at"`
 	User             User      `gorm:"foreignKey:UserID" json:"-"`
+	File             File      `gorm:"foreignKey:FileID" json:"-"` // 关联文件表
 }
 
 // TableName 设置表名

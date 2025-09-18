@@ -5,15 +5,15 @@ import (
 	"errors"
 	"fmt"
 	"mime/multipart"
-	"path/filepath"
 	"strconv"
 	"time"
 
+	"gorm.io/gorm"
+
 	"server/global"
 	"server/model"
+	fileService "server/service/file"
 	"server/utils"
-
-	"gorm.io/gorm"
 )
 
 type userService struct{}
@@ -287,21 +287,18 @@ func (s *userService) UpdateUserProfile(userID string, req UpdateUserProfileRequ
 	return nil
 }
 
-// UploadResume 上传简历
+// UploadResume 上传简历 (已废弃，建议使用 resume service)
 func (s *userService) UploadResume(userID string, file *multipart.FileHeader) (*UploadResponse, error) {
-	// 生成文件名和路径
-	filename := utils.GenerateFileName(file.Filename)
-	dst := filepath.Join(global.CONFIG.Local.StorePath, "resumes", filename)
-
-	// 保存文件
-	if err := utils.UploadFile(file, dst); err != nil {
-		return nil, errors.New("文件保存失败")
+	// 使用统一文件服务上传文件
+	uploadedFile, err := fileService.FileService.UploadFile(userID, file)
+	if err != nil {
+		return nil, err
 	}
 
-	// 构建简历信息
+	// 构建简历信息 (使用文件ID而不是路径)
 	resume := model.Resume{
 		Name:      file.Filename,
-		URL:       fmt.Sprintf("/uploads/file/resumes/%s", filename),
+		URL:       fmt.Sprintf("/api/files/%s/preview", uploadedFile.ID), // 使用文件预览API
 		Size:      file.Size,
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
@@ -348,7 +345,7 @@ func (s *userService) UploadResume(userID string, file *multipart.FileHeader) (*
 
 	response := &UploadResponse{
 		URL:      resume.URL,
-		Filename: filename,
+		Filename: uploadedFile.Name,
 		Size:     file.Size,
 	}
 

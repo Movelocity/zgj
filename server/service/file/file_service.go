@@ -364,13 +364,21 @@ func (s *fileService) MigrateOldFiles() error {
 			continue
 		}
 
+		// 跳过没有文件的简历记录（纯文本简历）
+		if resume.FileID == "" {
+			continue
+		}
+
+		// 从文件名推断扩展名
+		extension := s.getFileExtension(resume.OriginalFilename)
+
 		// 创建文件记录
 		file := model.File{
 			ID:           utils.GenerateTLID(),
 			OriginalName: resume.OriginalFilename,
-			Extension:    resume.FileType,
-			MimeType:     s.getMimeTypeFromExtension(resume.FileType),
-			Size:         resume.FileSize,
+			Extension:    extension,
+			MimeType:     s.getMimeTypeFromExtension(extension),
+			Size:         0, // 无法获取大小，设为0
 			CreatedBy:    userID,
 			CreatedAt:    resume.CreatedAt,
 			UpdatedAt:    resume.UpdatedAt,
@@ -382,19 +390,19 @@ func (s *fileService) MigrateOldFiles() error {
 		}
 
 		// 如果有物理文件，尝试移动到新位置
-		if resume.FilePath != "" {
-			oldPath := filepath.Join(global.CONFIG.Local.StorePath, strings.TrimPrefix(resume.FilePath, "/uploads/file/"))
-			if _, err := os.Stat(oldPath); err == nil {
-				newPath := s.GetFilePhysicalPath(&file)
-				// 确保新目录存在
-				if err := os.MkdirAll(filepath.Dir(newPath), 0755); err == nil {
-					// 复制文件到新位置
-					if err := s.copyFile(oldPath, newPath); err != nil {
-						fmt.Printf("复制文件失败 %s -> %s: %v\n", oldPath, newPath, err)
-					}
-				}
-			}
-		}
+		// if resume.FilePath != "" {
+		// 	oldPath := filepath.Join(global.CONFIG.Local.StorePath, strings.TrimPrefix(resume.FilePath, "/uploads/file/"))
+		// 	if _, err := os.Stat(oldPath); err == nil {
+		// 		newPath := s.GetFilePhysicalPath(&file)
+		// 		// 确保新目录存在
+		// 		if err := os.MkdirAll(filepath.Dir(newPath), 0755); err == nil {
+		// 			// 复制文件到新位置
+		// 			if err := s.copyFile(oldPath, newPath); err != nil {
+		// 				fmt.Printf("复制文件失败 %s -> %s: %v\n", oldPath, newPath, err)
+		// 			}
+		// 		}
+		// 	}
+		// }
 	}
 
 	// 迁移头像文件

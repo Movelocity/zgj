@@ -114,7 +114,7 @@ export const ResumeDetails: React.FC<ResumeEditorProps> = ({ onExit }) => {
         </div>
 
         {/* 右侧AI对话界面 (3/10) */}
-        <div className="w-[30%] p-4 bg-gray-50 h-screen overflow-auto pt-14">
+        <div className="w-[30%] p-2 bg-gray-50 h-screen overflow-auto pt-14">
           <ChatPanel />
         </div>
       </div>

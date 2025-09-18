@@ -61,11 +61,12 @@ func InitPrivateRouter(privateRouter *gin.RouterGroup, publicRouter *gin.RouterG
 	// 简历管理相关
 	ResumeRouter := privateRouter.Group("/api/user/resumes")
 	{
-		ResumeRouter.GET("", resume.GetUserResumes)       // 获取用户简历列表
-		ResumeRouter.GET("/:id", resume.GetResumeByID)    // 获取特定简历详情
-		ResumeRouter.PUT("/:id", resume.UpdateResume)     // 更新简历信息
-		ResumeRouter.DELETE("/:id", resume.DeleteResume)  // 删除简历
-		ResumeRouter.POST("/upload", resume.UploadResume) // 上传简历（新版本）
+		ResumeRouter.GET("", resume.GetUserResumes)                // 获取用户简历列表
+		ResumeRouter.GET("/:id", resume.GetResumeByID)             // 获取特定简历详情
+		ResumeRouter.PUT("/:id", resume.UpdateResume)              // 更新简历信息
+		ResumeRouter.DELETE("/:id", resume.DeleteResume)           // 删除简历
+		ResumeRouter.POST("/upload", resume.UploadResume)          // 上传简历（新版本）
+		ResumeRouter.POST("/create_text", resume.CreateTextResume) // 创建纯文本简历
 	}
 
 	// 文件管理相关（新的统一文件接口）

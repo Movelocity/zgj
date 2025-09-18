@@ -3,6 +3,7 @@ export interface OptimizationResult {
   totalChanges: number;
   sectionsImproved: string[];
   improvementPercentage: number;
+  resumeId?: string;
 }
 
 export interface PersonalInfo {

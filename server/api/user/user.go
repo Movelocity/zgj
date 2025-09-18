@@ -2,12 +2,12 @@ package user
 
 import (
 	"fmt"
-	"path/filepath"
 	"strconv"
 	"time"
 
 	"server/global"
 	"server/service"
+	fileService "server/service/file"
 	userService "server/service/user"
 	"server/utils"
 
@@ -225,19 +225,18 @@ func UploadAvatar(c *gin.Context) {
 		return
 	}
 
-	// 生成文件名和路径
-	filename := utils.GenerateFileName(file.Filename)
-	dst := filepath.Join(global.CONFIG.Local.StorePath, "avatars", filename)
+	userID := c.GetString("userID")
 
-	// 保存文件
-	if err := utils.UploadFile(file, dst); err != nil {
-		utils.FailWithMessage("文件保存失败", c)
+	// 使用统一文件服务上传文件
+	uploadedFile, err := fileService.FileService.UploadFile(userID, file)
+	if err != nil {
+		utils.FailWithMessage(err.Error(), c)
 		return
 	}
 
 	response := userService.UploadResponse{
-		URL:      fmt.Sprintf("/uploads/file/avatars/%s", filename),
-		Filename: filename,
+		URL:      fmt.Sprintf("/api/files/%s/preview", uploadedFile.ID), // 使用文件预览API
+		Filename: uploadedFile.Name,
 		Size:     file.Size,
 	}
 
