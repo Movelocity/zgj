@@ -9,7 +9,7 @@ type ResumeInfo struct {
 	Version          int       `json:"version"`
 	Name             string    `json:"name"`
 	OriginalFilename string    `json:"original_filename"`
-	FileID           string    `json:"file_id"`
+	FileID           *string   `json:"file_id"`
 	Status           string    `json:"status"`
 	CreatedAt        time.Time `json:"created_at"`
 	UpdatedAt        time.Time `json:"updated_at"`
@@ -22,7 +22,7 @@ type ResumeDetailInfo struct {
 	Version          int         `json:"version"`
 	Name             string      `json:"name"`
 	OriginalFilename string      `json:"original_filename"`
-	FileID           string      `json:"file_id"`
+	FileID           *string     `json:"file_id"`
 	TextContent      string      `json:"text_content"`
 	StructuredData   interface{} `json:"structured_data"`
 	Status           string      `json:"status"`

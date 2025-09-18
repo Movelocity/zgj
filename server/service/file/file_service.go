@@ -365,7 +365,7 @@ func (s *fileService) MigrateOldFiles() error {
 		}
 
 		// 跳过没有文件的简历记录（纯文本简历）
-		if resume.FileID == "" {
+		if resume.FileID == nil || *resume.FileID == "" {
 			continue
 		}
 

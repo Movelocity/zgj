@@ -1,5 +1,6 @@
 import apiClient from './client';
 import type { ApiResponse } from '@/types/global';
+import { API_BASE_URL } from '@/utils/constants';
 
 // 文件相关类型定义
 export interface FileInfo {
@@ -55,8 +56,7 @@ export const fileAPI = {
 
   // 预览/下载文件
   previewFile: (fileId: string, asAttachment = false): string => {
-    const baseUrl = '/api/files';
-    return `${baseUrl}/${fileId}/preview${asAttachment ? '?as_attachment=true' : ''}`;
+    return `${API_BASE_URL}/api/files/${fileId}/preview${asAttachment ? '?as_attachment=true' : ''}`;
   },
 
   // 获取文件信息

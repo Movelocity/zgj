@@ -181,7 +181,7 @@ func (s *resumeService) UploadResume(userID string, file *multipart.FileHeader) 
 		Version:          1,
 		Name:             file.Filename,
 		OriginalFilename: file.Filename,
-		FileID:           uploadedFile.ID, // 使用文件ID而不是路径
+		FileID:           &uploadedFile.ID, // 使用文件ID而不是路径
 		Status:           "active",
 	}
 
@@ -221,7 +221,7 @@ func (s *resumeService) CreateTextResume(userID, name, textContent string) (*Upl
 		ResumeNumber: resumeNumber,
 		Version:      1,
 		Name:         name,
-		FileID:       "", // 纯文本简历，无文件
+		FileID:       nil, // 纯文本简历，无文件
 		TextContent:  textContent,
 		Status:       "active",
 	}
@@ -297,7 +297,7 @@ func (s *resumeService) MigrateOldResumeData() error {
 				Version:          1,
 				Name:             oldResume.Name,
 				OriginalFilename: oldResume.Name,
-				FileID:           "", // 需要先创建文件记录再设置FileID
+				FileID:           nil, // 需要先创建文件记录再设置FileID
 				Status:           "active",
 				CreatedAt:        oldResume.CreatedAt,
 				UpdatedAt:        oldResume.UpdatedAt,

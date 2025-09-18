@@ -41,4 +41,5 @@ uploads/
 dist/
 build/
 resume-polisher
+server
 config.yaml
