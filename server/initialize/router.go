@@ -29,7 +29,7 @@ func InitRouter() *gin.Engine {
 		staticPath = "../web/dist" // 默认路径
 	}
 	r.Static("/assets", filepath.Join(staticPath, "assets"))
-	r.StaticFile("/favicon.ico", filepath.Join(staticPath, "vite.svg"))
+	r.StaticFile("/favicon.ico", filepath.Join(staticPath, "favicon.ico"))
 
 	// 注册API路由
 	router.InitRoutes(r)
