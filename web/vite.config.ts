@@ -15,6 +15,8 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: true,
+    // 确保 public 目录下的所有文件都被复制到 dist
+    copyPublicDir: true,
     rollupOptions: {
       output: {
         manualChunks: {
@@ -25,4 +27,6 @@ export default defineConfig({
       },
     },
   },
+  // 确保开发服务器正确提供静态文件
+  publicDir: 'public',
 })
