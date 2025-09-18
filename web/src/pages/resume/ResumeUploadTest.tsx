@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { FiUpload, FiFileText, FiCheck, FiX, FiDownload } from 'react-icons/fi';
+import { FiUpload, FiFileText, FiX, FiDownload } from 'react-icons/fi';
 import Button from '@/components/ui/Button';
 import { resumeAPI } from '@/api/resume';
-import { fileAPI } from '@/api/file';
+// import { fileAPI } from '@/api/file';
 import type { ResumeUploadData, ResumeUploadResponse } from '@/types/resume';
 import { showSuccess, showError, showWarning } from '@/utils/toast';
 
