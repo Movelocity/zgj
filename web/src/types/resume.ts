@@ -37,8 +37,6 @@ export interface ResumeDetail {
   name: string;
   original_filename: string;
   file_id: string;
-  file_size: number;
-  file_type: string;
   text_content: string;
   structured_data: any;
   status: string;

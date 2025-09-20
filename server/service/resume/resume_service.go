@@ -7,6 +7,7 @@ import (
 	"mime/multipart"
 	"regexp"
 	"strconv"
+	"strings"
 	"time"
 
 	"gorm.io/gorm"
@@ -256,6 +257,62 @@ func (s *resumeService) ResumeFileToText(userId string, resumeId string) error {
 	resume.TextContent = removeThinkTags(resume.TextContent)
 	if err := global.DB.Model(&model.ResumeRecord{}).Where("id = ?", resume.ID).Updates(&resume).Error; err != nil {
 		return errors.New("更新简历表格失败")
+	}
+
+	return nil
+}
+
+// 从字符串中提取可能的完整JSON子串
+func extractCompleteJSON(s string) string {
+	// 查找第一个 '{' 或 '['
+	start := strings.IndexAny(s, "{[")
+	if start == -1 {
+		return ""
+	}
+
+	// 从可能的开始位置向后扫描
+	for end := len(s); end > start; end-- {
+		candidate := s[start:end]
+		if json.Valid([]byte(candidate)) {
+			return candidate
+		}
+	}
+
+	return ""
+}
+
+func (s *resumeService) StructureTextToJSON(userId string, resumeId string) error {
+	var resume model.ResumeRecord
+	if err := global.DB.Where("id = ?", resumeId).First(&resume).Error; err != nil {
+		return errors.New("查询简历失败")
+	}
+
+	if resume.TextContent == "" {
+		return errors.New("简历内容不能为空")
+	}
+
+	workflow := model.Workflow{}
+	if err := global.DB.Where("name = ?", "resume_structure").First(&workflow).Error; err != nil {
+		return errors.New("查询工作流失败")
+	}
+
+	input := map[string]any{
+		"text_content": resume.TextContent,
+	}
+
+	var response *appService.WorkflowAPIResponse
+	response, err := appService.AppService.CallWorkflowAPI(workflow.ApiURL, workflow.ApiKey, resume.UserID, input)
+	if err != nil {
+		return errors.New("解析响应体失败: " + err.Error())
+	}
+	if response.Data.Error != "" {
+		return errors.New("请求失败")
+	}
+
+	completeJSON := extractCompleteJSON(response.Data.Outputs["output"].(string))
+	resume.StructuredData = model.JSON(completeJSON)
+	if err := global.DB.Model(&model.ResumeRecord{}).Where("id = ?", resume.ID).Updates(&resume).Error; err != nil {
+		return errors.New("更新简历结构化数据失败")
 	}
 
 	return nil

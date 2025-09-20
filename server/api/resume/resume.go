@@ -111,6 +111,16 @@ func ResumeFileToText(c *gin.Context) {
 	utils.OkWithMessage("文本提取成功", c)
 }
 
+func StructureTextToJSON(c *gin.Context) {
+	userID := c.GetString("userID")
+	resumeID := c.Param("id")
+
+	if err := resume.ResumeService.StructureTextToJSON(userID, resumeID); err != nil {
+		utils.FailWithMessage(err.Error(), c)
+		return
+	}
+}
+
 // CreateTextResume 创建纯文本简历
 func CreateTextResume(c *gin.Context) {
 	userID := c.GetString("userID")

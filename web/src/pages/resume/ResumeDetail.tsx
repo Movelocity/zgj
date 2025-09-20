@@ -86,7 +86,7 @@ const ResumeDetail: React.FC = () => {
 
   // 处理文件转文本
   const handleProcessText = async () => {
-    if (!id) return;
+    if (!id || !resume?.file_id) return;
 
     try {
       setProcessingText(true);
@@ -98,6 +98,23 @@ const ResumeDetail: React.FC = () => {
       }
     } catch (error) {
       showError(error instanceof Error ? error.message : '文本提取失败');
+    } finally {
+      setProcessingText(false);
+    }
+  };
+
+  const handleProcessTextToJSON = async () => {
+    if (!id || !resume?.text_content) return;
+    try {
+      setProcessingText(true);
+      const response = await resumeAPI.structureTextToJSON(id);
+      if (response.code === 0) {
+        showSuccess('文本结构化成功');
+        // 刷新简历详情
+        await loadResumeDetail();
+      }
+    } catch (error) {
+      showError(error instanceof Error ? error.message : '文本结构化失败');
     } finally {
       setProcessingText(false);
     }
@@ -226,6 +243,17 @@ const ResumeDetail: React.FC = () => {
                   icon={<FiFileText className="w-4 h-4" />}
                 >
                   {processingText ? '处理中...' : '提取文本'}
+                </Button>
+              )}
+              {resume.text_content && !resume.structured_data && (
+                <Button
+                  onClick={handleProcessTextToJSON}
+                  variant="primary"
+                  size="sm"
+                  loading={processingText}
+                  icon={<FiFileText className="w-4 h-4" />}
+                >
+                  文本结构化
                 </Button>
               )}
             </div>
