@@ -34,6 +34,15 @@ func (s *userService) Register(name, phone, password string) error {
 		return errors.New("密码加密失败")
 	}
 
+	// 检查系统中是否已有用户，如果没有则第一个注册的用户为管理员
+	var userCount int64
+	global.DB.Model(&model.User{}).Where("active = ?", true).Count(&userCount)
+
+	userRole := 666 // 默认为普通用户
+	if userCount == 0 {
+		userRole = 888 // 第一个用户设为管理员
+	}
+
 	// 创建用户
 	newUser := model.User{
 		ID:       utils.GenerateTLID(),
@@ -41,7 +50,7 @@ func (s *userService) Register(name, phone, password string) error {
 		Phone:    phone,
 		Password: hashedPassword,
 		Active:   true,
-		Role:     666, // 普通用户
+		Role:     userRole,
 	}
 
 	if err := global.DB.Create(&newUser).Error; err != nil {
@@ -58,6 +67,11 @@ func (s *userService) Register(name, phone, password string) error {
 
 	if err := global.DB.Create(&userProfile).Error; err != nil {
 		return errors.New("用户档案创建失败")
+	}
+
+	// 如果是第一个用户（管理员），输出提示信息
+	if userRole == 888 {
+		fmt.Printf("首个用户注册成功，已自动设为管理员 - 手机号: %s, 用户名: %s\n", phone, name)
 	}
 
 	return nil
@@ -518,6 +532,15 @@ func (s *userService) LoginOrRegister(phone, name string) (string, *UserInfo, bo
 		name = "用户" + phone[len(phone)-4:] // 使用手机号后4位作为默认用户名
 	}
 
+	// 检查系统中是否已有用户，如果没有则第一个注册的用户为管理员
+	var userCount int64
+	global.DB.Model(&model.User{}).Where("active = ?", true).Count(&userCount)
+
+	userRole := 666 // 默认为普通用户
+	if userCount == 0 {
+		userRole = 888 // 第一个用户设为管理员
+	}
+
 	// 创建新用户（无需密码）
 	hashedDefaultPassword, _ := utils.HashPassword("123456") // 设置默认密码，用户可后续修改
 	newUser := model.User{
@@ -526,7 +549,7 @@ func (s *userService) LoginOrRegister(phone, name string) (string, *UserInfo, bo
 		Phone:    phone,
 		Password: hashedDefaultPassword,
 		Active:   true,
-		Role:     666, // 普通用户
+		Role:     userRole,
 	}
 
 	if err := global.DB.Create(&newUser).Error; err != nil {
@@ -543,6 +566,11 @@ func (s *userService) LoginOrRegister(phone, name string) (string, *UserInfo, bo
 
 	if err := global.DB.Create(&userProfile).Error; err != nil {
 		return "", nil, false, errors.New("用户档案创建失败")
+	}
+
+	// 如果是第一个用户（管理员），输出提示信息
+	if userRole == 888 {
+		fmt.Printf("首个用户通过统一认证注册成功，已自动设为管理员 - 手机号: %s, 用户名: %s\n", phone, name)
 	}
 
 	// 生成JWT token

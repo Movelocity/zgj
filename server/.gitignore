@@ -43,3 +43,4 @@ build/
 resume-polisher
 server
 config.yaml
+*.yaml.backup.*

@@ -75,19 +75,7 @@ init_password() {
         echo -e "${RED}❌ 两次输入的数据库密码不一致${NC}"
         exit 1
     fi
-    
-    echo -n "请输入管理员密码: "
-    read -s admin_password
-    echo
-    echo -n "请再次输入管理员密码: "
-    read -s admin_password_confirm
-    echo
-    
-    if [ "$admin_password" != "$admin_password_confirm" ]; then
-        echo -e "${RED}❌ 两次输入的管理员密码不一致${NC}"
-        exit 1
-    fi
-    
+
     echo ""
     echo -e "${BLUE}📄 创建配置文件...${NC}"
     
@@ -113,24 +101,11 @@ change_password() {
     echo -n "请输入当前数据库密码: "
     read -s current_db_password
     echo
-    echo -n "请输入当前管理员密码: "
-    read -s current_admin_password
-    echo
     
     # 验证当前数据库密码是否正确
     if ! grep -A10 "pgsql:" "${CONFIG_FILE}" | grep -q "password: \"${current_db_password}\""; then
         echo -e "${RED}❌ 当前数据库密码不正确${NC}"
         exit 1
-    fi
-    
-    # 检查管理员配置是否存在
-    if grep -q "admin:" "${CONFIG_FILE}"; then
-        if ! grep -A5 "admin:" "${CONFIG_FILE}" | grep -q "password: \"${current_admin_password}\""; then
-            echo -e "${RED}❌ 当前管理员密码不正确${NC}"
-            exit 1
-        fi
-    else
-        echo -e "${YELLOW}⚠️  配置文件中没有找到管理员配置，将添加管理员配置${NC}"
     fi
     
     # 输入新密码
@@ -146,18 +121,6 @@ change_password() {
         exit 1
     fi
     
-    echo -n "请输入新的管理员密码: "
-    read -s new_admin_password
-    echo
-    echo -n "请再次输入新的管理员密码: "
-    read -s new_admin_password_confirm
-    echo
-    
-    if [ "$new_admin_password" != "$new_admin_password_confirm" ]; then
-        echo -e "${RED}❌ 两次输入的管理员密码不一致${NC}"
-        exit 1
-    fi
-    
     echo ""
     echo -e "${BLUE}🔄 更新密码中...${NC}"
     
@@ -168,20 +131,6 @@ change_password() {
     
     # 替换数据库密码
     sed -i.tmp "/pgsql:/,/^[[:space:]]*$/{s/password: \"${current_db_password}\"/password: \"${new_db_password}\"/g;}" "${CONFIG_FILE}"
-    
-    # 替换或添加管理员密码
-    if grep -q "admin:" "${CONFIG_FILE}"; then
-        # 替换现有管理员密码
-        sed -i.tmp "/admin:/,/^[[:space:]]*$/{s/password: \"${current_admin_password}\"/password: \"${new_admin_password}\"/g;}" "${CONFIG_FILE}"
-    else
-        # 添加管理员配置
-        echo "" >> "${CONFIG_FILE}"
-        echo "admin:" >> "${CONFIG_FILE}"
-        echo "  phone: \"18888888888\"" >> "${CONFIG_FILE}"
-        echo "  name: \"系统管理员\"" >> "${CONFIG_FILE}"
-        echo "  password: \"${new_admin_password}\"" >> "${CONFIG_FILE}"
-        echo "  email: \"admin@example.com\"" >> "${CONFIG_FILE}"
-    fi
     
     # 清理临时文件
     rm -f "${CONFIG_FILE}.tmp"

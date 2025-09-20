@@ -59,9 +59,3 @@ log:
   director: "log"
   show-line: true
   encode-level: "LowercaseColorLevelEncoder" # LowercaseLevelEncoder/LowercaseColorLevelEncoder/CapitalLevelEncoder/CapitalColorLevelEncoder
-
-admin:
-  phone: "18888888888"
-  name: "系统管理员"
-  password: "admin123*"
-  email: "admin@example.com"
