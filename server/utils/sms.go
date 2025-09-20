@@ -36,6 +36,12 @@ func SendSMS(phone string, code string) error {
 	name := url.QueryEscape(global.CONFIG.SpugSMS.Name)
 	requestURL := fmt.Sprintf("https://push.spug.cc/send/%s?key1=%s&key2=%s&key3=15&&targets=%s", global.CONFIG.SpugSMS.Token, name, code, phone)
 	fmt.Println("SMS URL:", requestURL)
+
+	if global.CONFIG.SpugSMS.Token == "skip" {
+		fmt.Println("跳过短信发送，请查看验证码：", code)
+		return nil
+	}
+
 	resp, err := http.Get(requestURL)
 	if err != nil {
 		return err

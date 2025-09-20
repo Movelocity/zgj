@@ -32,10 +32,10 @@ func (s *workflowService) RecordExecution(workflowID, userID, resumeID string, i
 
 	// 创建执行记录
 	execution := model.WorkflowExecution{
-		ID:            utils.GenerateTLID(),
-		WorkflowID:    workflowID,
-		UserID:        userID,
-		ResumeID:      resumeID,
+		ID:         utils.GenerateTLID(),
+		WorkflowID: workflowID,
+		UserID:     userID,
+		// ResumeID:      resumeID,
 		Inputs:        model.JSON(inputsJSON),
 		Outputs:       model.JSON(outputsJSON),
 		Status:        status,
@@ -107,10 +107,10 @@ func (s *workflowService) GetWorkflowHistory(workflowID, page, pageSize string) 
 		}
 
 		executionInfo := WorkflowExecutionInfo{
-			ID:            execution.ID,
-			WorkflowID:    execution.WorkflowID,
-			WorkflowName:  workflowName,
-			ResumeID:      execution.ResumeID,
+			ID:           execution.ID,
+			WorkflowID:   execution.WorkflowID,
+			WorkflowName: workflowName,
+			// ResumeID:      execution.ResumeID,
 			Inputs:        inputs,
 			Outputs:       outputs,
 			Status:        execution.Status,
@@ -182,10 +182,10 @@ func (s *workflowService) GetUserWorkflowHistory(userID, page, pageSize string) 
 		}
 
 		executionInfo := WorkflowExecutionInfo{
-			ID:            execution.ID,
-			WorkflowID:    execution.WorkflowID,
-			WorkflowName:  workflowName,
-			ResumeID:      execution.ResumeID,
+			ID:           execution.ID,
+			WorkflowID:   execution.WorkflowID,
+			WorkflowName: workflowName,
+			// ResumeID:      execution.ResumeID,
 			Inputs:        inputs,
 			Outputs:       outputs,
 			Status:        execution.Status,
@@ -240,12 +240,12 @@ func (s *workflowService) GetExecutionDetail(executionID string) (*WorkflowExecu
 	}
 
 	detail := &WorkflowExecutionDetail{
-		ID:            execution.ID,
-		WorkflowID:    execution.WorkflowID,
-		WorkflowName:  workflowName,
-		UserID:        execution.UserID,
-		UserName:      userName,
-		ResumeID:      execution.ResumeID,
+		ID:           execution.ID,
+		WorkflowID:   execution.WorkflowID,
+		WorkflowName: workflowName,
+		UserID:       execution.UserID,
+		UserName:     userName,
+		// ResumeID:      execution.ResumeID,
 		Inputs:        inputs,
 		Outputs:       outputs,
 		Status:        execution.Status,

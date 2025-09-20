@@ -192,13 +192,13 @@ const WorkflowManagement: React.FC = () => {
                         }`}>
                           {workflow.enabled ? '启用' : '禁用'}
                         </span>
-                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                        {/* <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                           workflow.is_public 
                             ? 'bg-blue-100 text-blue-800' 
                             : 'bg-yellow-100 text-yellow-800'
                         }`}>
                           {workflow.is_public ? '公开' : '私有'}
-                        </span>
+                        </span> */}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">

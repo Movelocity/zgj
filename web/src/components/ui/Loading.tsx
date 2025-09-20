@@ -18,7 +18,7 @@ const Loading: React.FC<LoadingProps> = ({
   };
 
   return (
-    <div className={`flex flex-col items-center justify-center space-y-2 ${className}`}>
+    <div className={`flex flex-row items-center justify-center gap-2 ${className}`}>
       <div className={`animate-spin rounded-full border-2 border-gray-300 border-t-blue-500 ${sizeClasses[size]}`} />
       {text && (
         <p className="text-sm text-gray-600">{text}</p>

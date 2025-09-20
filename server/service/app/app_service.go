@@ -257,53 +257,6 @@ func (s *appService) CreateWorkflow(userID string, req CreateWorkflowRequest) (*
 	return response, nil
 }
 
-// UpdateWorkflow 更新工作流
-// func (s *appService) UpdateWorkflow(workflowID, userID string, req UpdateWorkflowRequest) error {
-// 	// 检查工作流是否存在且属于当前用户
-// 	var workflow model.Workflow
-// 	if err := global.DB.Where("id = ? AND creator_id = ?", workflowID, userID).First(&workflow).Error; err != nil {
-// 		if errors.Is(err, gorm.ErrRecordNotFound) {
-// 			return errors.New("工作流不存在")
-// 		}
-// 		return errors.New("查询工作流失败")
-// 	}
-
-// 	updates := make(map[string]interface{})
-// 	if req.ApiURL != "" {
-// 		updates["api_url"] = req.ApiURL
-// 	}
-// 	if req.ApiKey != "" {
-// 		updates["api_key"] = req.ApiKey
-// 	}
-// 	if req.Name != "" {
-// 		updates["name"] = req.Name
-// 	}
-// 	if req.Description != "" {
-// 		updates["description"] = req.Description
-// 	}
-// 	if req.Inputs != nil {
-// 		inputsJSON, err := json.Marshal(req.Inputs)
-// 		if err != nil {
-// 			return errors.New("输入参数格式错误")
-// 		}
-// 		updates["inputs"] = model.JSON(inputsJSON)
-// 	}
-// 	if req.Outputs != nil {
-// 		outputsJSON, err := json.Marshal(req.Outputs)
-// 		if err != nil {
-// 			return errors.New("输出参数格式错误")
-// 		}
-// 		updates["outputs"] = model.JSON(outputsJSON)
-// 	}
-// 	updates["is_public"] = req.IsPublic
-
-// 	if err := global.DB.Model(&workflow).Updates(updates).Error; err != nil {
-// 		return errors.New("更新工作流失败")
-// 	}
-
-// 	return nil
-// }
-
 // DeleteWorkflow 删除工作流
 func (s *appService) DeleteWorkflow(workflowID, userID string) error {
 	result := global.DB.Where("id = ? AND creator_id = ?", workflowID, userID).Delete(&model.Workflow{})
@@ -328,14 +281,6 @@ func (s *appService) ExecuteWorkflow(workflowID, userID string, inputs map[strin
 			return nil, errors.New("工作流不存在")
 		}
 		return nil, errors.New("查询工作流失败")
-	}
-
-	// 获取关联的简历ID（如果有）
-	resumeID := ""
-	if resumeIDValue, exists := inputs["resume_id"]; exists {
-		if resumeIDStr, ok := resumeIDValue.(string); ok {
-			resumeID = resumeIDStr
-		}
 	}
 
 	// 实现实际的工作流执行逻辑
@@ -391,17 +336,17 @@ func (s *appService) ExecuteWorkflow(workflowID, userID string, inputs map[strin
 	// 计算执行时间
 	executionTime := int(time.Since(startTime).Milliseconds())
 
-	// 记录执行历史（异步执行，不影响主流程）
+	// 记录日志，异步执行，不影响主流程
 	go func() {
 		// 这里需要导入workflow服务，但为了避免循环依赖，我们直接在这里实现
 		inputsJSON, _ := json.Marshal(inputs)
 		outputsJSON, _ := json.Marshal(response.Data)
 
 		execution := model.WorkflowExecution{
-			ID:            utils.GenerateTLID(),
-			WorkflowID:    workflowID,
-			UserID:        userID,
-			ResumeID:      resumeID,
+			ID:         utils.GenerateTLID(),
+			WorkflowID: workflowID,
+			UserID:     userID,
+			// ResumeID:      "",
 			Inputs:        model.JSON(inputsJSON),
 			Outputs:       model.JSON(outputsJSON),
 			Status:        status,

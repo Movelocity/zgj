@@ -152,9 +152,7 @@ const PhoneLogin: React.FC<PhoneLoginProps> = ({ onSuccess }) => {
               className="px-4 whitespace-nowrap"
             >
               {sendingCode ? (
-                <>
-                  <Loading size="sm" className="mr-1" />
-                </>
+                <Loading size="sm" className="mr-1" text="" />
               ) : countdown > 0 ? (
                 `${countdown}s`
               ) : (
