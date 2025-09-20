@@ -27,7 +27,6 @@ func InitUserRouter(privateGroup *gin.RouterGroup, publicGroup *gin.RouterGroup,
 		UserPrivateRouter.PUT("/password", user.ChangePassword)     // 修改密码
 		UserPrivateRouter.POST("/logout", user.Logout)              // 用户登出
 		UserPrivateRouter.POST("/upload_avatar", user.UploadAvatar) // 上传头像
-		UserPrivateRouter.POST("/upload_resume", user.UploadResume) // 上传简历
 	}
 
 	// 管理员路由 - 用户管理

@@ -228,7 +228,7 @@ func UploadAvatar(c *gin.Context) {
 	userID := c.GetString("userID")
 
 	// 使用统一文件服务上传文件
-	uploadedFile, err := fileService.FileService.UploadFile(userID, file)
+	uploadedFile, err := fileService.FileService.UploadFile(userID, file, false)
 	if err != nil {
 		utils.FailWithMessage(err.Error(), c)
 		return
@@ -244,35 +244,35 @@ func UploadAvatar(c *gin.Context) {
 }
 
 // UploadResume 上传简历
-func UploadResume(c *gin.Context) {
-	file, err := c.FormFile("resume")
-	if err != nil {
-		utils.FailWithMessage("文件上传失败", c)
-		return
-	}
+// func UploadResume(c *gin.Context) {
+// 	file, err := c.FormFile("resume")
+// 	if err != nil {
+// 		utils.FailWithMessage("文件上传失败", c)
+// 		return
+// 	}
 
-	// 检查文件类型和大小
-	if !utils.IsAllowedFileType(file.Header.Get("Content-Type")) {
-		utils.FailWithMessage("不支持的文件格式", c)
-		return
-	}
+// 	// 检查文件类型和大小
+// 	if !utils.IsAllowedFileType(file.Header.Get("Content-Type")) {
+// 		utils.FailWithMessage("不支持的文件格式", c)
+// 		return
+// 	}
 
-	if !utils.CheckFileSize(file.Size, global.CONFIG.Upload.FileMaxSize) {
-		utils.FailWithMessage("文件大小超出限制", c)
-		return
-	}
+// 	if !utils.CheckFileSize(file.Size, global.CONFIG.Upload.FileMaxSize) {
+// 		utils.FailWithMessage("文件大小超出限制", c)
+// 		return
+// 	}
 
-	userID := c.GetString("userID")
+// 	userID := c.GetString("userID")
 
-	// 调用服务层保存简历信息
-	resumeInfo, err := service.UserService.UploadResume(userID, file)
-	if err != nil {
-		utils.FailWithMessage(err.Error(), c)
-		return
-	}
+// 	// 调用服务层保存简历信息
+// 	resumeInfo, err := service.UserService.UploadResume(userID, file)
+// 	if err != nil {
+// 		utils.FailWithMessage(err.Error(), c)
+// 		return
+// 	}
 
-	utils.OkWithData(resumeInfo, c)
-}
+// 	utils.OkWithData(resumeInfo, c)
+// }
 
 // GetAllUsers 获取所有用户（管理员）- 支持分页
 func GetAllUsers(c *gin.Context) {

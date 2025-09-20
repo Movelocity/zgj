@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"mime/multipart"
 	"strconv"
 	"time"
 
@@ -12,7 +11,6 @@ import (
 
 	"server/global"
 	"server/model"
-	fileService "server/service/file"
 	"server/utils"
 )
 
@@ -208,8 +206,8 @@ func (s *userService) GetUserProfile(userID string) (*UserProfileResponse, error
 	}
 
 	// 解析数据
-	var data interface{}
-	var resumes interface{}
+	var data any
+	var resumes any
 
 	if len(profile.Data) > 0 {
 		json.Unmarshal(profile.Data, &data)
@@ -299,71 +297,6 @@ func (s *userService) UpdateUserProfile(userID string, req UpdateUserProfileRequ
 	}
 
 	return nil
-}
-
-// UploadResume 上传简历 (已废弃，建议使用 resume service)
-func (s *userService) UploadResume(userID string, file *multipart.FileHeader) (*UploadResponse, error) {
-	// 使用统一文件服务上传文件
-	uploadedFile, err := fileService.FileService.UploadFile(userID, file)
-	if err != nil {
-		return nil, err
-	}
-
-	// 构建简历信息 (使用文件ID而不是路径)
-	resume := model.Resume{
-		Name:      file.Filename,
-		URL:       fmt.Sprintf("/api/files/%s/preview", uploadedFile.ID), // 使用文件预览API
-		Size:      file.Size,
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
-	}
-
-	// 获取现有简历列表
-	var profile model.UserProfile
-	if err := global.DB.First(&profile, "user_id = ?", userID).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			// 用户档案不存在，创建默认档案
-			profile = model.UserProfile{
-				ID:      utils.GenerateTLID(),
-				UserID:  userID,
-				Data:    model.JSON("{}"),
-				Resumes: model.JSON("[]"),
-			}
-
-			// 创建默认用户档案
-			if err := global.DB.Create(&profile).Error; err != nil {
-				return nil, errors.New("创建默认用户档案失败")
-			}
-		} else {
-			return nil, errors.New("查询用户档案失败")
-		}
-	}
-
-	var resumes []model.Resume
-	if len(profile.Resumes) > 0 {
-		json.Unmarshal(profile.Resumes, &resumes)
-	}
-
-	// 添加新简历
-	resumes = append(resumes, resume)
-
-	// 更新简历列表
-	resumesJSON, err := json.Marshal(resumes)
-	if err != nil {
-		return nil, errors.New("数据序列化失败")
-	}
-
-	if err := global.DB.Model(&profile).Update("resumes", model.JSON(resumesJSON)).Error; err != nil {
-		return nil, errors.New("简历信息保存失败")
-	}
-
-	response := &UploadResponse{
-		URL:      resume.URL,
-		Filename: uploadedFile.Name,
-		Size:     file.Size,
-	}
-
-	return response, nil
 }
 
 // GetAllUsers 获取所有用户（管理员）- 支持分页

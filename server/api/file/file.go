@@ -34,7 +34,7 @@ func UploadFile(c *gin.Context) {
 	}
 
 	// 调用服务层上传文件
-	response, err := file.FileService.UploadFile(userID, fileHeader)
+	response, err := file.FileService.UploadFile(userID, fileHeader, false)
 	if err != nil {
 		utils.FailWithMessage(err.Error(), c)
 		return

@@ -165,7 +165,7 @@ func (s *resumeService) DeleteResume(userID, resumeID string) error {
 // UploadResume 上传简历到新的简历表
 func (s *resumeService) UploadResume(userID string, file *multipart.FileHeader) (*UploadResumeResponse, error) {
 	// 使用统一文件服务上传文件
-	uploadedFile, err := fileService.FileService.UploadFile(userID, file)
+	uploadedFile, err := fileService.FileService.UploadFile(userID, file, true)
 	if err != nil {
 		return nil, err
 	}

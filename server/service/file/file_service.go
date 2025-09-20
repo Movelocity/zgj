@@ -22,7 +22,7 @@ type fileService struct{}
 var FileService = &fileService{}
 
 // UploadFile 上传文件（统一接口）
-func (s *fileService) UploadFile(userID string, fileHeader *multipart.FileHeader) (*UploadFileResponse, error) {
+func (s *fileService) UploadFile(userID string, fileHeader *multipart.FileHeader, toDify bool) (*UploadFileResponse, error) {
 	// 验证用户ID
 	if userID == "" {
 		return nil, errors.New("无效的用户ID")
@@ -61,9 +61,18 @@ func (s *fileService) UploadFile(userID string, fileHeader *multipart.FileHeader
 		mimeType = contentType
 	}
 
+	var difyId string
+	if toDify {
+		// difyID := utils.GenerateTLID()
+		difyId = ""
+	} else {
+		difyId = ""
+	}
+
 	// 创建文件记录
 	file := model.File{
 		ID:           fileID,
+		DifyID:       difyId,
 		OriginalName: fileHeader.Filename,
 		Extension:    extension,
 		MimeType:     mimeType,

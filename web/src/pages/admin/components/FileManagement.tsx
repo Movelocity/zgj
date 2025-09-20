@@ -15,7 +15,7 @@ import {
 import { adminAPI } from '@/api/admin';
 import { showSuccess, showError, showInfo } from '@/utils/toast';
 import Button from '@/components/ui/Button';
-import { Modal } from '@/components/modals';
+import Modal from '@/components/ui/Modal';
 import { API_BASE_URL, TOKEN_KEY } from '@/utils/constants';
 
 interface FileInfo {
@@ -282,7 +282,7 @@ const FileManagement: React.FC = () => {
               className="flex items-center gap-2"
             >
               <FiTrash2 className="w-4 h-4" />
-              删除选中 ({selectedFiles.length})
+              批量删除 ({selectedFiles.length})
             </Button>
           )}
           
@@ -444,7 +444,8 @@ const FileManagement: React.FC = () => {
 
       {/* 统计信息模态框 */}
       <Modal
-        isOpen={showStatsModal}
+        open={showStatsModal}
+        size="lg"
         onClose={() => setShowStatsModal(false)}
         title="文件统计信息"
       >

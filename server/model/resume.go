@@ -29,10 +29,9 @@ func (ResumeRecord) TableName() string {
 
 // WorkflowExecution 工作流执行历史表
 type WorkflowExecution struct {
-	ID         string `gorm:"primaryKey;type:varchar(20)" json:"id"`
-	WorkflowID string `gorm:"type:varchar(20);index;not null" json:"workflow_id"`
-	UserID     string `gorm:"type:varchar(20);index;not null" json:"user_id"`
-	// ResumeID      string    `gorm:"type:varchar(20);index" json:"resume_id"` // 关联的简历ID
+	ID            string    `gorm:"primaryKey;type:varchar(20)" json:"id"`
+	WorkflowID    string    `gorm:"type:varchar(20);index;not null" json:"workflow_id"`
+	UserID        string    `gorm:"type:varchar(20);index;not null" json:"user_id"`
 	Inputs        JSON      `gorm:"type:jsonb" json:"inputs"`       // 输入参数
 	Outputs       JSON      `gorm:"type:jsonb" json:"outputs"`      // 输出结果
 	Status        string    `gorm:"size:20" json:"status"`          // 执行状态 (running/success/failed)
