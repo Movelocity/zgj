@@ -317,8 +317,8 @@ func (s *appService) ExecuteWorkflow(workflowID, userID string, inputs map[strin
 		} else {
 			status = "failed"
 			errorMsg := "未知错误"
-			if apiResponse.Data.Error != nil {
-				errorMsg = *apiResponse.Data.Error
+			if apiResponse.Data.Error != "" {
+				errorMsg = apiResponse.Data.Error
 			}
 			errorMessage = errorMsg
 			response = &ExecuteWorkflowResponse{
@@ -459,7 +459,6 @@ func (s *appService) CallWorkflowAPI(apiURL, apiKey, userID string, inputs map[s
 		ResponseMode: "blocking", // 只支持blocking模式
 		User:         userID,
 	}
-	fmt.Println("callWorkflowAPI", requestBody)
 
 	// 序列化请求体
 	jsonData, err := json.Marshal(requestBody)
@@ -478,11 +477,8 @@ func (s *appService) CallWorkflowAPI(apiURL, apiKey, userID string, inputs map[s
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", apiKey))
 
 	// 创建HTTP客户端并发送请求
-	client := &http.Client{
-		Timeout: 60 * time.Second, // 设置60秒超时
-	}
-
-	fmt.Println("request workflow", req)
+	client := &http.Client{Timeout: 90 * time.Second} // 设置60秒超时
+	fmt.Println("[request workflow]", req)
 
 	resp, err := client.Do(req)
 	if err != nil {
@@ -495,6 +491,7 @@ func (s *appService) CallWorkflowAPI(apiURL, apiKey, userID string, inputs map[s
 	if err != nil {
 		return nil, fmt.Errorf("读取响应体失败: %w", err)
 	}
+	fmt.Println("[response workflow] ", string(body))
 
 	// 检查HTTP状态码
 	if resp.StatusCode != http.StatusOK {

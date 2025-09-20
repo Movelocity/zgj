@@ -36,7 +36,6 @@ func (s *fileService) UploadFile(userID string, fileHeader *multipart.FileHeader
 
 	// 检查用户是否存在
 	var user model.User
-	// if err := global.DB.First(&user, userID).Error; err != nil {
 	if err := global.DB.Where("id = ?", userID).First(&user).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, errors.New("用户不存在")
@@ -66,6 +65,7 @@ func (s *fileService) UploadFile(userID string, fileHeader *multipart.FileHeader
 	if mimeType == "" {
 		mimeType = contentType
 	}
+	fmt.Println("[mimeType] ", mimeType)
 
 	var difyId string
 	if toDify {
@@ -98,19 +98,9 @@ func (s *fileService) UploadFile(userID string, fileHeader *multipart.FileHeader
 		if err != nil {
 			return nil, fmt.Errorf("复制文件内容失败: %v", err)
 		}
-
-		if err := writer.WriteField("type", mimeType); err != nil {
-			return nil, fmt.Errorf("写入type字段失败: %v", err)
-		}
-
-		if err := writer.WriteField("user", userID); err != nil {
-			return nil, fmt.Errorf("写入user字段失败: %v", err)
-		}
-
-		err = writer.Close()
-		if err != nil {
-			return nil, fmt.Errorf("关闭表单写入器失败: %v", err)
-		}
+		writer.WriteField("type", mimeType)
+		writer.WriteField("user", userID)
+		writer.Close()
 
 		req, err := http.NewRequest("POST", url, body)
 		if err != nil {
@@ -140,7 +130,15 @@ func (s *fileService) UploadFile(userID string, fileHeader *multipart.FileHeader
 
 		var response struct {
 			ID string `json:"id"`
+			// Name      string `json:"name"`
+			// Size      int64  `json:"size"`
+			// Extension string `json:"extension"`
+			// MimeType  string `json:"mime_type"`
+			// CreatedBy int64  `json:"created_by"`
+			// CreatedAt int64  `json:"created_at"`
 		}
+
+		fmt.Println("[response upload file] ", zap.Any("response", resp.Body))
 
 		if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 			return nil, fmt.Errorf("解析响应失败: %v", err)

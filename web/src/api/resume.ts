@@ -64,4 +64,9 @@ export const resumeAPI = {
   updateResumeContent: (id: string, content: string): Promise<ApiResponse> => {
     return apiClient.put(`/api/resume/${id}/content`, { content });
   },
+
+  // 简历文件转文本
+  resumeFileToText: (id: string): Promise<ApiResponse> => {
+    return apiClient.post(`/api/user/resumes/file_to_text/${id}`);
+  },
 };

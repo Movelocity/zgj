@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { FiArrowLeft, FiEdit, FiDownload, FiTrash2, FiFileText, FiCalendar, FiUser } from 'react-icons/fi';
-import { Sparkles } from 'lucide-react';
+import { FiEdit, FiShare2, FiTrash2, FiFileText, FiCalendar, FiUser } from 'react-icons/fi';
+// import { Sparkles } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import { resumeAPI } from '@/api/resume';
 import { fileAPI } from '@/api/file';
@@ -15,6 +15,7 @@ const ResumeDetail: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [editForm, setEditForm] = useState<ResumeUpdateRequest>({});
+  const [processingText, setProcessingText] = useState(false);
 
   // 加载简历详情
   const loadResumeDetail = async () => {
@@ -74,12 +75,31 @@ const ResumeDetail: React.FC = () => {
   };
 
   // 下载简历
-  const handleDownload = () => {
-    if (resume?.file_id) {
-      const downloadUrl = fileAPI.previewFile(resume.file_id, true);
-      window.open(downloadUrl, '_blank');
-    } else {
-      showError('文件不存在或无法下载');
+  // const handleDownload = () => {
+  //   if (resume?.file_id) {
+  //     const downloadUrl = fileAPI.previewFile(resume.file_id, true);
+  //     window.open(downloadUrl, '_blank');
+  //   } else {
+  //     showError('文件不存在或无法下载');
+  //   }
+  // };
+
+  // 处理文件转文本
+  const handleProcessText = async () => {
+    if (!id) return;
+
+    try {
+      setProcessingText(true);
+      const response = await resumeAPI.resumeFileToText(id);
+      if (response.code === 0) {
+        showSuccess('文本提取成功');
+        // 刷新简历详情
+        await loadResumeDetail();
+      }
+    } catch (error) {
+      showError(error instanceof Error ? error.message : '文本提取失败');
+    } finally {
+      setProcessingText(false);
     }
   };
 
@@ -158,18 +178,8 @@ const ResumeDetail: React.FC = () => {
         {/* 头部导航 */}
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center">
-            <Button
-              onClick={() => navigate('/resumes')}
-              variant="outline"
-              className="mr-4"
-              icon={<FiArrowLeft className="w-4 h-4" />}
-            >
-              返回列表
-            </Button>
-            <div className="flex items-center">
-              <Sparkles className="w-6 h-6 text-blue-600 mr-2" />
-              <h1 className="text-2xl font-bold text-gray-900">简历详情</h1>
-            </div>
+            <FiFileText className="w-8 h-8 text-blue-600 mr-3" />
+            <h1 className="text-2xl font-bold text-gray-900 max-w-[400px] truncate">{resume.name}</h1>
           </div>
           
           <div className="flex items-center space-x-3">
@@ -182,11 +192,11 @@ const ResumeDetail: React.FC = () => {
             </Button>
             {resume.file_id && (
               <Button
-                onClick={handleDownload}
+                onClick={() => window.open(fileAPI.previewFile(resume.file_id), '_blank')}
                 variant="outline"
-                icon={<FiDownload className="w-4 h-4" />}
+                icon={<FiShare2 className="w-4 h-4" />}
               >
-                下载
+                预览源文件
               </Button>
             )}
             <Button
@@ -200,66 +210,32 @@ const ResumeDetail: React.FC = () => {
           </div>
         </div>
 
-        {/* 简历信息卡片 */}
-        <div className="bg-white rounded-lg shadow-md overflow-hidden mb-6">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <div className="flex items-start justify-between">
-              <div className="flex items-center">
-                <FiFileText className="w-8 h-8 text-blue-600 mr-3" />
-                <div>
-                  {editing ? (
-                    <input
-                      type="text"
-                      value={editForm.name || ''}
-                      onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                      className="text-xl font-bold text-gray-900 border-b border-gray-300 focus:border-blue-600 focus:outline-none bg-transparent"
-                      placeholder="简历名称"
-                    />
-                  ) : (
-                    <h2 className="text-xl font-bold text-gray-900">{resume.name}</h2>
-                  )}
-                  <p className="text-sm text-gray-600 mt-1">{resume.original_filename}</p>
-                </div>
-              </div>
-              <div className="text-right">
-                <div className="text-sm text-gray-600">编号: {resume.resume_number}</div>
-                <div className="text-sm text-gray-600">版本: v{resume.version}</div>
-              </div>
-            </div>
-          </div>
-
-          {/* 基本信息 */}
-          <div className="px-6 py-4 bg-gray-50">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-              <div className="flex items-center">
-                <FiCalendar className="w-4 h-4 text-gray-400 mr-2" />
-                <span className="text-gray-600">创建时间: {formatDate(resume.created_at)}</span>
-              </div>
-              <div className="flex items-center">
-                <FiCalendar className="w-4 h-4 text-gray-400 mr-2" />
-                <span className="text-gray-600">更新时间: {formatDate(resume.updated_at)}</span>
-              </div>
-              <div className="flex items-center">
-                <FiUser className="w-4 h-4 text-gray-400 mr-2" />
-                <span className="text-gray-600">
-                  类型: {resume.file_id ? '文件简历' : '纯文本简历'}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-
         {/* 简历内容 */}
         <div className="space-y-6">
           {/* 文本内容 */}
-          {resume.text_content && (
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">文本内容</h3>
-              {editing ? (
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-lg font-medium text-gray-900">文本内容</h3>
+              {/* 如果没有文本内容且有文件，显示处理按钮 */}
+              {!resume.text_content && resume.file_id && (
+                <Button
+                  onClick={handleProcessText}
+                  variant="primary"
+                  size="sm"
+                  loading={processingText}
+                  icon={<FiFileText className="w-4 h-4" />}
+                >
+                  {processingText ? '处理中...' : '提取文本'}
+                </Button>
+              )}
+            </div>
+            
+            {resume.text_content ? (
+              editing ? (
                 <textarea
                   value={editForm.text_content || ''}
                   onChange={(e) => setEditForm({ ...editForm, text_content: e.target.value })}
-                  rows={12}
+                  rows={24}
                   className="w-full border border-gray-300 rounded-md p-3 focus:border-blue-600 focus:outline-none resize-vertical"
                   placeholder="简历文本内容..."
                 />
@@ -269,9 +245,33 @@ const ResumeDetail: React.FC = () => {
                     {resume.text_content}
                   </pre>
                 </div>
-              )}
-            </div>
-          )}
+              )
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                {resume.file_id ? (
+                  <div>
+                    <FiFileText className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                    <p className="text-sm">文本内容尚未提取</p>
+                    <p className="text-xs text-gray-400 mt-1">点击上方"提取文本"按钮来解析文件内容</p>
+                  </div>
+                ) : (
+                  <div>
+                    <FiFileText className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                    <p className="text-sm">此简历没有关联的文件</p>
+                    <p className="text-xs text-gray-400 mt-1">纯文本简历或文件已丢失</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* 编辑操作按钮 */}
+            {editing && (
+              <div className="flex justify-end space-x-3 mt-4">
+                <Button onClick={() => setEditing(false)} variant="outline">取消</Button>
+                <Button onClick={handleUpdate} variant="primary">保存更改</Button>
+              </div>
+            )}
+          </div>
 
           {/* 结构化数据 */}
           {resume.structured_data && (
@@ -303,57 +303,26 @@ const ResumeDetail: React.FC = () => {
             </div>
           )}
 
-          {/* 文件预览 */}
-          {resume.file_id && (
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">文件预览</h3>
-              <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <FiFileText className="w-8 h-8 text-blue-600 mr-3" />
-                    <div>
-                      <div className="font-medium">{resume.original_filename}</div>
-                      <div className="text-sm text-gray-600">文件ID: {resume.file_id}</div>
-                    </div>
-                  </div>
-                  <Button
-                    onClick={() => window.open(fileAPI.previewFile(resume.file_id), '_blank')}
-                    variant="outline"
-                    size="sm"
-                  >
-                    在线预览
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )}
+        </div>
+      </div>
 
-          {/* 编辑操作按钮 */}
-          {editing && (
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <div className="flex justify-end space-x-3">
-                <Button
-                  onClick={() => {
-                    setEditing(false);
-                    setEditForm({
-                      name: resume.name,
-                      text_content: resume.text_content,
-                      structured_data: resume.structured_data,
-                    });
-                  }}
-                  variant="outline"
-                >
-                  取消
-                </Button>
-                <Button
-                  onClick={handleUpdate}
-                  variant="primary"
-                >
-                  保存更改
-                </Button>
-              </div>
-            </div>
-          )}
+      {/* 基本信息 */}
+      <div className="bg-gray-50 max-w-[900px] mx-auto">
+        <div className="flex w-full justify-between gap-4 text-sm px-16 py-8">
+          <div className="flex items-center">
+            <FiCalendar className="w-4 h-4 text-gray-400 mr-2" />
+            <span className="text-gray-600">创建时间: {formatDate(resume.created_at)}</span>
+          </div>
+          <div className="flex items-center">
+            <FiCalendar className="w-4 h-4 text-gray-400 mr-2" />
+            <span className="text-gray-600">更新时间: {formatDate(resume.updated_at)}</span>
+          </div>
+          <div className="flex items-center">
+            <FiUser className="w-4 h-4 text-gray-400 mr-2" />
+            <span className="text-gray-600">
+              类型: {resume.file_id ? '文件简历' : '纯文本简历'}
+            </span>
+          </div>
         </div>
       </div>
     </div>

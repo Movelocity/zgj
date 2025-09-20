@@ -5,8 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"mime/multipart"
+	"regexp"
 	"strconv"
-	"strings"
 	"time"
 
 	"gorm.io/gorm"
@@ -204,6 +204,12 @@ func (s *resumeService) UploadResume(userID string, file *multipart.FileHeader) 
 	return response, nil
 }
 
+func removeThinkTags(input string) string {
+	// (?s) 表示 . 匹配包括换行符在内的所有字符
+	re := regexp.MustCompile(`(?s)<think>.*?</think>`)
+	return re.ReplaceAllString(input, "")
+}
+
 func (s *resumeService) ResumeFileToText(userId string, resumeId string) error {
 	var resume model.ResumeRecord
 	if err := global.DB.Where("id = ?", resumeId).First(&resume).Error; err != nil {
@@ -219,35 +225,39 @@ func (s *resumeService) ResumeFileToText(userId string, resumeId string) error {
 		return errors.New("查询文件失败")
 	}
 	difyFileId := file.DifyID
-	ext := strings.ToUpper(file.Extension)
+	// ext := strings.ToUpper(file.Extension)
 
 	workflow := model.Workflow{}
 	if err := global.DB.Where("name = ?", "doc_extract").First(&workflow).Error; err != nil {
 		return errors.New("查询工作流失败")
 	}
 
+	// doc_file is a list of map[string]any, how to fix?
 	fileInput := map[string]any{
-		"transfer_method": "local_file",
-		"upload_file_id":  difyFileId,
-		"type":            ext,
+		"doc_file": map[string]any{
+			"transfer_method": "local_file",
+			"upload_file_id":  difyFileId,
+			"type":            "document",
+		},
 	}
 
 	var response *appService.WorkflowAPIResponse
 	response, err := appService.AppService.CallWorkflowAPI(workflow.ApiURL, workflow.ApiKey, resume.UserID, fileInput)
 	if err != nil {
-		return errors.New("解析响应体失败")
+		fmt.Println("[err] ", err)
+		return errors.New("解析响应体失败: " + err.Error())
 	}
-	if response.Data.Error != nil {
+	if response.Data.Error != "" {
+		fmt.Println("[response.Data.Error] ", response.Data.Error)
 		return errors.New("请求失败")
 	}
-	resume.TextContent = response.Data.Outputs["text"].(string)
 
-	if err := global.DB.Model(&resume).Updates(map[string]interface{}{
-		"text_content": resume.TextContent,
-		"updated_at":   time.Now(),
-	}).Error; err != nil {
+	resume.TextContent = response.Data.Outputs["output"].(string)
+	resume.TextContent = removeThinkTags(resume.TextContent)
+	if err := global.DB.Model(&model.ResumeRecord{}).Where("id = ?", resume.ID).Updates(&resume).Error; err != nil {
 		return errors.New("更新简历表格失败")
 	}
+
 	return nil
 }
 

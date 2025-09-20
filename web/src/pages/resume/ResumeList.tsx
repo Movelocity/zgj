@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FiUpload, FiFileText, FiDownload, FiTrash2, FiCalendar, FiPlus, FiEye, FiEdit } from 'react-icons/fi';
+import { FiUpload, FiFileText, FiDownload, FiTrash2, FiCalendar, FiPlus, FiEdit } from 'react-icons/fi';
 import { useNavigate } from 'react-router-dom';
 import Button from '@/components/ui/Button';
 import { resumeAPI } from '@/api/resume';
@@ -279,13 +279,6 @@ const ResumeList: React.FC = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <div className="flex items-center space-x-2">
-                          <button
-                            onClick={() => handleViewResume(resume.id)}
-                            className="text-blue-600 hover:text-blue-900 p-1 rounded cursor-pointer"
-                            title="查看详情"
-                          >
-                            <FiEye className="w-4 h-4" />
-                          </button>
                           <button
                             onClick={() => handleViewResume(resume.id)}
                             className="text-green-600 hover:text-green-900 p-1 rounded cursor-pointer"
