@@ -45,7 +45,7 @@ export const adminAPI = {
 
   // 工作流管理
   getAllWorkflows: (): Promise<ApiResponse<Workflow[]>> => {
-    return apiClient.get('/api/admin/workflow/all');
+    return apiClient.get('/api/workflow/all');
   },
 
   createWorkflow: (data: CreateWorkflowRequest): Promise<ApiResponse<Workflow>> => {
@@ -57,7 +57,7 @@ export const adminAPI = {
   },
 
   updateWorkflowAsAdmin: (id: string, data: UpdateWorkflowRequest): Promise<ApiResponse<Workflow>> => {
-    return apiClient.put(`/api/admin/workflow/${id}`, data);
+    return apiClient.put(`/api/workflow/${id}`, data);
   },
 
   deleteWorkflow: (id: string): Promise<ApiResponse> => {

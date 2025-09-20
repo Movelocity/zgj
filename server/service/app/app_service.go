@@ -258,51 +258,51 @@ func (s *appService) CreateWorkflow(userID string, req CreateWorkflowRequest) (*
 }
 
 // UpdateWorkflow 更新工作流
-func (s *appService) UpdateWorkflow(workflowID, userID string, req UpdateWorkflowRequest) error {
-	// 检查工作流是否存在且属于当前用户
-	var workflow model.Workflow
-	if err := global.DB.Where("id = ? AND creator_id = ?", workflowID, userID).First(&workflow).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return errors.New("工作流不存在")
-		}
-		return errors.New("查询工作流失败")
-	}
+// func (s *appService) UpdateWorkflow(workflowID, userID string, req UpdateWorkflowRequest) error {
+// 	// 检查工作流是否存在且属于当前用户
+// 	var workflow model.Workflow
+// 	if err := global.DB.Where("id = ? AND creator_id = ?", workflowID, userID).First(&workflow).Error; err != nil {
+// 		if errors.Is(err, gorm.ErrRecordNotFound) {
+// 			return errors.New("工作流不存在")
+// 		}
+// 		return errors.New("查询工作流失败")
+// 	}
 
-	updates := make(map[string]interface{})
-	if req.ApiURL != "" {
-		updates["api_url"] = req.ApiURL
-	}
-	if req.ApiKey != "" {
-		updates["api_key"] = req.ApiKey
-	}
-	if req.Name != "" {
-		updates["name"] = req.Name
-	}
-	if req.Description != "" {
-		updates["description"] = req.Description
-	}
-	if req.Inputs != nil {
-		inputsJSON, err := json.Marshal(req.Inputs)
-		if err != nil {
-			return errors.New("输入参数格式错误")
-		}
-		updates["inputs"] = model.JSON(inputsJSON)
-	}
-	if req.Outputs != nil {
-		outputsJSON, err := json.Marshal(req.Outputs)
-		if err != nil {
-			return errors.New("输出参数格式错误")
-		}
-		updates["outputs"] = model.JSON(outputsJSON)
-	}
-	updates["is_public"] = req.IsPublic
+// 	updates := make(map[string]interface{})
+// 	if req.ApiURL != "" {
+// 		updates["api_url"] = req.ApiURL
+// 	}
+// 	if req.ApiKey != "" {
+// 		updates["api_key"] = req.ApiKey
+// 	}
+// 	if req.Name != "" {
+// 		updates["name"] = req.Name
+// 	}
+// 	if req.Description != "" {
+// 		updates["description"] = req.Description
+// 	}
+// 	if req.Inputs != nil {
+// 		inputsJSON, err := json.Marshal(req.Inputs)
+// 		if err != nil {
+// 			return errors.New("输入参数格式错误")
+// 		}
+// 		updates["inputs"] = model.JSON(inputsJSON)
+// 	}
+// 	if req.Outputs != nil {
+// 		outputsJSON, err := json.Marshal(req.Outputs)
+// 		if err != nil {
+// 			return errors.New("输出参数格式错误")
+// 		}
+// 		updates["outputs"] = model.JSON(outputsJSON)
+// 	}
+// 	updates["is_public"] = req.IsPublic
 
-	if err := global.DB.Model(&workflow).Updates(updates).Error; err != nil {
-		return errors.New("更新工作流失败")
-	}
+// 	if err := global.DB.Model(&workflow).Updates(updates).Error; err != nil {
+// 		return errors.New("更新工作流失败")
+// 	}
 
-	return nil
-}
+// 	return nil
+// }
 
 // DeleteWorkflow 删除工作流
 func (s *appService) DeleteWorkflow(workflowID, userID string) error {

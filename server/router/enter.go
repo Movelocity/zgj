@@ -10,15 +10,20 @@ import (
 func InitRoutes(r *gin.Engine) {
 	// 公共路由
 	PublicGroup := r.Group("")
-	InitPublicRouter(PublicGroup)
 
 	// 私有路由（需要认证）
 	PrivateGroup := r.Group("")
 	PrivateGroup.Use(middleware.JWTAuth())
-	InitPrivateRouter(PrivateGroup, PublicGroup) // 后续重构，目前的用法太死板了
 
 	// 管理员路由
 	AdminGroup := r.Group("")
 	AdminGroup.Use(middleware.JWTAuth(), middleware.AdminAuth())
-	InitAdminRouter(AdminGroup)
+
+	// 初始化各个实体的路由
+	InitUserRouter(PrivateGroup, PublicGroup, AdminGroup)
+	InitWorkflowRouter(PrivateGroup, PublicGroup, AdminGroup)
+	InitConversationRouter(PrivateGroup, PublicGroup, AdminGroup)
+	InitResumeRouter(PrivateGroup, PublicGroup, AdminGroup)
+	InitFileRouter(PrivateGroup, PublicGroup, AdminGroup)
+	InitSystemRouter(PrivateGroup, PublicGroup, AdminGroup)
 }

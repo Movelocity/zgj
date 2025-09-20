@@ -138,23 +138,23 @@ func CreateWorkflow(c *gin.Context) {
 }
 
 // UpdateWorkflow 更新工作流
-func UpdateWorkflow(c *gin.Context) {
-	workflowID := c.Param("id")
-	userID := c.GetString("userID")
-	var req appService.UpdateWorkflowRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		utils.FailWithMessage(err.Error(), c)
-		return
-	}
+// func UpdateWorkflow(c *gin.Context) {
+// 	workflowID := c.Param("id")
+// 	userID := c.GetString("userID")
+// 	var req appService.UpdateWorkflowRequest
+// 	if err := c.ShouldBindJSON(&req); err != nil {
+// 		utils.FailWithMessage(err.Error(), c)
+// 		return
+// 	}
 
-	// 调用服务层
-	if err := service.AppService.UpdateWorkflow(workflowID, userID, req); err != nil {
-		utils.FailWithMessage(err.Error(), c)
-		return
-	}
+// 	// 调用服务层
+// 	if err := service.AppService.UpdateWorkflow(workflowID, userID, req); err != nil {
+// 		utils.FailWithMessage(err.Error(), c)
+// 		return
+// 	}
 
-	utils.OkWithMessage("更新成功", c)
-}
+// 	utils.OkWithMessage("更新成功", c)
+// }
 
 // DeleteWorkflow 删除工作流
 func DeleteWorkflow(c *gin.Context) {
