@@ -1,14 +1,20 @@
 package file
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"mime/multipart"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
+
+	"go.uber.org/zap"
 
 	"gorm.io/gorm"
 
@@ -63,8 +69,84 @@ func (s *fileService) UploadFile(userID string, fileHeader *multipart.FileHeader
 
 	var difyId string
 	if toDify {
-		// difyID := utils.GenerateTLID()
-		difyId = ""
+		wName := "upload_file"
+		workflow := model.Workflow{}
+		if err := global.DB.Model(&model.Workflow{}).Where("name = ? AND enabled = ?", wName, true).First(&workflow).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return nil, fmt.Errorf("未找到名为 '%s' 的启用工作流", wName)
+			}
+			return nil, fmt.Errorf("查询文件上传工作流失败: %v", err)
+		}
+
+		url := workflow.ApiURL
+		apiKey := workflow.ApiKey
+
+		body := &bytes.Buffer{}
+		writer := multipart.NewWriter(body)
+		filePart, err := writer.CreateFormFile("file", fileHeader.Filename)
+		if err != nil {
+			return nil, fmt.Errorf("创建文件表单失败: %v", err)
+		}
+
+		file, err := fileHeader.Open()
+		if err != nil {
+			return nil, fmt.Errorf("打开文件失败: %v", err)
+		}
+		defer file.Close()
+
+		_, err = io.Copy(filePart, file)
+		if err != nil {
+			return nil, fmt.Errorf("复制文件内容失败: %v", err)
+		}
+
+		if err := writer.WriteField("type", mimeType); err != nil {
+			return nil, fmt.Errorf("写入type字段失败: %v", err)
+		}
+
+		if err := writer.WriteField("user", userID); err != nil {
+			return nil, fmt.Errorf("写入user字段失败: %v", err)
+		}
+
+		err = writer.Close()
+		if err != nil {
+			return nil, fmt.Errorf("关闭表单写入器失败: %v", err)
+		}
+
+		req, err := http.NewRequest("POST", url, body)
+		if err != nil {
+			return nil, fmt.Errorf("创建请求失败: %v", err)
+		}
+
+		req.Header.Set("Content-Type", writer.FormDataContentType())
+		req.Header.Set("Authorization", "Bearer "+apiKey)
+
+		client := &http.Client{Timeout: 30 * time.Second}
+		resp, err := client.Do(req)
+		if err != nil {
+			return nil, fmt.Errorf("发送请求失败: %v", err)
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+			bodyBytes, _ := io.ReadAll(resp.Body)
+			bodyStr := string(bodyBytes)
+
+			utils.Logger.Error("Dify API返回错误状态码",
+				zap.Int("status_code", resp.StatusCode),
+				zap.String("response_body", bodyStr))
+
+			return nil, fmt.Errorf("dify api 返回错误状态码: %d, 响应: %s", resp.StatusCode, bodyStr)
+		}
+
+		var response struct {
+			ID string `json:"id"`
+		}
+
+		if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
+			return nil, fmt.Errorf("解析响应失败: %v", err)
+		}
+
+		difyId = response.ID
 	} else {
 		difyId = ""
 	}

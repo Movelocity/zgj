@@ -6,12 +6,14 @@ import (
 	"fmt"
 	"mime/multipart"
 	"strconv"
+	"strings"
 	"time"
 
 	"gorm.io/gorm"
 
 	"server/global"
 	"server/model"
+	appService "server/service/app"
 	fileService "server/service/file"
 	"server/utils"
 )
@@ -200,6 +202,53 @@ func (s *resumeService) UploadResume(userID string, file *multipart.FileHeader) 
 	}
 
 	return response, nil
+}
+
+func (s *resumeService) ResumeFileToText(userId string, resumeId string) error {
+	var resume model.ResumeRecord
+	if err := global.DB.Where("id = ?", resumeId).First(&resume).Error; err != nil {
+		return errors.New("查询简历失败")
+	}
+
+	if resume.FileID == nil {
+		return errors.New("简历没有文件")
+	}
+
+	file := model.File{}
+	if err := global.DB.Where("id = ?", *resume.FileID).First(&file).Error; err != nil {
+		return errors.New("查询文件失败")
+	}
+	difyFileId := file.DifyID
+	ext := strings.ToUpper(file.Extension)
+
+	workflow := model.Workflow{}
+	if err := global.DB.Where("name = ?", "doc_extract").First(&workflow).Error; err != nil {
+		return errors.New("查询工作流失败")
+	}
+
+	fileInput := map[string]any{
+		"transfer_method": "local_file",
+		"upload_file_id":  difyFileId,
+		"type":            ext,
+	}
+
+	var response *appService.WorkflowAPIResponse
+	response, err := appService.AppService.CallWorkflowAPI(workflow.ApiURL, workflow.ApiKey, resume.UserID, fileInput)
+	if err != nil {
+		return errors.New("解析响应体失败")
+	}
+	if response.Data.Error != nil {
+		return errors.New("请求失败")
+	}
+	resume.TextContent = response.Data.Outputs["text"].(string)
+
+	if err := global.DB.Model(&resume).Updates(map[string]interface{}{
+		"text_content": resume.TextContent,
+		"updated_at":   time.Now(),
+	}).Error; err != nil {
+		return errors.New("更新简历表格失败")
+	}
+	return nil
 }
 
 // CreateTextResume 创建纯文本简历

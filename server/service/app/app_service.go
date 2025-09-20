@@ -289,7 +289,7 @@ func (s *appService) ExecuteWorkflow(workflowID, userID string, inputs map[strin
 	var errorMessage string
 
 	// 调用远程工作流API
-	apiResponse, err := s.callWorkflowAPI(workflow.ApiURL, workflow.ApiKey, userID, inputs)
+	apiResponse, err := s.CallWorkflowAPI(workflow.ApiURL, workflow.ApiKey, userID, inputs)
 	if err != nil {
 		errorMessage = err.Error()
 		status = "failed"
@@ -452,7 +452,7 @@ func (s *appService) AdminUpdateWorkflow(workflowID string, req UpdateWorkflowRe
 }
 
 // callWorkflowAPI 调用远程工作流API
-func (s *appService) callWorkflowAPI(apiURL, apiKey, userID string, inputs map[string]interface{}) (*WorkflowAPIResponse, error) {
+func (s *appService) CallWorkflowAPI(apiURL, apiKey, userID string, inputs map[string]interface{}) (*WorkflowAPIResponse, error) {
 	// 构建请求体
 	requestBody := WorkflowAPIRequest{
 		Inputs:       inputs,

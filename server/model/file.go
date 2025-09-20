@@ -7,7 +7,7 @@ import (
 // File 统一文件表
 type File struct {
 	ID           string    `json:"id" gorm:"primaryKey;type:varchar(20);comment:文件ID(TLID)"`
-	DifyID       string    `json:"dify_id" gorm:"type:varchar(20);comment:Dify文件ID"`
+	DifyID       string    `json:"dify_id" gorm:"type:varchar(36);comment:Dify文件ID"`
 	OriginalName string    `json:"original_name" gorm:"type:varchar(255);not null;comment:原始文件名"`
 	Extension    string    `json:"extension" gorm:"type:varchar(10);not null;comment:文件扩展名"`
 	MimeType     string    `json:"mime_type" gorm:"type:varchar(100);not null;comment:MIME类型"`

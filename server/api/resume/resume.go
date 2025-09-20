@@ -99,6 +99,16 @@ func UploadResume(c *gin.Context) {
 	utils.OkWithData(response, c)
 }
 
+func ResumeFileToText(c *gin.Context) {
+	userID := c.GetString("userID")
+	resumeID := c.Param("id")
+
+	if err := resume.ResumeService.ResumeFileToText(userID, resumeID); err != nil {
+		utils.FailWithMessage(err.Error(), c)
+		return
+	}
+}
+
 // CreateTextResume 创建纯文本简历
 func CreateTextResume(c *gin.Context) {
 	userID := c.GetString("userID")
