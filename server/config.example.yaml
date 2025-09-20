@@ -24,7 +24,7 @@ pgsql:
   port: 5666
   db-name: "d1"
   username: "postgres"
-  password: "minecraft123"
+  password: "admin123*"
   sslmode: "disable"
   max-idle-conns: 10
   max-open-conns: 100
