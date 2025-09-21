@@ -1,10 +1,9 @@
 import React from 'react';
 import type { ButtonHTMLAttributes } from 'react';
-import Loading from './Loading';
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger' | 'text';
-  size?: 'xs' | 'sm' | 'md' | 'lg';
+  size?: 'xs' | 'sm' | 'md' | 'lg' | 'zero';
   loading?: boolean;
   icon?: React.ReactNode;
   iconPosition?: 'left' | 'right';
@@ -14,7 +13,6 @@ const Button: React.FC<ButtonProps> = ({
   children,
   variant = 'primary',
   size = 'md',
-  loading = false,
   disabled = false,
   icon,
   iconPosition = 'left',
@@ -33,6 +31,7 @@ const Button: React.FC<ButtonProps> = ({
   };
   
   const sizeClasses = {
+    zero: '',
     xs: 'px-2 py-1 text-xs',
     sm: 'px-3 py-1.5 text-sm',
     md: 'px-4 py-2 text-sm',
@@ -44,15 +43,15 @@ const Button: React.FC<ButtonProps> = ({
   return (
     <button
       className={classes}
-      disabled={disabled || loading}
+      disabled={disabled}
       {...props}
     >
-      {loading && <Loading size="sm" text="" className="mr-2" />}
-      {!loading && icon && iconPosition === 'left' && (
-        <span className="mr-2">{icon}</span>
+      {/* {loading && <Loading size="sm" text="" className="mr-2" />} */}
+      {icon && iconPosition === 'left' && (
+        <span >{icon}</span>
       )}
       {children}
-      {!loading && icon && iconPosition === 'right' && (
+      {icon && iconPosition === 'right' && (
         <span className="ml-2">{icon}</span>
       )}
     </button>

@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
-import { Mail, Phone, MapPin, Sparkles, Check, X } from 'lucide-react';
+import { Mail, Phone, MapPin, Sparkles, Check, X, Plus, ChevronUp, ChevronDown, Trash2 } from 'lucide-react';
 import Button from "@/components/ui/Button"
-import type { ResumeData, OptimizedSections } from '@/types/resume';
+import type { ResumeData, OptimizedSections, WorkExperience, Education, Project } from '@/types/resume';
 
 interface OptimizedResumeViewProps {
   optimizedSections: OptimizedSections;
@@ -78,6 +78,12 @@ export default function ResumeEditor({
       if (projectIndex !== -1) {
         (newData.projects[projectIndex] as any)[field] = currentValue;
       }
+    } else if (fieldId.startsWith('education-')) {
+      const [, educationId, field] = fieldId.split('-');
+      const educationIndex = newData.education.findIndex(e => e.id === educationId);
+      if (educationIndex !== -1) {
+        (newData.education[educationIndex] as any)[field] = currentValue;
+      }
     } else if (fieldId === 'skills') {
       newData.skills = currentValue.split(',').map(s => s.trim()).filter(s => s);
     }
@@ -91,11 +97,115 @@ export default function ResumeEditor({
     setEditingField(null);
   };
 
-  // 停止整体编辑模式
-  // const handleStopEditing = () => {
-  //   cancelEdit();
-  //   onStopEditing();
-  // };
+  // 生成唯一ID
+  const generateId = () => {
+    return Date.now().toString() + Math.random().toString(36).substr(2, 9);
+  };
+
+  // 添加工作经历
+  const addWorkExperience = () => {
+    const newWork: WorkExperience = {
+      id: generateId(),
+      company: '',
+      position: '',
+      duration: '',
+      description: ''
+    };
+    const newData = { ...resumeData };
+    newData.workExperience.push(newWork);
+    onResumeDataChange(newData);
+  };
+
+  // 添加教育经历
+  const addEducation = () => {
+    const newEducation: Education = {
+      id: generateId(),
+      school: '',
+      degree: '',
+      duration: '',
+      description: ''
+    };
+    const newData = { ...resumeData };
+    newData.education.push(newEducation);
+    onResumeDataChange(newData);
+  };
+
+  // 添加项目经历
+  const addProject = () => {
+    const newProject: Project = {
+      id: generateId(),
+      name: '',
+      duration: '',
+      description: '',
+      technologies: ''
+    };
+    const newData = { ...resumeData };
+    newData.projects.push(newProject);
+    onResumeDataChange(newData);
+  };
+
+  // 删除列表项
+  const deleteItem = (type: 'workExperience' | 'education' | 'projects', id: string) => {
+    const newData = { ...resumeData };
+    if (type === 'workExperience') {
+      newData.workExperience = newData.workExperience.filter(item => item.id !== id);
+    } else if (type === 'education') {
+      newData.education = newData.education.filter(item => item.id !== id);
+    } else if (type === 'projects') {
+      newData.projects = newData.projects.filter(item => item.id !== id);
+    }
+    onResumeDataChange(newData);
+  };
+
+  // 上移列表项
+  const moveItemUp = (type: 'workExperience' | 'education' | 'projects', id: string) => {
+    const newData = { ...resumeData };
+    if (type === 'workExperience') {
+      const items = newData.workExperience;
+      const index = items.findIndex(item => item.id === id);
+      if (index > 0) {
+        [items[index], items[index - 1]] = [items[index - 1], items[index]];
+      }
+    } else if (type === 'education') {
+      const items = newData.education;
+      const index = items.findIndex(item => item.id === id);
+      if (index > 0) {
+        [items[index], items[index - 1]] = [items[index - 1], items[index]];
+      }
+    } else if (type === 'projects') {
+      const items = newData.projects;
+      const index = items.findIndex(item => item.id === id);
+      if (index > 0) {
+        [items[index], items[index - 1]] = [items[index - 1], items[index]];
+      }
+    }
+    onResumeDataChange(newData);
+  };
+
+  // 下移列表项
+  const moveItemDown = (type: 'workExperience' | 'education' | 'projects', id: string) => {
+    const newData = { ...resumeData };
+    if (type === 'workExperience') {
+      const items = newData.workExperience;
+      const index = items.findIndex(item => item.id === id);
+      if (index < items.length - 1) {
+        [items[index], items[index + 1]] = [items[index + 1], items[index]];
+      }
+    } else if (type === 'education') {
+      const items = newData.education;
+      const index = items.findIndex(item => item.id === id);
+      if (index < items.length - 1) {
+        [items[index], items[index + 1]] = [items[index + 1], items[index]];
+      }
+    } else if (type === 'projects') {
+      const items = newData.projects;
+      const index = items.findIndex(item => item.id === id);
+      if (index < items.length - 1) {
+        [items[index], items[index + 1]] = [items[index + 1], items[index]];
+      }
+    }
+    onResumeDataChange(newData);
+  };
 
   // 高亮组件
   const HighlightedText = ({ children, isHighlighted = false }: { children: React.ReactNode; isHighlighted?: boolean }) => {
@@ -111,6 +221,73 @@ export default function ResumeEditor({
       </span>
     );
   };
+
+  // 列表项操作按钮组件
+  const ListItemActions = ({ 
+    type, 
+    id, 
+    index, 
+    total 
+  }: { 
+    type: 'workExperience' | 'education' | 'projects'; 
+    id: string; 
+    index: number; 
+    total: number; 
+  }) => (
+    <div className="absolute -left-10 top-0 flex flex-col space-y-1 opacity-0 group-hover:opacity-100 transition-opacity">
+      <Button
+        size="zero"
+        variant="outline"
+        onClick={() => moveItemUp(type, id)}
+        disabled={index === 0}
+        className="w-8 h-8 p-0 bg-white shadow-sm hover:bg-gray-50"
+        title="上移"
+      >
+        <ChevronUp size={14} />
+      </Button>
+      <Button
+        size="zero"
+        variant="outline"
+        onClick={() => moveItemDown(type, id)}
+        disabled={index === total - 1}
+        className="w-8 h-8 p-0 bg-white shadow-sm hover:bg-gray-50"
+        title="下移"
+      >
+        <ChevronDown size={14} />
+      </Button>
+      <Button
+        size="zero"
+        variant="outline"
+        onClick={() => deleteItem(type, id)}
+        className="w-8 h-8 p-0 bg-white shadow-sm hover:bg-red-50 hover:text-red-600"
+        title="删除"
+      >
+        <Trash2 size={14} />
+      </Button>
+    </div>
+  );
+
+  // 列表标题组件
+  const ListSectionTitle = ({ 
+    title, 
+    onAdd 
+  }: { 
+    title: string; 
+    onAdd: () => void; 
+  }) => (
+    <div className="relative group">
+      <h3 className="text-lg text-gray-800 border-l-4 border-blue-600 pl-3 mb-4">{title}</h3>
+      <Button
+        size="zero"
+        variant="outline"
+        onClick={onAdd}
+        className="absolute -left-10 top-0 w-8 h-8 p-0 bg-white shadow-sm opacity-0 group-hover:opacity-100 transition-opacity hover:bg-blue-50 hover:text-blue-600"
+        title={`添加${title}`}
+      >
+        <Plus size={14} />
+      </Button>
+    </div>
+  );
 
   // 可编辑文本组件
   const EditableText = ({ 
@@ -134,23 +311,23 @@ export default function ResumeEditor({
     
     if (isCurrentlyEditing) {
       return (
-        <div className="flex items-start space-x-2">
+        <div className="flex items-start space-x-2 min-h-[2.5rem]">
           {multiline ? (
             <textarea
               ref={textareaRef}
               defaultValue={editingValueRef.current}
-              className="flex-1 min-h-20"
+              className="flex-1 min-h-20 p-2 border border-gray-300 rounded resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
               autoFocus
             />
           ) : (
             <input
               ref={inputRef}
               defaultValue={editingValueRef.current}
-              className="flex-1"
+              className="flex-1 h-8 px-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
               autoFocus
             />
           )}
-          <div className="flex space-x-1">
+          <div className="flex space-x-1 flex-shrink-0">
             <Button size="sm" onClick={() => {
               const element = multiline ? textareaRef.current : inputRef.current;
               if (element) saveEdit(fieldId, element);
@@ -166,9 +343,10 @@ export default function ResumeEditor({
     }
 
     const content = value || placeholder;
+    const baseClasses = multiline ? 'min-h-[2rem] block' : 'min-h-[1.5rem] inline-block';
     const textElement = (
       <span 
-        className={`cursor-pointer hover:bg-gray-100 px-1 py-0.5 rounded transition-colors ${className} ${!value ? 'text-gray-400 italic' : ''}`}
+        className={`cursor-pointer hover:bg-gray-100 px-1 py-0.5 rounded transition-colors ${baseClasses} ${className} ${!value ? 'text-gray-400 italic' : ''}`}
         onClick={() => startEditing(fieldId, value)}
       >
         {content}
@@ -184,218 +362,252 @@ export default function ResumeEditor({
 
   return (
     <div className="h-full bg-white">
-      <div className="h-full">{/** scroll area */}
-        <div className="p-8 max-w-4xl mx-auto">
+      <div className="p-8 max-w-4xl mx-auto">
 
-          {/* 个人信息头部 */}
-          <div className="border-b-2 border-blue-600 pb-6 mb-6 p-4 -m-4 rounded-lg">
-            <h1 className="text-3xl text-gray-800 mb-2">
+        {/* 个人信息头部 */}
+        <div className="border-b-2 border-blue-600 pb-6 mb-6 p-4 -m-4">
+          <h1 className="text-3xl text-gray-800 mb-2">
+            <EditableText 
+              fieldId="name"
+              value={personalInfo.name}
+              placeholder="点击输入姓名"
+            />
+          </h1>
+          <h2 className="text-xl text-blue-600 mb-4">
+            <EditableText 
+              fieldId="title"
+              value={personalInfo.title}
+              placeholder="点击输入职位"
+              isHighlighted={isOptimized('personalInfo', undefined, 'title')}
+            />
+          </h2>
+          <div className="flex flex-wrap gap-4 text-gray-600">
+            <div className="flex items-center">
+              <Mail className="w-4 h-4 mr-2" />
               <EditableText 
-                fieldId="name"
-                value={personalInfo.name}
-                placeholder="点击输入姓名"
+                fieldId="email"
+                value={personalInfo.email}
+                placeholder="点击输入邮箱"
               />
-            </h1>
-            <h2 className="text-xl text-blue-600 mb-4">
-              <EditableText 
-                fieldId="title"
-                value={personalInfo.title}
-                placeholder="点击输入职位"
-                isHighlighted={isOptimized('personalInfo', undefined, 'title')}
-              />
-            </h2>
-            <div className="flex flex-wrap gap-4 text-gray-600">
-              <div className="flex items-center">
-                <Mail className="w-4 h-4 mr-2" />
-                <EditableText 
-                  fieldId="email"
-                  value={personalInfo.email}
-                  placeholder="点击输入邮箱"
-                />
-              </div>
-              <div className="flex items-center">
-                <Phone className="w-4 h-4 mr-2" />
-                <EditableText 
-                  fieldId="phone"
-                  value={personalInfo.phone}
-                  placeholder="点击输入电话"
-                />
-              </div>
-              <div className="flex items-center">
-                <MapPin className="w-4 h-4 mr-2" />
-                <EditableText 
-                  fieldId="location"
-                  value={personalInfo.location}
-                  placeholder="点击输入地址"
-                />
-              </div>
             </div>
-          </div>
-
-          {/* 个人总结 */}
-          <div className="mb-6 p-4 -m-4 rounded-lg">
-            <h3 className="text-lg text-gray-800 border-l-4 border-blue-600 pl-3 mb-3">个人总结</h3>
-            <div className="text-gray-700 leading-relaxed">
+            <div className="flex items-center">
+              <Phone className="w-4 h-4 mr-2" />
               <EditableText 
-                fieldId="summary"
-                value={summary}
-                placeholder="点击添加个人总结..."
-                multiline={true}
-                isHighlighted={isOptimized('summary')}
+                fieldId="phone"
+                value={personalInfo.phone}
+                placeholder="点击输入电话"
+              />
+            </div>
+            <div className="flex items-center">
+              <MapPin className="w-4 h-4 mr-2" />
+              <EditableText 
+                fieldId="location"
+                value={personalInfo.location}
+                placeholder="点击输入地址"
               />
             </div>
           </div>
+        </div>
 
-          {/* 工作经历 */}
-          <div className="mb-6 p-4 -m-4 rounded-lg">
-            <h3 className="text-lg text-gray-800 border-l-4 border-blue-600 pl-3 mb-4">工作经历</h3>
-            {workExperience.length > 0 ? (
-              <div className="space-y-4">
-                {workExperience.map((work, index) => (
-                  <div key={work.id} className="border-l-2 border-gray-200 pl-4">
-                    <div className="flex justify-between items-start mb-2">
-                      <div className="flex-1">
-                        <h4 className="text-gray-800 font-medium">
-                          <EditableText 
-                            fieldId={`work-${work.id}-position`}
-                            value={work.position}
-                            placeholder={`工作经历 ${index + 1}`}
-                          />
-                        </h4>
-                        <p className="text-blue-600">
-                          <EditableText 
-                            fieldId={`work-${work.id}-company`}
-                            value={work.company}
-                            placeholder="公司名称"
-                          />
-                        </p>
-                      </div>
-                      <span className="text-gray-500 text-sm ml-4">
-                        <EditableText 
-                          fieldId={`work-${work.id}-duration`}
-                          value={work.duration}
-                          placeholder="时间"
-                        />
-                      </span>
-                    </div>
-                    <div className="text-gray-700 text-sm leading-relaxed whitespace-pre-line">
-                      <EditableText 
-                        fieldId={`work-${work.id}-description`}
-                        value={work.description}
-                        placeholder="点击添加工作描述..."
-                        multiline={true}
-                        isHighlighted={isOptimized('workExperience', work.id, 'description')}
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-gray-500 italic">请添加工作经历...</p>
-            )}
+        {/* 个人总结 */}
+        <div className="mb-3 p-4 -m-4 rounded-lg">
+          <h3 className="text-lg text-gray-800 border-l-4 border-blue-600 pl-3 mb-3">个人总结</h3>
+          <div className="text-gray-700 leading-relaxed">
+            <EditableText 
+              fieldId="summary"
+              value={summary}
+              placeholder="点击添加个人总结..."
+              multiline={true}
+              isHighlighted={isOptimized('summary')}
+            />
           </div>
+        </div>
 
-          {/* 项目经验 */}
-          <div className="mb-6 p-4 -m-4 rounded-lg">
-            <h3 className="text-lg text-gray-800 border-l-4 border-blue-600 pl-3 mb-4">项目经验</h3>
-            {projects.length > 0 ? (
-              <div className="space-y-4">
-                {projects.map((project) => (
-                  <div key={project.id} className="border-l-2 border-gray-200 pl-4">
-                    <div className="flex justify-between items-start mb-2">
-                      <div className="flex-1">
-                        <h4 className="text-gray-800 font-medium">
-                          <EditableText 
-                            fieldId={`project-${project.id}-name`}
-                            value={project.name}
-                            placeholder="项目名称"
-                          />
-                        </h4>
-                        <p className="text-blue-600 text-sm">
-                          <EditableText 
-                            fieldId={`project-${project.id}-technologies`}
-                            value={project.technologies}
-                            placeholder="技术栈"
-                          />
-                        </p>
-                      </div>
-                      <span className="text-gray-500 text-sm ml-4">
+        {/* 工作经历 */}
+        <div className="mb-3 p-4 -m-4 rounded-lg relative">
+          <ListSectionTitle title="工作经历" onAdd={addWorkExperience} />
+          {workExperience.length > 0 ? (
+            <div className="space-y-4">
+              {workExperience.map((work, index) => (
+                <div key={work.id} className="relative group border-l-2 border-gray-200 pl-4">
+                  <ListItemActions 
+                    type="workExperience" 
+                    id={work.id} 
+                    index={index} 
+                    total={workExperience.length} 
+                  />
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1">
+                      <h4 className="text-gray-800 font-medium">
                         <EditableText 
-                          fieldId={`project-${project.id}-duration`}
-                          value={project.duration}
-                          placeholder="时间"
+                          fieldId={`work-${work.id}-position`}
+                          value={work.position}
+                          placeholder={`职位名称`}
                         />
-                      </span>
-                    </div>
-                    <div className="text-gray-700 text-sm leading-relaxed whitespace-pre-line">
-                      <EditableText 
-                        fieldId={`project-${project.id}-description`}
-                        value={project.description}
-                        placeholder="点击添加项目描述..."
-                        multiline={true}
-                        isHighlighted={isOptimized('projects', project.id, 'description')}
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-gray-500 italic">请添加项目经验...</p>
-            )}
-          </div>
-
-          {/* 教育背景 */}
-          <div 
-            className="mb-6 cursor-pointer hover:bg-gray-50 p-4 -m-4 rounded-lg transition-colors"
-            // onClick={() => onEditSection?.('education')}
-          >
-            <h3 className="text-lg text-gray-800 border-l-4 border-blue-600 pl-3 mb-4">教育背景</h3>
-            {education.length > 0 ? (
-              <div className="space-y-3">
-                {education.map((edu) => (
-                  <div key={edu.id} className="border-l-2 border-gray-200 pl-4">
-                    <div className="flex justify-between items-start mb-1">
-                      <div>
-                        <h4 className="text-gray-800 font-medium">{edu.degree || '学历/专业'}</h4>
-                        <p className="text-blue-600">{edu.school || '学校名称'}</p>
-                      </div>
-                      <span className="text-gray-500 text-sm">{edu.duration || '时间'}</span>
-                    </div>
-                    {edu.description && (
-                      <p className="text-gray-700 text-sm leading-relaxed whitespace-pre-line">
-                        {edu.description}
+                      </h4>
+                      <p className="text-blue-600">
+                        <EditableText 
+                          fieldId={`work-${work.id}-company`}
+                          value={work.company}
+                          placeholder="公司名称"
+                        />
                       </p>
-                    )}
+                    </div>
+                    <span className="text-gray-500 text-sm ml-4">
+                      <EditableText 
+                        fieldId={`work-${work.id}-duration`}
+                        value={work.duration}
+                        placeholder="工作时间"
+                      />
+                    </span>
                   </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-gray-500 italic">请添加教育背景...</p>
-            )}
-          </div>
+                  <div className="text-gray-700 text-sm leading-relaxed whitespace-pre-line">
+                    <EditableText 
+                      fieldId={`work-${work.id}-description`}
+                      value={work.description}
+                      placeholder="点击添加工作描述..."
+                      multiline={true}
+                      isHighlighted={isOptimized('workExperience', work.id, 'description')}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-gray-500 italic">暂无工作经历，点击上方加号添加...</p>
+          )}
+        </div>
 
-          {/* 专业技能 */}
-          <div className="mb-6 p-4 -m-4 rounded-lg">
-            <h3 className="text-lg text-gray-800 border-l-4 border-blue-600 pl-3 mb-3">专业技能</h3>
-            {skills.length > 0 ? (
-              <div className="text-gray-700">
-                <EditableText 
-                  fieldId="skills"
-                  value={skills.join(', ')}
-                  placeholder="点击添加技能，用逗号分隔..."
-                  isHighlighted={isOptimized('skills')}
-                />
-              </div>
-            ) : (
-              <p className="text-gray-500 italic">
-                <EditableText 
-                  fieldId="skills"
-                  value=""
-                  placeholder="点击添加专业技能..."
-                />
-              </p>
-            )}
-          </div>
+        {/* 项目经验 */}
+        <div className="mb-3 p-4 -m-4 rounded-lg relative">
+          <ListSectionTitle title="项目经验" onAdd={addProject} />
+          {projects.length > 0 ? (
+            <div className="space-y-4">
+              {projects.map((project, index) => (
+                <div key={project.id} className="relative group border-l-2 border-gray-200 pl-4">
+                  <ListItemActions 
+                    type="projects" 
+                    id={project.id} 
+                    index={index} 
+                    total={projects.length} 
+                  />
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1">
+                      <h4 className="text-gray-800 font-medium">
+                        <EditableText 
+                          fieldId={`project-${project.id}-name`}
+                          value={project.name}
+                          placeholder="项目名称"
+                        />
+                      </h4>
+                      <p className="text-blue-600 text-sm">
+                        <EditableText 
+                          fieldId={`project-${project.id}-technologies`}
+                          value={project.technologies}
+                          placeholder="技术栈"
+                        />
+                      </p>
+                    </div>
+                    <span className="text-gray-500 text-sm ml-4">
+                      <EditableText 
+                        fieldId={`project-${project.id}-duration`}
+                        value={project.duration}
+                        placeholder="项目时间"
+                      />
+                    </span>
+                  </div>
+                  <div className="text-gray-700 text-sm leading-relaxed whitespace-pre-line">
+                    <EditableText 
+                      fieldId={`project-${project.id}-description`}
+                      value={project.description}
+                      placeholder="点击添加项目描述..."
+                      multiline={true}
+                      isHighlighted={isOptimized('projects', project.id, 'description')}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-gray-500 italic">暂无项目经验，点击上方加号添加...</p>
+          )}
+        </div>
+
+        {/* 教育背景 */}
+        <div className="mb-3 p-4 -m-4 rounded-lg relative">
+          <ListSectionTitle title="教育背景" onAdd={addEducation} />
+          {education.length > 0 ? (
+            <div className="space-y-4">
+              {education.map((edu, index) => (
+                <div key={edu.id} className="relative group border-l-2 border-gray-200 pl-4">
+                  <ListItemActions 
+                    type="education" 
+                    id={edu.id} 
+                    index={index} 
+                    total={education.length} 
+                  />
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1">
+                      <h4 className="text-gray-800 font-medium">
+                        <EditableText 
+                          fieldId={`education-${edu.id}-degree`}
+                          value={edu.degree}
+                          placeholder="学历/专业"
+                        />
+                      </h4>
+                      <p className="text-blue-600">
+                        <EditableText 
+                          fieldId={`education-${edu.id}-school`}
+                          value={edu.school}
+                          placeholder="学校名称"
+                        />
+                      </p>
+                    </div>
+                    <span className="text-gray-500 text-sm ml-4">
+                      <EditableText 
+                        fieldId={`education-${edu.id}-duration`}
+                        value={edu.duration}
+                        placeholder="就读时间"
+                      />
+                    </span>
+                  </div>
+                  <div className="text-gray-700 text-sm leading-relaxed whitespace-pre-line">
+                    <EditableText 
+                      fieldId={`education-${edu.id}-description`}
+                      value={edu.description}
+                      placeholder="点击添加教育描述..."
+                      multiline={true}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-gray-500 italic">暂无教育背景，点击上方加号添加...</p>
+          )}
+        </div>
+
+        {/* 专业技能 */}
+        <div className="mb-3 p-4 -m-4 rounded-lg">
+          <h3 className="text-lg text-gray-800 border-l-4 border-blue-600 pl-3 mb-3">专业技能</h3>
+          {skills.length > 0 ? (
+            <div className="text-gray-700">
+              <EditableText 
+                fieldId="skills"
+                value={skills.join(', ')}
+                placeholder="点击添加技能，用逗号分隔..."
+                isHighlighted={isOptimized('skills')}
+              />
+            </div>
+          ) : (
+            <p className="text-gray-500 italic">
+              <EditableText 
+                fieldId="skills"
+                value=""
+                placeholder="点击添加专业技能..."
+              />
+            </p>
+          )}
         </div>
       </div>
     </div>
