@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Mail, Phone, MapPin, Sparkles, Check, X } from 'lucide-react';
 import Button from "@/components/ui/Button"
-import type { ResumeData } from '../types';
+import type { ResumeData } from '@/types/resume';
 
 
 interface OptimizedResumeViewProps {
