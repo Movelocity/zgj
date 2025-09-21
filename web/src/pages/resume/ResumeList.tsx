@@ -343,7 +343,7 @@ const ResumeList: React.FC = () => {
 
         {/* 创建纯文本简历弹窗 */}
         {showCreateTextModal && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[1000]">
             <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-lg font-medium text-gray-900">创建纯文本简历</h3>
@@ -352,7 +352,7 @@ const ResumeList: React.FC = () => {
                     setShowCreateTextModal(false);
                     setTextResumeForm({ name: '', text_content: '' });
                   }}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="text-gray-400 hover:text-gray-600 cursor-pointer"
                 >
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

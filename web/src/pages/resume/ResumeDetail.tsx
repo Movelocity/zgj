@@ -5,7 +5,7 @@ import { FiEdit, FiShare2, FiTrash2, FiFileText, FiCalendar, FiUser } from 'reac
 import Button from '@/components/ui/Button';
 import { resumeAPI } from '@/api/resume';
 import { fileAPI } from '@/api/file';
-import type { ResumeDetail as ResumeDetailType, ResumeUpdateRequest } from '@/types/resume';
+import type { ResumeDetail as ResumeDetailType } from '@/types/resume';
 import { showSuccess, showError } from '@/utils/toast';
 
 const ResumeDetail: React.FC = () => {
@@ -13,8 +13,8 @@ const ResumeDetail: React.FC = () => {
   const navigate = useNavigate();
   const [resume, setResume] = useState<ResumeDetailType | null>(null);
   const [loading, setLoading] = useState(true);
-  const [editing, setEditing] = useState(false);
-  const [editForm, setEditForm] = useState<ResumeUpdateRequest>({});
+  // const [editing, setEditing] = useState(false);
+  // const [editForm, setEditForm] = useState<ResumeUpdateRequest>({});
   const [processingText, setProcessingText] = useState(false);
 
   // 加载简历详情
@@ -26,11 +26,11 @@ const ResumeDetail: React.FC = () => {
       const response = await resumeAPI.getResume(id);
       if (response.code === 0 && response.data) {
         setResume(response.data);
-        setEditForm({
-          name: response.data.name,
-          text_content: response.data.text_content,
-          structured_data: response.data.structured_data,
-        });
+        // setEditForm({
+        //   name: response.data.name,
+        //   text_content: response.data.text_content,
+        //   structured_data: response.data.structured_data,
+        // });
       }
     } catch (error) {
       showError(error instanceof Error ? error.message : '获取简历详情失败');
@@ -40,20 +40,20 @@ const ResumeDetail: React.FC = () => {
   };
 
   // 更新简历信息
-  const handleUpdate = async () => {
-    if (!id) return;
+  // const handleUpdate = async () => {
+  //   if (!id) return;
 
-    try {
-      const response = await resumeAPI.updateResume(id, editForm);
-      if (response.code === 0) {
-        showSuccess('简历更新成功');
-        setEditing(false);
-        loadResumeDetail();
-      }
-    } catch (error) {
-      showError(error instanceof Error ? error.message : '更新简历失败');
-    }
-  };
+  //   try {
+  //     const response = await resumeAPI.updateResume(id, editForm);
+  //     if (response.code === 0) {
+  //       showSuccess('简历更新成功');
+  //       // setEditing(false);
+  //       loadResumeDetail();
+  //     }
+  //   } catch (error) {
+  //     showError(error instanceof Error ? error.message : '更新简历失败');
+  //   }
+  // };
 
   // 删除简历
   const handleDelete = async () => {
@@ -201,11 +201,11 @@ const ResumeDetail: React.FC = () => {
           
           <div className="flex items-center space-x-3">
             <Button
-              onClick={() => setEditing(!editing)}
+              onClick={() => navigate(`/editor/${id}`)}
               variant="outline"
               icon={<FiEdit className="w-4 h-4" />}
             >
-              {editing ? '取消编辑' : '编辑'}
+              编辑
             </Button>
             {resume.file_id && (
               <Button
@@ -259,21 +259,21 @@ const ResumeDetail: React.FC = () => {
             </div>
             
             {resume.text_content ? (
-              editing ? (
-                <textarea
-                  value={editForm.text_content || ''}
-                  onChange={(e) => setEditForm({ ...editForm, text_content: e.target.value })}
-                  rows={24}
-                  className="w-full border border-gray-300 rounded-md p-3 focus:border-blue-600 focus:outline-none resize-vertical"
-                  placeholder="简历文本内容..."
-                />
-              ) : (
+              // editing ? (
+              //   <textarea
+              //     value={editForm.text_content || ''}
+              //     onChange={(e) => setEditForm({ ...editForm, text_content: e.target.value })}
+              //     rows={24}
+              //     className="w-full border border-gray-300 rounded-md p-3 focus:border-blue-600 focus:outline-none resize-vertical"
+              //     placeholder="简历文本内容..."
+              //   />
+              // ) : (
                 <div className="prose max-w-none">
                   <pre className="whitespace-pre-wrap text-sm text-gray-700 font-sans leading-relaxed">
                     {resume.text_content}
                   </pre>
                 </div>
-              )
+              // )
             ) : (
               <div className="text-center py-8 text-gray-500">
                 {resume.file_id ? (
@@ -293,19 +293,19 @@ const ResumeDetail: React.FC = () => {
             )}
 
             {/* 编辑操作按钮 */}
-            {editing && (
+            {/* {editing && (
               <div className="flex justify-end space-x-3 mt-4">
                 <Button onClick={() => setEditing(false)} variant="outline">取消</Button>
                 <Button onClick={handleUpdate} variant="primary">保存更改</Button>
               </div>
-            )}
+            )} */}
           </div>
 
           {/* 结构化数据 */}
           {resume.structured_data && (
             <div className="bg-white rounded-lg shadow-md p-6">
               <h3 className="text-lg font-medium text-gray-900 mb-4">结构化数据</h3>
-              {editing ? (
+              {/* {editing ? (
                 <div>
                   <textarea
                     value={JSON.stringify(editForm.structured_data || {}, null, 2)}
@@ -325,9 +325,9 @@ const ResumeDetail: React.FC = () => {
                     请输入有效的JSON格式数据
                   </p>
                 </div>
-              ) : (
-                renderStructuredData(resume.structured_data)
-              )}
+              ) : ( */}
+                {renderStructuredData(resume.structured_data)}
+              {/* )} */}
             </div>
           )}
 
