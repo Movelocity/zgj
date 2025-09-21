@@ -65,3 +65,38 @@ export interface WorkflowResult {
   result?: any;
   error?: string;
 }
+
+// 工作流备份和导入相关类型
+export interface WorkflowBackupData {
+  api_url: string;
+  api_key: string;
+  name: string;
+  description?: string;
+  inputs?: any;
+  outputs?: any;
+  is_public?: boolean;
+  enabled?: boolean;
+}
+
+export interface WorkflowBackupFile {
+  version: string;
+  exported_at: string;
+  workflows: WorkflowBackupData[];
+}
+
+export interface WorkflowConflict {
+  index: number;
+  name: string;
+  existing: Workflow;
+  importing: WorkflowBackupData;
+  action?: 'skip' | 'overwrite' | 'rename';
+  newName?: string;
+}
+
+export interface WorkflowImportResult {
+  total: number;
+  successful: number;
+  failed: number;
+  conflicts: WorkflowConflict[];
+  errors: string[];
+}

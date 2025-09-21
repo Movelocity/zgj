@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { FiPlus, FiPlay } from 'react-icons/fi';
+import { FiPlus, FiPlay, FiDownload } from 'react-icons/fi';
 import { adminAPI } from '@/api/admin';
 import { showSuccess, showError } from '@/utils/toast';
 import type { Workflow } from '@/types/workflow';
 import { Button } from '@/components/ui';
 import WorkflowModal from './WorkflowModal';
 import WorkflowDebugModal from '@/components/modals/WorkflowDebugModal';
+import WorkflowBackupModal from '@/components/modals/WorkflowBackupModal';
 
 const WorkflowManagement: React.FC = () => {
   const [workflows, setWorkflows] = useState<Workflow[]>([]);
@@ -15,6 +16,7 @@ const WorkflowManagement: React.FC = () => {
   const [selectedWorkflow, setSelectedWorkflow] = useState<Workflow | null>(null);
   const [debugModalOpen, setDebugModalOpen] = useState(false);
   const [debugWorkflow, setDebugWorkflow] = useState<Workflow | null>(null);
+  const [backupModalOpen, setBackupModalOpen] = useState(false);
 
   // 获取工作流列表
   const fetchWorkflows = async () => {
@@ -118,6 +120,16 @@ const WorkflowManagement: React.FC = () => {
     setDebugWorkflow(null);
   };
 
+  // 打开备份管理模态框
+  const handleBackupOpen = () => {
+    setBackupModalOpen(true);
+  };
+
+  // 备份模态框关闭回调
+  const handleBackupModalClose = () => {
+    setBackupModalOpen(false);
+  };
+
   return (
     <div className="space-y-6">
       {/* 头部操作栏 */}
@@ -125,13 +137,23 @@ const WorkflowManagement: React.FC = () => {
         <div>
           <h2 className="text-2xl font-bold text-gray-900">工作流API配置</h2>
         </div>
-        <Button
-          onClick={handleCreate}
-          className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-        >
-          <FiPlus className="mr-2" />
-          创建工作流
-        </Button>
+        <div className="flex items-center space-x-3">
+          <Button
+            onClick={handleBackupOpen}
+            variant="text"
+            className="inline-flex items-center px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+          >
+            <FiDownload className="mr-2" />
+            备份管理
+          </Button>
+          <Button
+            onClick={handleCreate}
+            className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+          >
+            <FiPlus className="mr-2" />
+            创建工作流
+          </Button>
+        </div>
       </div>
 
       {/* 工作流列表 */}
@@ -268,6 +290,15 @@ const WorkflowManagement: React.FC = () => {
         <WorkflowDebugModal
           workflow={debugWorkflow}
           onClose={handleDebugModalClose}
+        />
+      )}
+
+      {/* 备份管理模态框 */}
+      {backupModalOpen && (
+        <WorkflowBackupModal
+          workflows={workflows}
+          onClose={handleBackupModalClose}
+          onRefresh={fetchWorkflows}
         />
       )}
     </div>
