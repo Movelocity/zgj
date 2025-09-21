@@ -223,7 +223,7 @@ export default function ResumeDetails() {
             </Button>
             <div className="flex items-center ml-4">
               <Sparkles className="w-6 h-6 text-blue-600 mr-2" />
-              <h1 className="text-xl">简历编辑</h1>
+              <h1 className="text-xl">{ loading ? '正在处理您的简历' : '简历编辑' }</h1>
             </div>
           </div>
           <div className="flex items-center space-x-2">
@@ -231,10 +231,7 @@ export default function ResumeDetails() {
               <FiMessageSquare className="w-4 h-4 text-blue-600 mr-2" />
               <span className="text-sm text-blue-700">AI 优化简历</span>
             </div>
-            {/* <Button variant="outline">
-              导出PDF
-            </Button> */}
-            <Button variant="primary" onClick={handleSaveResume}>
+            <Button disabled={loading} variant="primary" onClick={handleSaveResume}>
               保存简历
             </Button>
           </div>
@@ -244,7 +241,7 @@ export default function ResumeDetails() {
       {/* 编辑区域 */}
       <div className="flex-1 flex">
         {loading ? (
-          <div className="flex justify-center items-center h-full">
+          <div className="flex justify-center items-center h-full w-full">
             <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-8 max-w-md w-full mx-4">
               {!showCompleted ? (
                 <div className="space-y-6">
@@ -272,7 +269,7 @@ export default function ResumeDetails() {
                       <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ${currentStage === 'analyzing' ? 'bg-blue-100 border-2 border-blue-600' : currentStage === 'completed' ? 'bg-green-100 border-2 border-green-600' : 'bg-gray-100 border-2 border-gray-300'}`}>
                         {currentStage === 'analyzing' ? '3' : currentStage === 'completed' ? '✓' : '3'}
                       </div>
-                      <span className="text-sm font-medium">简历分析 (暂时跳过)</span>
+                      <span className="text-sm font-medium">简历分析</span>
                     </div>
                   </div>
                   
