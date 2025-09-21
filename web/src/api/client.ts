@@ -111,17 +111,17 @@ apiClient.interceptors.response.use(
     return response.data as any;
   },
   (error: AxiosError<ApiResponse>) => {
-    const duration = error.config ? Date.now() - (error.config as any)._requestStartTime : 0;
+    // const duration = error.config ? Date.now() - (error.config as any)._requestStartTime : 0;
     
     // 记录错误日志
-    debugLogger.log({
-      type: 'error',
-      method: error.config?.method,
-      url: error.config?.url,
-      status: error.response?.status,
-      error: (error.response?.data as any)?.msg || error.message,
-      duration
-    });
+    // debugLogger.log({
+    //   type: 'error',
+    //   method: error.config?.method,
+    //   url: error.config?.url,
+    //   status: error.response?.status,
+    //   error: (error.response?.data as any)?.msg || error.message,
+    //   duration
+    // });
     
     // 处理401未授权错误
     if (error.response?.status === 401) {

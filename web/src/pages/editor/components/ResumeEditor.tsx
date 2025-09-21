@@ -234,13 +234,13 @@ export default function ResumeEditor({
     index: number; 
     total: number; 
   }) => (
-    <div className="absolute -left-10 top-0 flex flex-col space-y-1 opacity-0 group-hover:opacity-100 transition-opacity">
+    <div className="absolute -left-8 top-0 flex flex-col space-y-1 opacity-0 group-hover:opacity-100 transition-opacity">
       <Button
         size="zero"
         variant="outline"
         onClick={() => moveItemUp(type, id)}
         disabled={index === 0}
-        className="w-8 h-8 p-0 bg-white shadow-sm hover:bg-gray-50"
+        className="w-6 h-6 p-0 bg-white shadow-sm hover:bg-gray-50"
         title="上移"
       >
         <ChevronUp size={14} />
@@ -250,7 +250,7 @@ export default function ResumeEditor({
         variant="outline"
         onClick={() => moveItemDown(type, id)}
         disabled={index === total - 1}
-        className="w-8 h-8 p-0 bg-white shadow-sm hover:bg-gray-50"
+        className="w-6 h-6 p-0 bg-white shadow-sm hover:bg-gray-50"
         title="下移"
       >
         <ChevronDown size={14} />
@@ -259,7 +259,7 @@ export default function ResumeEditor({
         size="zero"
         variant="outline"
         onClick={() => deleteItem(type, id)}
-        className="w-8 h-8 p-0 bg-white shadow-sm hover:bg-red-50 hover:text-red-600"
+        className="w-6 h-6 p-0 bg-white shadow-sm hover:bg-red-50 hover:text-red-600"
         title="删除"
       >
         <Trash2 size={14} />
@@ -281,7 +281,7 @@ export default function ResumeEditor({
         size="zero"
         variant="outline"
         onClick={onAdd}
-        className="absolute -left-10 top-0 w-8 h-8 p-0 bg-white shadow-sm opacity-0 group-hover:opacity-100 transition-opacity hover:bg-blue-50 hover:text-blue-600"
+        className="absolute -left-8 top-0 w-6 h-6 p-0 bg-white shadow-sm opacity-0 group-hover:opacity-100 transition-opacity hover:bg-blue-50 hover:text-blue-600"
         title={`添加${title}`}
       >
         <Plus size={14} />

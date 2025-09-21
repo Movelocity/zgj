@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { FiMessageSquare } from 'react-icons/fi';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Sparkles, ArrowLeftIcon } from 'lucide-react';
@@ -13,7 +13,7 @@ import type {
 } from '@/types/resume';
 import { resumeAPI } from '@/api/resume';
 import { showError, showSuccess } from '@/utils/toast';
-import Spinner from '@/components/ui/Loading';
+import Loading from '@/components/ui/Loading';
 
 // 定义哪些内容是AI优化过的
 // const optimizedSectionsExample: OptimizedSections = {
@@ -62,7 +62,7 @@ export default function ResumeDetails() {
       const response = await resumeAPI.getResume(id);
       if (response.code === 0 && response.data) {
         const { name, text_content, structured_data, file_id } = response.data;
-        if (!structured_data) { 
+        if (!structured_data || !Object.keys(structured_data).length) { 
           if (!text_content) {
             if (file_id) {
               // 解析文件到文本
@@ -129,8 +129,14 @@ export default function ResumeDetails() {
     }));
   }
 
+  const loadTimeOutRef = useRef<NodeJS.Timeout | null>(null);
   useEffect(() => {
-    loadResumeDetail();
+    if (loadTimeOutRef.current) {
+      clearTimeout(loadTimeOutRef.current);
+    }
+    loadTimeOutRef.current = setTimeout(() => {
+      loadResumeDetail();
+    }, 1);
   }, [id]);
 
   useEffect(() => {
@@ -174,7 +180,7 @@ export default function ResumeDetails() {
         <div className="w-[70%] border-r border-gray-200 bg-white h-screen overflow-auto py-16">
           {loading ? (
             <div className="flex justify-center items-center h-full">
-              <Spinner />
+              <Loading />
               <p className="text-gray-600">{processingText}</p>
             </div>
           ) : (

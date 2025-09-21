@@ -226,7 +226,6 @@ func (s *resumeService) ResumeFileToText(userId string, resumeId string) error {
 		return errors.New("查询文件失败")
 	}
 	difyFileId := file.DifyID
-	// ext := strings.ToUpper(file.Extension)
 
 	workflow := model.Workflow{}
 	if err := global.DB.Where("name = ?", "doc_extract").First(&workflow).Error; err != nil {
@@ -242,18 +241,24 @@ func (s *resumeService) ResumeFileToText(userId string, resumeId string) error {
 		},
 	}
 
-	var response *appService.WorkflowAPIResponse
-	response, err := appService.AppService.CallWorkflowAPI(workflow.ApiURL, workflow.ApiKey, resume.UserID, fileInput)
+	// 使用新的ExecuteWorkflowAPI方法，自动处理日志记录
+	response, err := appService.AppService.ExecuteWorkflowAPI(workflow.ID, resume.UserID, fileInput)
 	if err != nil {
 		fmt.Println("[err] ", err)
-		return errors.New("解析响应体失败: " + err.Error())
+		return errors.New("工作流执行失败: " + err.Error())
 	}
-	if response.Data.Error != "" {
-		fmt.Println("[response.Data.Error] ", response.Data.Error)
-		return errors.New("请求失败")
+	if !response.Success {
+		fmt.Println("[response error] ", response.Message)
+		return errors.New(response.Message)
 	}
 
-	resume.TextContent = response.Data.Outputs["output"].(string)
+	// 从响应中提取输出
+	outputs, ok := response.Data["outputs"].(map[string]interface{})
+	if !ok {
+		return errors.New("响应格式错误")
+	}
+
+	resume.TextContent = outputs["output"].(string)
 	resume.TextContent = removeThinkTags(resume.TextContent)
 	if err := global.DB.Model(&model.ResumeRecord{}).Where("id = ?", resume.ID).Updates(&resume).Error; err != nil {
 		return errors.New("更新简历表格失败")
@@ -300,16 +305,22 @@ func (s *resumeService) StructureTextToJSON(userId string, resumeId string) erro
 		"text_content": resume.TextContent,
 	}
 
-	var response *appService.WorkflowAPIResponse
-	response, err := appService.AppService.CallWorkflowAPI(workflow.ApiURL, workflow.ApiKey, resume.UserID, input)
+	// 使用新的ExecuteWorkflowAPI方法，自动处理日志记录
+	response, err := appService.AppService.ExecuteWorkflowAPI(workflow.ID, resume.UserID, input)
 	if err != nil {
-		return errors.New("解析响应体失败: " + err.Error())
+		return errors.New("工作流执行失败: " + err.Error())
 	}
-	if response.Data.Error != "" {
-		return errors.New("请求失败")
+	if !response.Success {
+		return errors.New(response.Message)
 	}
 
-	completeJSON := extractCompleteJSON(response.Data.Outputs["output"].(string))
+	// 从响应中提取输出
+	outputs, ok := response.Data["outputs"].(map[string]interface{})
+	if !ok {
+		return errors.New("响应格式错误")
+	}
+
+	completeJSON := extractCompleteJSON(outputs["output"].(string))
 	resume.StructuredData = model.JSON(completeJSON)
 	if err := global.DB.Model(&model.ResumeRecord{}).Where("id = ?", resume.ID).Updates(&resume).Error; err != nil {
 		return errors.New("更新简历结构化数据失败")

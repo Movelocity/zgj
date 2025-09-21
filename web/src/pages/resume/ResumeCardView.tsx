@@ -171,7 +171,7 @@ const ResumeCardView: React.FC = () => {
         ) : (
           <>
             {/* 卡片网格 */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-12">
               {/* 上传简历卡片 */}
               <div className="group">
                 <input

@@ -119,6 +119,8 @@ func StructureTextToJSON(c *gin.Context) {
 		utils.FailWithMessage(err.Error(), c)
 		return
 	}
+
+	utils.OkWithMessage("文本结构化成功", c)
 }
 
 // CreateTextResume 创建纯文本简历

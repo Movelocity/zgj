@@ -289,7 +289,7 @@ func (s *appService) ExecuteWorkflow(workflowID, userID string, inputs map[strin
 	var errorMessage string
 
 	// 调用远程工作流API
-	apiResponse, err := s.CallWorkflowAPI(workflow.ApiURL, workflow.ApiKey, userID, inputs)
+	apiResponse, err := s.callWorkflowAPI(workflow.ApiURL, workflow.ApiKey, userID, inputs)
 	if err != nil {
 		errorMessage = err.Error()
 		status = "failed"
@@ -336,31 +336,8 @@ func (s *appService) ExecuteWorkflow(workflowID, userID string, inputs map[strin
 	// 计算执行时间
 	executionTime := int(time.Since(startTime).Milliseconds())
 
-	// 记录日志，异步执行，不影响主流程
-	go func() {
-		// 这里需要导入workflow服务，但为了避免循环依赖，我们直接在这里实现
-		inputsJSON, _ := json.Marshal(inputs)
-		outputsJSON, _ := json.Marshal(response.Data)
-
-		execution := model.WorkflowExecution{
-			ID:         utils.GenerateTLID(),
-			WorkflowID: workflowID,
-			UserID:     userID,
-			// ResumeID:      "",
-			Inputs:        model.JSON(inputsJSON),
-			Outputs:       model.JSON(outputsJSON),
-			Status:        status,
-			ErrorMessage:  errorMessage,
-			ExecutionTime: executionTime,
-		}
-
-		global.DB.Create(&execution)
-
-		// 只有成功时才增加使用次数
-		if status == "success" {
-			global.DB.Model(&workflow).UpdateColumn("used", gorm.Expr("used + ?", 1))
-		}
-	}()
+	// 记录工作流执行日志
+	s.LogWorkflowExecution(workflowID, userID, inputs, response, status, errorMessage, executionTime)
 
 	return response, nil
 }
@@ -451,8 +428,107 @@ func (s *appService) AdminUpdateWorkflow(workflowID string, req UpdateWorkflowRe
 	return nil
 }
 
-// callWorkflowAPI 调用远程工作流API
-func (s *appService) CallWorkflowAPI(apiURL, apiKey, userID string, inputs map[string]interface{}) (*WorkflowAPIResponse, error) {
+// LogWorkflowExecution 记录工作流执行日志
+func (s *appService) LogWorkflowExecution(workflowID, userID string, inputs map[string]interface{}, response *ExecuteWorkflowResponse, status string, errorMessage string, executionTime int) {
+	go func() {
+		// 获取工作流信息用于更新使用次数
+		var workflow model.Workflow
+		global.DB.Where("id = ?", workflowID).First(&workflow)
+
+		inputsJSON, _ := json.Marshal(inputs)
+		outputsJSON, _ := json.Marshal(response.Data)
+
+		execution := model.WorkflowExecution{
+			ID:            utils.GenerateTLID(),
+			WorkflowID:    workflowID,
+			UserID:        userID,
+			Inputs:        model.JSON(inputsJSON),
+			Outputs:       model.JSON(outputsJSON),
+			Status:        status,
+			ErrorMessage:  errorMessage,
+			ExecutionTime: executionTime,
+		}
+
+		global.DB.Create(&execution)
+
+		// 只有成功时才增加使用次数
+		if status == "success" {
+			global.DB.Model(&workflow).UpdateColumn("used", gorm.Expr("used + ?", 1))
+		}
+	}()
+}
+
+// ExecuteWorkflowAPI 执行工作流API并自动记录日志 (公开方法)
+func (s *appService) ExecuteWorkflowAPI(workflowID, userID string, inputs map[string]interface{}) (*ExecuteWorkflowResponse, error) {
+	startTime := time.Now()
+
+	// 获取工作流信息
+	var workflow model.Workflow
+	if err := global.DB.Where("id = ?", workflowID).First(&workflow).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errors.New("工作流不存在")
+		}
+		return nil, errors.New("查询工作流失败")
+	}
+
+	// 调用私有的工作流API方法
+	var response *ExecuteWorkflowResponse
+	var status string
+	var errorMessage string
+
+	apiResponse, err := s.callWorkflowAPI(workflow.ApiURL, workflow.ApiKey, userID, inputs)
+	if err != nil {
+		errorMessage = err.Error()
+		status = "failed"
+		response = &ExecuteWorkflowResponse{
+			Success: false,
+			Data:    map[string]interface{}{},
+			Message: fmt.Sprintf("工作流执行失败: %s", err.Error()),
+		}
+	} else {
+		// 根据API响应状态判断结果
+		if apiResponse.Data.Status == "succeeded" {
+			status = "success"
+			response = &ExecuteWorkflowResponse{
+				Success: true,
+				Data: map[string]interface{}{
+					"workflow_run_id": apiResponse.WorkflowRunID,
+					"task_id":         apiResponse.TaskID,
+					"outputs":         apiResponse.Data.Outputs,
+					"elapsed_time":    apiResponse.Data.ElapsedTime,
+					"total_tokens":    apiResponse.Data.TotalTokens,
+					"total_steps":     apiResponse.Data.TotalSteps,
+				},
+				Message: "工作流执行成功",
+			}
+		} else {
+			status = "failed"
+			errorMsg := "未知错误"
+			if apiResponse.Data.Error != "" {
+				errorMsg = apiResponse.Data.Error
+			}
+			errorMessage = errorMsg
+			response = &ExecuteWorkflowResponse{
+				Success: false,
+				Data: map[string]interface{}{
+					"workflow_run_id": apiResponse.WorkflowRunID,
+					"task_id":         apiResponse.TaskID,
+					"status":          apiResponse.Data.Status,
+				},
+				Message: fmt.Sprintf("工作流执行失败: %s", errorMsg),
+			}
+		}
+	}
+
+	// 计算执行时间并记录日志
+	executionTime := int(time.Since(startTime).Milliseconds())
+	s.LogWorkflowExecution(workflowID, userID, inputs, response, status, errorMessage, executionTime)
+
+	return response, nil
+}
+
+// callWorkflowAPI 调用远程工作流API (私有方法)
+func (s *appService) callWorkflowAPI(apiURL, apiKey, userID string, inputs map[string]interface{}) (*WorkflowAPIResponse, error) {
 	// 构建请求体
 	requestBody := WorkflowAPIRequest{
 		Inputs:       inputs,

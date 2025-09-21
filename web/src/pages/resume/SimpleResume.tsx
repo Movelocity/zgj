@@ -405,7 +405,7 @@ const SimpleResume: React.FC = () => {
 
         {/* 优化结果弹窗 */}
         {showResults && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[1000]">
             <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
               <div className="text-center mb-4">
                 <div className="flex items-center justify-center mb-2">
