@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { FiMessageSquare } from 'react-icons/fi';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ROUTES } from '@/utils/constants';
 import { Sparkles, ArrowLeftIcon } from 'lucide-react';
 import Button from "@/components/ui/Button"
 import { useGlobalStore } from '@/store';
@@ -14,6 +13,7 @@ import type {
 } from '@/types/resume';
 import { resumeAPI } from '@/api/resume';
 import { showError, showSuccess } from '@/utils/toast';
+import Spinner from '@/components/ui/Loading';
 
 // 定义哪些内容是AI优化过的
 // const optimizedSectionsExample: OptimizedSections = {
@@ -50,33 +50,64 @@ export default function ResumeDetails() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   // const [resume, setResume] = useState<ResumeDetailType | null>(null);
-  // const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [processingText, setProcessingText] = useState("");
   const [editForm, setEditForm] = useState<ResumeUpdateRequest>({});
-  // const [processingText, setProcessingText] = useState(false);
 
   // 加载简历详情
   const loadResumeDetail = async () => {
     if (!id) return;
     
     try {
-      // setLoading(true);
       const response = await resumeAPI.getResume(id);
       if (response.code === 0 && response.data) {
-        // setResume(response.data);
-        setEditForm({
-          name: response.data.name,
-          text_content: response.data.text_content,
-          structured_data: response.data.structured_data,
-        });
+        const { name, text_content, structured_data, file_id } = response.data;
+        if (!structured_data) { 
+          if (!text_content) {
+            if (file_id) {
+              // 解析文件到文本
+              setProcessingText("正在解析文件 请稍后...");
+              setLoading(true);
 
-        const newResumeData = response.data.structured_data;
-        console.log('newResumeData', newResumeData);
-        setResumeData(newResumeData);
+              const response = await resumeAPI.resumeFileToText(id);
+              if (response.code === 0) {
+                // 刷新简历详情
+                loadResumeDetail();
+                return
+              }
+            }
+          } else if (text_content.length > 20) {
+            // 后端结构化文本
+            setProcessingText("正在结构化文本 请耐心等待...");
+            setLoading(true);
+
+            const response = await resumeAPI.structureTextToJSON(id);
+            if (response.code === 0) {
+              loadResumeDetail();
+              return;
+            }
+          } else {
+            // 文本内容太短，解析了也没用，直接创建默认模版
+            setEditForm({
+              name: name,
+              text_content: text_content,
+              structured_data: ResumeExample,
+            });
+            setResumeData(ResumeExample);
+          }
+        } else {
+          setEditForm({
+            name: name,
+            text_content: text_content,
+            structured_data: structured_data,
+          });
+          setResumeData(structured_data);
+          setLoading(false);
+        }
       }
     } catch (error) {
       showError(error instanceof Error ? error.message : '获取简历详情失败');
-    } finally {
-      // setLoading(false);
+      setLoading(false);
     }
   };
 
@@ -114,7 +145,7 @@ export default function ResumeDetails() {
       <div className="bg-white border-b border-gray-200 px-4 shadow-sm fixed top-0 w-full z-[1000]">
         <div className="max-w-7xl mx-auto flex items-center justify-between h-14">
           <div className="flex items-center">
-            <Button variant="ghost" onClick={() => navigate(ROUTES.HOME)} icon={<ArrowLeftIcon className="w-4 h-4" />}>
+            <Button variant="ghost" onClick={() => navigate("/resumes/cards")} icon={<ArrowLeftIcon className="w-4 h-4" />}>
               返回
             </Button>
             <div className="flex items-center ml-4">
@@ -141,11 +172,18 @@ export default function ResumeDetails() {
       <div className="flex-1 flex">
         {/* 左侧优化后简历 (7/10) */}
         <div className="w-[70%] border-r border-gray-200 bg-white h-screen overflow-auto py-16">
-          <ResumeEditor 
-            optimizedSections={optimizedSections}
-            resumeData={resumeData}
-            onResumeDataChange={handleSetResumeData}
-          />
+          {loading ? (
+            <div className="flex justify-center items-center h-full">
+              <Spinner />
+              <p className="text-gray-600">{processingText}</p>
+            </div>
+          ) : (
+            <ResumeEditor 
+              optimizedSections={optimizedSections}
+              resumeData={resumeData}
+              onResumeDataChange={handleSetResumeData}
+            />
+          )}
         </div>
 
         {/* 右侧AI对话界面 (3/10) */}

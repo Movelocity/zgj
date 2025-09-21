@@ -13,6 +13,7 @@ const CodeAuth = lazy(() => import('@/pages/auth/CodeAuth'));
 const SimpleResume = lazy(() => import('@/pages/resume/SimpleResume'));
 const JobResume = lazy(() => import('@/pages/resume/JobResume'));
 const ResumeList = lazy(() => import('@/pages/resume/ResumeList'));
+const ResumeCardView = lazy(() => import('@/pages/resume/ResumeCardView'));
 const ResumeDetail = lazy(() => import('@/pages/resume/ResumeDetail'));
 const ResumeEditor = lazy(() => import('@/pages/editor/ResumeDetails'));
 const Profile = lazy(() => import('@/pages/profile/Profile'));
@@ -46,6 +47,10 @@ export const routes = [
   {
     path: '/resumes',
     element: <ResumeList />,
+  },
+  {
+    path: '/resumes/cards',
+    element: <ResumeCardView />,
   },
   {
     path: '/resume/:id',
@@ -83,6 +88,7 @@ const protectedRoutes = [
   '/simple-resume',
   '/job-resume',
   '/resumes',
+  '/resumes/cards',
   '/resume/:id',
   '/profile',
   '/api-test', // API测试页面需要登录才能访问

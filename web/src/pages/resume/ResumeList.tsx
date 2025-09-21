@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { FiUpload, FiFileText, FiDownload, FiTrash2, FiCalendar, FiPlus, FiEdit } from 'react-icons/fi';
-import { useNavigate } from 'react-router-dom';
+import { FiUpload, FiFileText, FiDownload, FiTrash2, FiCalendar, FiPlus, FiEdit, FiGrid } from 'react-icons/fi';
+import { useNavigate, Link } from 'react-router-dom';
 import Button from '@/components/ui/Button';
 import { resumeAPI } from '@/api/resume';
 import { fileAPI } from '@/api/file';
@@ -163,7 +163,15 @@ const ResumeList: React.FC = () => {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* 页面标题和操作按钮 */}
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">我的简历</h1>
+          <div className="flex items-center space-x-4">
+            <h1 className="text-3xl font-bold text-gray-900">我的简历</h1>
+            <Link to="/resumes/cards">
+              <Button variant="ghost" size="sm" className="flex items-center space-x-2">
+                <FiGrid className="w-4 h-4" />
+                <span>卡片视图</span>
+              </Button>
+            </Link>
+          </div>
           <div className="flex items-center space-x-3">
             <input
               type="file"
@@ -253,9 +261,9 @@ const ResumeList: React.FC = () => {
                             <div className="text-sm font-medium text-gray-900">
                               {resume.name}
                             </div>
-                            <div className="text-sm text-gray-500">
+                            {/* <div className="text-sm text-gray-500">
                               {resume.original_filename}
-                            </div>
+                            </div> */}
                           </div>
                         </div>
                       </td>
