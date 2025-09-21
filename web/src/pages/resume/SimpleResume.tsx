@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FiUpload, FiFileText, FiStar, FiCheckCircle, FiX, FiFolder } from 'react-icons/fi';
 import { Sparkles } from 'lucide-react';
 import Button from "@/components/ui/Button"
 import type { ResumeUploadData, ResumeInfo, OptimizationResult } from '@/types/resume';
 import { resumeAPI } from '@/api/resume';
 import { useNavigate } from 'react-router-dom';
+import { TimeBasedProgressUpdater, AI_OPTIMIZATION_STEPS } from '@/utils/progress';
+import { showError, showSuccess } from '@/utils/toast';
 
 const HistoryResumeSelector: React.FC<{
   onSelect: (file: File) => void;
@@ -234,17 +236,50 @@ const SimpleResume: React.FC = () => {
   const [showResults, setShowResults] = useState(false);  // 是否显示优化结果弹窗
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [optimizationResults, setOptimizationResults] = useState<OptimizationResult | null>(null);
+  const [progressUpdater, setProgressUpdater] = useState<TimeBasedProgressUpdater | null>(null);
+  const [currentStep, setCurrentStep] = useState(0);
+
+  // 初始化进度更新器
+  const initProgressUpdater = () => {
+    const updater = new TimeBasedProgressUpdater(AI_OPTIMIZATION_STEPS, {
+      onProgressUpdate: (progress: number, text: string) => {
+        setProgress(progress);
+        setProgressText(text);
+      },
+      onStepComplete: (stepIndex: number, stepName: string) => {
+        console.log(`Step ${stepIndex + 1} completed: ${stepName}`);
+        setCurrentStep(stepIndex + 1);
+      },
+      onAllComplete: () => {
+        // 生成模拟结果
+        const mockResults: OptimizationResult = {
+          totalChanges: Math.floor(Math.random() * 15) + 8,
+          sectionsImproved: ['工作经历', '技能描述', '项目经验', '个人总结'],
+          improvementPercentage: Math.floor(Math.random() * 30) + 40
+        };
+        
+        setOptimizationResults(mockResults);
+        setIsOptimizing(false);
+        setShowResults(true);
+        showSuccess('简历优化完成！');
+      }
+    });
+    setProgressUpdater(updater);
+    return updater;
+  };
 
   const startOptimization = async (file: File) => {
     if (!file) return;
 
     setIsOptimizing(true);
     setProgress(0);
+    setCurrentStep(0);
 
     try {
+      const updater = initProgressUpdater();
+      
       // 第一步：上传简历文件
-      setProgressText('上传简历文件中...');
-      setProgress(20);
+      updater.startStep(0);
       
       const uploadData: ResumeUploadData = { file };
       const uploadResponse = await resumeAPI.uploadResume(uploadData);
@@ -252,38 +287,60 @@ const SimpleResume: React.FC = () => {
       if (uploadResponse.code !== 0) {
         throw new Error('简历上传失败');
       }
-
-      // 模拟AI优化过程的其他步骤
-      const steps = [
-        { text: '分析您的个人优势...', progress: 40 },
-        { text: '生成针对性优化建议...', progress: 65 },
-        { text: '专家为您优化简历中...', progress: 85 },
-        { text: '完成优化处理...', progress: 100 }
-      ];
-
-      for (const step of steps) {
-        setProgressText(step.text);
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        setProgress(step.progress);
+      
+      // 完成上传步骤
+      updater.completeCurrentStep();
+      
+      // 第二步：解析简历内容
+      setTimeout(() => {
+        updater.startStep(1);
+        setTimeout(() => {
+          updater.completeCurrentStep();
+          
+          // 第三步：分析个人优势
+          setTimeout(() => {
+            updater.startStep(2);
+            setTimeout(() => {
+              updater.completeCurrentStep();
+              
+              // 第四步：生成优化建议
+              setTimeout(() => {
+                updater.startStep(3);
+                setTimeout(() => {
+                  updater.completeCurrentStep();
+                  
+                  // 第五步：应用优化方案
+                  setTimeout(() => {
+                    updater.startStep(4);
+                    setTimeout(() => {
+                      updater.completeCurrentStep();
+                    }, AI_OPTIMIZATION_STEPS[4].expectedDuration * 1000);
+                  }, 500);
+                }, AI_OPTIMIZATION_STEPS[3].expectedDuration * 1000);
+              }, 500);
+            }, AI_OPTIMIZATION_STEPS[2].expectedDuration * 1000);
+          }, 500);
+        }, AI_OPTIMIZATION_STEPS[1].expectedDuration * 1000);
+      }, 500);
+      
+      // 设置结果中的简历ID
+      if (optimizationResults) {
+        setOptimizationResults({
+          ...optimizationResults,
+          resumeId: uploadResponse.data?.id || ''
+        });
       }
-
-      // 模拟优化结果
-      const mockResults: OptimizationResult = {
-        totalChanges: Math.floor(Math.random() * 15) + 8,
-        sectionsImproved: ['工作经历', '技能描述', '项目经验', '个人总结'],
-        improvementPercentage: Math.floor(Math.random() * 30) + 40,
-        resumeId: uploadResponse.data?.id || ''
-      };
-
-      setOptimizationResults(mockResults);
-      setIsOptimizing(false);
-      setShowResults(true);
+      
     } catch (error) {
+      if (progressUpdater) {
+        progressUpdater.stop();
+      }
       setIsOptimizing(false);
       setProgress(0);
       setProgressText('');
-      // 这里应该显示错误提示，但先保持原有的模拟逻辑
-      console.error('优化过程出错:', error);
+      setCurrentStep(0);
+      
+      showError(error instanceof Error ? error.message : '优化过程出错');
       
       // 回退到模拟模式
       const mockResults: OptimizationResult = {
@@ -304,13 +361,27 @@ const SimpleResume: React.FC = () => {
   };
 
   const resetProcess = () => {
+    if (progressUpdater) {
+      progressUpdater.stop();
+    }
     setSelectedFile(null);
     setIsOptimizing(false);
     setProgress(0);
     setProgressText('');
     setShowResults(false);
     setOptimizationResults(null);
+    setProgressUpdater(null);
+    setCurrentStep(0);
   };
+
+  // 清理进度更新器
+  useEffect(() => {
+    return () => {
+      if (progressUpdater) {
+        progressUpdater.stop();
+      }
+    };
+  }, [progressUpdater]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-4">
@@ -378,6 +449,9 @@ const SimpleResume: React.FC = () => {
                   <div className="text-sm text-gray-600">
                     {progress}% 完成
                   </div>
+                  <div className="text-xs text-gray-500 mt-2">
+                    步骤 {currentStep + 1} / {AI_OPTIMIZATION_STEPS.length}
+                  </div>
                 </div>
               </div>
             )}
@@ -420,7 +494,7 @@ const SimpleResume: React.FC = () => {
                   optimizationResults={optimizationResults}
                   onConfirm={() => {
                     setShowResults(false)
-                    navigate('/editor')
+                    navigate('/resumes')
                   }}
                 />
               )}

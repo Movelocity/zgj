@@ -181,7 +181,7 @@ const ResumeList: React.FC = () => {
               onChange={handleUpload}
               disabled={uploading}
             />
-            <Button
+            {/* <Button
               onClick={() => setShowCreateTextModal(true)}
               variant="outline"
               disabled={uploading}
@@ -189,7 +189,7 @@ const ResumeList: React.FC = () => {
             >
               <FiPlus className="w-4 h-4" />
               <span>创建简历</span>
-            </Button>
+            </Button> */}
             <Button
               onClick={() => document.getElementById('resume-upload')?.click()}
               disabled={uploading}

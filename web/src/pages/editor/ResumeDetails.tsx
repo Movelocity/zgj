@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { FiMessageSquare } from 'react-icons/fi';
+import { FiMessageSquare, FiCheckCircle } from 'react-icons/fi';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Sparkles, ArrowLeftIcon } from 'lucide-react';
 import Button from "@/components/ui/Button"
@@ -13,7 +13,7 @@ import type {
 } from '@/types/resume';
 import { resumeAPI } from '@/api/resume';
 import { showError, showSuccess } from '@/utils/toast';
-import Loading from '@/components/ui/Loading';
+import { TimeBasedProgressUpdater, RESUME_PROCESSING_STEPS } from '@/utils/progress';
 
 // 定义哪些内容是AI优化过的
 // const optimizedSectionsExample: OptimizedSections = {
@@ -51,8 +51,35 @@ export default function ResumeDetails() {
   const navigate = useNavigate();
   // const [resume, setResume] = useState<ResumeDetailType | null>(null);
   const [loading, setLoading] = useState(true);
-  const [processingText, setProcessingText] = useState("");
+  const [currentStage, setCurrentStage] = useState<'parsing' | 'structuring' | 'analyzing' | 'completed'>('parsing');
+  const [progress, setProgress] = useState(0);
+  const [progressText, setProgressText] = useState('');
+  const [showCompleted, setShowCompleted] = useState(false);
   const [editForm, setEditForm] = useState<ResumeUpdateRequest>({});
+  const [progressUpdater, setProgressUpdater] = useState<TimeBasedProgressUpdater | null>(null);
+
+  // 初始化进度更新器
+  const initProgressUpdater = () => {
+    const updater = new TimeBasedProgressUpdater(RESUME_PROCESSING_STEPS, {
+      onProgressUpdate: (progress: number, text: string) => {
+        setProgress(progress);
+        setProgressText(text);
+      },
+      onStepComplete: (stepIndex: number, stepName: string) => {
+        console.log(`Step ${stepIndex + 1} completed: ${stepName}`);
+      },
+      onAllComplete: () => {
+        setCurrentStage('completed');
+        setShowCompleted(true);
+        setTimeout(() => {
+          setShowCompleted(false);
+          loadResumeDetail();
+        }, 2000);
+      }
+    });
+    setProgressUpdater(updater);
+    return updater;
+  };
 
   // 加载简历详情
   const loadResumeDetail = async () => {
@@ -65,26 +92,45 @@ export default function ResumeDetails() {
         if (!structured_data || !Object.keys(structured_data).length) { 
           if (!text_content) {
             if (file_id) {
-              // 解析文件到文本
-              setProcessingText("正在解析文件 请稍后...");
+              // 第一阶段：解析文件到文本
+              setCurrentStage('parsing');
               setLoading(true);
+              
+              const updater = progressUpdater || initProgressUpdater();
+              updater.startStep(0); // 开始第一步
 
               const response = await resumeAPI.resumeFileToText(id);
               if (response.code === 0) {
-                // 刷新简历详情
-                loadResumeDetail();
-                return
+                updater.completeCurrentStep();
+                setTimeout(() => {
+                  loadResumeDetail(); // 重新加载以进入下一阶段
+                }, 1000);
+                return;
+              } else {
+                updater.stop();
+                setLoading(false);
+                showError('文件解析失败');
               }
             }
           } else if (text_content.length > 20) {
-            // 后端结构化文本
-            setProcessingText("正在结构化文本 请耐心等待...");
+            // 第二阶段：结构化文本数据
+            setCurrentStage('structuring');
             setLoading(true);
+            
+            const updater = progressUpdater || initProgressUpdater();
+            updater.startStep(1); // 开始第二步
 
             const response = await resumeAPI.structureTextToJSON(id);
             if (response.code === 0) {
-              loadResumeDetail();
+              updater.completeCurrentStep();
+              setTimeout(() => {
+                loadResumeDetail(); // 重新加载以进入下一阶段
+              }, 1000);
               return;
+            } else {
+              updater.stop();
+              setLoading(false);
+              showError('数据结构化失败');
             }
           } else {
             // 文本内容太短，解析了也没用，直接创建默认模版
@@ -94,6 +140,7 @@ export default function ResumeDetails() {
               structured_data: ResumeExample,
             });
             setResumeData(ResumeExample);
+            setLoading(false);
           }
         } else {
           setEditForm({
@@ -103,11 +150,22 @@ export default function ResumeDetails() {
           });
           setResumeData(structured_data);
           setLoading(false);
+          setProgress(0);
+          setProgressText('');
+          setCurrentStage('parsing');
+          setShowCompleted(false);
         }
       }
     } catch (error) {
+      if (progressUpdater) {
+        progressUpdater.stop();
+      }
       showError(error instanceof Error ? error.message : '获取简历详情失败');
       setLoading(false);
+      setProgress(0);
+      setProgressText('');
+      setCurrentStage('parsing');
+      setShowCompleted(false);
     }
   };
 
@@ -143,6 +201,15 @@ export default function ResumeDetails() {
     // 设置标签页标题
     document.title = `简历编辑 - 职管加`;
   }, []);
+
+  // 清理进度更新器
+  useEffect(() => {
+    return () => {
+      if (progressUpdater) {
+        progressUpdater.stop();
+      }
+    };
+  }, [progressUpdater]);
   
 
   return (
@@ -176,26 +243,80 @@ export default function ResumeDetails() {
 
       {/* 编辑区域 */}
       <div className="flex-1 flex">
-        {/* 左侧优化后简历 (7/10) */}
-        <div className="w-[70%] border-r border-gray-200 bg-white h-screen overflow-auto py-16">
-          {loading ? (
-            <div className="flex justify-center items-center h-full">
-              <Loading />
-              <p className="text-gray-600">{processingText}</p>
+        {loading ? (
+          <div className="flex justify-center items-center h-full">
+            <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-8 max-w-md w-full mx-4">
+              {!showCompleted ? (
+                <div className="space-y-6">
+                  <div className="text-center">
+                    <h3 className="text-lg font-medium mb-4">正在处理您的简历</h3>
+                  </div>
+                  
+                  {/* 步骤指示器 */}
+                  <div className="space-y-3">
+                    <div className={`flex items-center space-x-3 ${currentStage === 'parsing' ? 'text-blue-600' : currentStage === 'structuring' || currentStage === 'analyzing' || currentStage === 'completed' ? 'text-green-600' : 'text-gray-400'}`}>
+                      <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ${currentStage === 'parsing' ? 'bg-blue-100 border-2 border-blue-600' : currentStage === 'structuring' || currentStage === 'analyzing' || currentStage === 'completed' ? 'bg-green-100 border-2 border-green-600' : 'bg-gray-100 border-2 border-gray-300'}`}>
+                        {currentStage === 'parsing' ? '1' : '✓'}
+                      </div>
+                      <span className="text-sm font-medium">简历文件解析</span>
+                    </div>
+                    
+                    <div className={`flex items-center space-x-3 ${currentStage === 'structuring' ? 'text-blue-600' : currentStage === 'analyzing' || currentStage === 'completed' ? 'text-green-600' : 'text-gray-400'}`}>
+                      <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ${currentStage === 'structuring' ? 'bg-blue-100 border-2 border-blue-600' : currentStage === 'analyzing' || currentStage === 'completed' ? 'bg-green-100 border-2 border-green-600' : 'bg-gray-100 border-2 border-gray-300'}`}>
+                        {currentStage === 'structuring' ? '2' : currentStage === 'analyzing' || currentStage === 'completed' ? '✓' : '2'}
+                      </div>
+                      <span className="text-sm font-medium">简历数据结构化</span>
+                    </div>
+                    
+                    <div className={`flex items-center space-x-3 ${currentStage === 'analyzing' ? 'text-blue-600' : currentStage === 'completed' ? 'text-green-600' : 'text-gray-400'}`}>
+                      <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ${currentStage === 'analyzing' ? 'bg-blue-100 border-2 border-blue-600' : currentStage === 'completed' ? 'bg-green-100 border-2 border-green-600' : 'bg-gray-100 border-2 border-gray-300'}`}>
+                        {currentStage === 'analyzing' ? '3' : currentStage === 'completed' ? '✓' : '3'}
+                      </div>
+                      <span className="text-sm font-medium">简历分析 (暂时跳过)</span>
+                    </div>
+                  </div>
+                  
+                  <div className="w-full bg-gray-200 rounded-full h-2 mt-6">
+                    <div 
+                      className="bg-blue-600 h-2 rounded-full transition-all duration-500" 
+                      style={{ width: `${progress}%` }}
+                    ></div>
+                  </div>
+                  
+                  {/* 当前处理步骤文本 */}
+                  {progressText && (
+                    <div className="text-center mt-4">
+                      <p className="text-sm text-blue-600 font-medium">{progressText}</p>
+                      <p className="text-xs text-gray-500 mt-1">{progress}% 完成</p>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="text-center space-y-4">
+                  <FiCheckCircle className="w-16 h-16 text-green-500 mx-auto" />
+                  <h3 className="text-lg font-medium">处理完成！</h3>
+                </div>
+              )}
             </div>
-          ) : (
-            <ResumeEditor 
-              optimizedSections={optimizedSections}
-              resumeData={resumeData}
-              onResumeDataChange={handleSetResumeData}
-            />
-          )}
-        </div>
+          </div>
+        ) : (
+          <>
+            {/* 左侧优化后简历 (7/10) */}
+            <div className="w-[70%] border-r border-gray-200 bg-white h-screen overflow-auto py-16">
+              <ResumeEditor 
+                optimizedSections={optimizedSections}
+                resumeData={resumeData}
+                onResumeDataChange={handleSetResumeData}
+              />
+            </div>
 
-        {/* 右侧AI对话界面 (3/10) */}
-        <div className="w-[30%] p-2 bg-gray-50 h-screen overflow-auto pt-14">
-          <ChatPanel />
-        </div>
+            {/* 右侧AI对话界面 (3/10) */}
+            <div className="w-[30%] p-2 bg-gray-50 h-screen overflow-auto pt-14">
+              <ChatPanel />
+            </div>
+          </>
+        )}
+        
       </div>
     </div>
   )
