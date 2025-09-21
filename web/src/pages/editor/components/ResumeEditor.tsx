@@ -1,37 +1,24 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Mail, Phone, MapPin, Sparkles, Check, X } from 'lucide-react';
 import Button from "@/components/ui/Button"
-import type { ResumeData } from '@/types/resume';
-
+import type { ResumeData, OptimizedSections } from '@/types/resume';
 
 interface OptimizedResumeViewProps {
+  optimizedSections: OptimizedSections;
   resumeData: ResumeData;
   onResumeDataChange?: (data: ResumeData) => void;
   onStartEditing?: () => void;
-  // onStopEditing?: () => void;
   isEditing?: boolean;
 }
 
-// 定义哪些内容是AI优化过的
-const optimizedSections = {
-  personalInfo: ['title'], // 职位标题被优化：更专业的表述
-  summary: true, // 整个个人总结被优化：更具体和有吸引力
-  workExperience: {
-    '1': ['description'] // 第一个工作经历的描述被优化：添加了数据和成果
-  },
-  skills: true, // 技能部分被优化：重新排序突出核心技能
-  projects: {
-    '1': ['description'] // 第一个项目的描述被优化：更详细的技术实现和业务价值
-  }
-};
-
 export default function ResumeEditor({ 
+  optimizedSections,
   resumeData, 
   onResumeDataChange = () => {}, 
 }: OptimizedResumeViewProps) {
   const { personalInfo, summary, workExperience, education, skills, projects } = resumeData;
   const [editingField, setEditingField] = useState<string | null>(null);
-  const [tempValue, setTempValue] = useState<string>('');
+  const editingValueRef = useRef<string>('');
 
   // 检查某个字段是否被优化过
   const isOptimized = (section: string, itemId?: string, field?: string): boolean => {
@@ -55,55 +42,53 @@ export default function ResumeEditor({
 
   // 开始编辑某个字段
   const startEditing = (fieldId: string, currentValue: string) => {
-    // if (!isEditing) {
-    //   onStartEditing();
-    // }
     setEditingField(fieldId);
-    setTempValue(currentValue);
+    editingValueRef.current = currentValue;
   };
 
   // 保存编辑
-  const saveEdit = (fieldId: string) => {
+  const saveEdit = (fieldId: string, inputElement: HTMLInputElement | HTMLTextAreaElement) => {
+    // 从输入框直接获取最新值
+    const currentValue = inputElement.value;
+    
     // 根据fieldId更新对应的数据
     const newData = { ...resumeData };
     
     if (fieldId === 'name') {
-      newData.personalInfo.name = tempValue;
+      newData.personalInfo.name = currentValue;
     } else if (fieldId === 'title') {
-      newData.personalInfo.title = tempValue;
+      newData.personalInfo.title = currentValue;
     } else if (fieldId === 'email') {
-      newData.personalInfo.email = tempValue;
+      newData.personalInfo.email = currentValue;
     } else if (fieldId === 'phone') {
-      newData.personalInfo.phone = tempValue;
+      newData.personalInfo.phone = currentValue;
     } else if (fieldId === 'location') {
-      newData.personalInfo.location = tempValue;
+      newData.personalInfo.location = currentValue;
     } else if (fieldId === 'summary') {
-      newData.summary = tempValue;
+      newData.summary = currentValue;
     } else if (fieldId.startsWith('work-')) {
       const [, workId, field] = fieldId.split('-');
       const workIndex = newData.workExperience.findIndex(w => w.id === workId);
       if (workIndex !== -1) {
-        (newData.workExperience[workIndex] as any)[field] = tempValue;
+        (newData.workExperience[workIndex] as any)[field] = currentValue;
       }
     } else if (fieldId.startsWith('project-')) {
       const [, projectId, field] = fieldId.split('-');
       const projectIndex = newData.projects.findIndex(p => p.id === projectId);
       if (projectIndex !== -1) {
-        (newData.projects[projectIndex] as any)[field] = tempValue;
+        (newData.projects[projectIndex] as any)[field] = currentValue;
       }
     } else if (fieldId === 'skills') {
-      newData.skills = tempValue.split(',').map(s => s.trim()).filter(s => s);
+      newData.skills = currentValue.split(',').map(s => s.trim()).filter(s => s);
     }
     
     onResumeDataChange(newData);
     setEditingField(null);
-    setTempValue('');
   };
 
   // 取消编辑
   const cancelEdit = () => {
     setEditingField(null);
-    setTempValue('');
   };
 
   // 停止整体编辑模式
@@ -144,27 +129,32 @@ export default function ResumeEditor({
     className?: string;
   }) => {
     const isCurrentlyEditing = editingField === fieldId;
+    const inputRef = useRef<HTMLInputElement>(null);
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
     
     if (isCurrentlyEditing) {
       return (
         <div className="flex items-start space-x-2">
           {multiline ? (
             <textarea
-              value={tempValue}
-              onChange={(e) => setTempValue(e.target.value)}
+              ref={textareaRef}
+              defaultValue={editingValueRef.current}
               className="flex-1 min-h-20"
               autoFocus
             />
           ) : (
             <input
-              value={tempValue}
-              onChange={(e) => setTempValue(e.target.value)}
+              ref={inputRef}
+              defaultValue={editingValueRef.current}
               className="flex-1"
               autoFocus
             />
           )}
           <div className="flex space-x-1">
-            <Button size="sm" onClick={() => saveEdit(fieldId)}>
+            <Button size="sm" onClick={() => {
+              const element = multiline ? textareaRef.current : inputRef.current;
+              if (element) saveEdit(fieldId, element);
+            }}>
               <Check className="w-4 h-4" />
             </Button>
             <Button size="sm" variant="outline" onClick={cancelEdit}>

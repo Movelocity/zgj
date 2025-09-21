@@ -1,18 +1,35 @@
 import { useEffect, useState } from 'react';
 import { FiMessageSquare } from 'react-icons/fi';
-import { Link } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { ROUTES } from '@/utils/constants';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, ArrowLeftIcon } from 'lucide-react';
 import Button from "@/components/ui/Button"
 import { useGlobalStore } from '@/store';
 import ChatPanel from './components/ChatPanel';
 import ResumeEditor from './components/ResumeEditor';
 import { ResumeExample, type ResumeData } from '@/types/resume';
-// import { useNavigate } from 'react-router-dom';
+import type { 
+  OptimizedSections,
+  ResumeUpdateRequest
+} from '@/types/resume';
+import { resumeAPI } from '@/api/resume';
+import { showError, showSuccess } from '@/utils/toast';
+
+// 定义哪些内容是AI优化过的
+// const optimizedSectionsExample: OptimizedSections = {
+//   personalInfo: ['title'], // 职位标题被优化：更专业的表述
+//   summary: true, // 整个个人总结被优化：更具体和有吸引力
+//   workExperience: {
+//     '1': ['description'] // 第一个工作经历的描述被优化：添加了数据和成果
+//   },
+//   skills: true, // 技能部分被优化：重新排序突出核心技能
+//   projects: {
+//     '1': ['description'] // 第一个项目的描述被优化：更详细的技术实现和业务价值
+//   }
+// };
 
 export default function ResumeDetails() {
   const { setShowBanner } = useGlobalStore();
-  // const navigate = useNavigate();
   useEffect(() => {
     setShowBanner(false);
     return () => {
@@ -20,12 +37,75 @@ export default function ResumeDetails() {
     };
   }, []);
 
-  // const onExit = () => {
-  //   navigate('/');
-  // };
-
   // 简历数据状态 - AI优化后的内容
   const [resumeData, setResumeData] = useState<ResumeData>(ResumeExample);
+  const [optimizedSections] = useState<OptimizedSections>({
+    personalInfo: [],
+    summary: false,
+    workExperience: {},
+    skills: false,
+    projects: {},
+  });
+
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  // const [resume, setResume] = useState<ResumeDetailType | null>(null);
+  // const [loading, setLoading] = useState(true);
+  const [editForm, setEditForm] = useState<ResumeUpdateRequest>({});
+  // const [processingText, setProcessingText] = useState(false);
+
+  // 加载简历详情
+  const loadResumeDetail = async () => {
+    if (!id) return;
+    
+    try {
+      // setLoading(true);
+      const response = await resumeAPI.getResume(id);
+      if (response.code === 0 && response.data) {
+        // setResume(response.data);
+        setEditForm({
+          name: response.data.name,
+          text_content: response.data.text_content,
+          structured_data: response.data.structured_data,
+        });
+
+        const newResumeData = response.data.structured_data;
+        console.log('newResumeData', newResumeData);
+        setResumeData(newResumeData);
+      }
+    } catch (error) {
+      showError(error instanceof Error ? error.message : '获取简历详情失败');
+    } finally {
+      // setLoading(false);
+    }
+  };
+
+  const handleSaveResume = async () => {
+    if (!id) return;
+    try {
+      await resumeAPI.updateResume(id, editForm);
+      showSuccess('保存简历成功');
+    } catch (error) {
+      showError(error instanceof Error ? error.message : '保存简历失败');
+    }
+  };
+
+  const handleSetResumeData = async (data: ResumeData) => {
+    setResumeData(data);
+    setEditForm(prev => ({
+      ...prev,
+      structured_data: data,
+    }));
+  }
+
+  useEffect(() => {
+    loadResumeDetail();
+  }, [id]);
+
+  useEffect(() => {
+    // 设置标签页标题
+    document.title = `简历编辑 - 职管加`;
+  }, []);
   
 
   return (
@@ -34,13 +114,9 @@ export default function ResumeDetails() {
       <div className="bg-white border-b border-gray-200 px-4 shadow-sm fixed top-0 w-full z-[1000]">
         <div className="max-w-7xl mx-auto flex items-center justify-between h-14">
           <div className="flex items-center">
-            <div className="flex items-center">
-              <Link to={ROUTES.HOME} className="flex items-center space-x-2">
-                {/* <DocumentTextIcon className="h-8 w-8 text-blue-600" /> */}
-                <img src="/favicon.ico" alt="职管加" className="h-8 w-8" />
-                <span className="text-xl font-bold text-gray-900">职管加</span>
-              </Link>
-            </div>
+            <Button variant="ghost" onClick={() => navigate(ROUTES.HOME)} icon={<ArrowLeftIcon className="w-4 h-4" />}>
+              返回
+            </Button>
             <div className="flex items-center ml-4">
               <Sparkles className="w-6 h-6 text-blue-600 mr-2" />
               <h1 className="text-xl">简历编辑</h1>
@@ -54,7 +130,7 @@ export default function ResumeDetails() {
             {/* <Button variant="outline">
               导出PDF
             </Button> */}
-            <Button variant="primary">
+            <Button variant="primary" onClick={handleSaveResume}>
               保存简历
             </Button>
           </div>
@@ -66,8 +142,9 @@ export default function ResumeDetails() {
         {/* 左侧优化后简历 (7/10) */}
         <div className="w-[70%] border-r border-gray-200 bg-white h-screen overflow-auto py-16">
           <ResumeEditor 
+            optimizedSections={optimizedSections}
             resumeData={resumeData}
-            onResumeDataChange={setResumeData}
+            onResumeDataChange={handleSetResumeData}
           />
         </div>
 

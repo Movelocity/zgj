@@ -313,122 +313,120 @@ const SimpleResume: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
-      <div className="p-4">
-        <div className="max-w-2xl mx-auto pt-20">
-          <div className="text-center mb-8">
-            <div className="flex items-center justify-center mb-4">
-              <Sparkles className="w-8 h-8 text-blue-600 mr-2" />
-              <h1 className="text-3xl">AI简历优化</h1>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-4">
+      <div className="max-w-2xl mx-auto pt-20">
+        <div className="text-center mb-8">
+          <div className="flex items-center justify-center mb-4">
+            <Sparkles className="w-8 h-8 text-blue-600 mr-2" />
+            <h1 className="text-3xl">AI简历优化</h1>
+          </div>
+          <p className="text-gray-600">
+            上传您的简历，让AI为您智能优化内容和格式
+          </p>
+        </div>
+
+        <div className="bg-white rounded-xl shadow-lg border border-gray-200">
+          <div className="p-6">
+            <div className="flex items-center mb-2">
+              <FiFileText className="w-5 h-5 mr-2" />
+              <h2 className="text-lg font-medium">简历优化</h2>
             </div>
-            <p className="text-gray-600">
-              上传您的简历，让AI为您智能优化内容和格式
+            <p className="text-gray-600 text-sm">
+              支持PDF、Word等格式，文件大小不超过10MB
             </p>
           </div>
+          <div className="p-6 space-y-6">
+            {!isOptimizing && !showResults && (
+              <>
+                <ResumeSelector
+                  selectedFile={selectedFile}
+                  onSelect={setSelectedFile}
+                />
+                {/* 开始优化按钮 */}
+                <Button
+                  onClick={handleStartOptimization}
+                  disabled={!selectedFile}
+                  className="w-full h-12"
+                  icon={<FiStar className="w-4 h-4 mr-2" />}
+                >
+                  开始AI优化
+                </Button>
+              </>
+            )}
 
-          <div className="bg-white rounded-xl shadow-lg border border-gray-200">
-            <div className="p-6">
-              <div className="flex items-center mb-2">
-                <FiFileText className="w-5 h-5 mr-2" />
-                <h2 className="text-lg font-medium">简历优化</h2>
-              </div>
-              <p className="text-gray-600 text-sm">
-                支持PDF、Word等格式，文件大小不超过10MB
-              </p>
-            </div>
-            <div className="p-6 space-y-6">
-              {!isOptimizing && !showResults && (
-                <>
-                  <ResumeSelector
-                    selectedFile={selectedFile}
-                    onSelect={setSelectedFile}
-                  />
-                  {/* 开始优化按钮 */}
-                  <Button
-                    onClick={handleStartOptimization}
-                    disabled={!selectedFile}
-                    className="w-full h-12"
-                    icon={<FiStar className="w-4 h-4 mr-2" />}
-                  >
-                    开始AI优化
-                  </Button>
-                </>
-              )}
-
-              {/* 优化进度 */}
-              {isOptimizing && (
-                <div className="space-y-4">
-                  <div className="text-center">
-                    <h3 className="mb-2">正在优化您的简历...</h3>
-                    <p className="text-sm text-gray-600 mb-4">
-                      AI正在分析和优化您的简历内容
-                    </p>
-                  </div>
-                  
-                  <div className="w-full bg-gray-200 rounded-full h-3">
-                    <div 
-                      className="bg-blue-600 h-3 rounded-full transition-all duration-300" 
-                      style={{ width: `${progress}%` }}
-                    ></div>
-                  </div>
-                  
-                  <div className="text-center space-y-2">
-                    <div className="text-sm text-blue-600 font-medium">
-                      {progressText}
-                    </div>
-                    <div className="text-sm text-gray-600">
-                      {progress}% 完成
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* 完成状态 */}
-              {!isOptimizing && showResults && (
-                <div className="text-center space-y-4">
-                  <FiCheckCircle className="w-16 h-16 text-green-500 mx-auto" />
-                  <h3>优化完成！</h3>
-                  <p className="text-gray-600">
-                    您的简历已成功优化
+            {/* 优化进度 */}
+            {isOptimizing && (
+              <div className="space-y-4">
+                <div className="text-center">
+                  <h3 className="mb-2">正在优化您的简历...</h3>
+                  <p className="text-sm text-gray-600 mb-4">
+                    AI正在分析和优化您的简历内容
                   </p>
-                  <Button 
-                    icon={<FiCheckCircle className="w-4 h-4 mr-2" />}
-                    variant="primary"
-                    onClick={resetProcess} 
-                    className="w-full"
-                  >
-                    优化新简历
-                  </Button>
                 </div>
+                
+                <div className="w-full bg-gray-200 rounded-full h-3">
+                  <div 
+                    className="bg-blue-600 h-3 rounded-full transition-all duration-300" 
+                    style={{ width: `${progress}%` }}
+                  ></div>
+                </div>
+                
+                <div className="text-center space-y-2">
+                  <div className="text-sm text-blue-600 font-medium">
+                    {progressText}
+                  </div>
+                  <div className="text-sm text-gray-600">
+                    {progress}% 完成
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* 完成状态 */}
+            {!isOptimizing && showResults && (
+              <div className="text-center space-y-4">
+                <FiCheckCircle className="w-16 h-16 text-green-500 mx-auto" />
+                <h3>优化完成！</h3>
+                <p className="text-gray-600">
+                  您的简历已成功优化
+                </p>
+                <Button 
+                  icon={<FiCheckCircle className="w-4 h-4 mr-2" />}
+                  variant="primary"
+                  onClick={resetProcess} 
+                  className="w-full"
+                >
+                  优化新简历
+                </Button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* 优化结果弹窗 */}
+        {showResults && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+              <div className="text-center mb-4">
+                <div className="flex items-center justify-center mb-2">
+                  <FiStar className="w-5 h-5 mr-2 text-blue-600" />
+                  <h3 className="text-lg font-medium">优化完成</h3>
+                </div>
+                <p className="text-gray-600">AI已成功优化您的简历</p>
+              </div>
+              
+              {optimizationResults && (
+                <OptimizedResultsModal
+                  optimizationResults={optimizationResults}
+                  onConfirm={() => {
+                    setShowResults(false)
+                    navigate('/editor')
+                  }}
+                />
               )}
             </div>
           </div>
-
-          {/* 优化结果弹窗 */}
-          {showResults && (
-            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-              <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-                <div className="text-center mb-4">
-                  <div className="flex items-center justify-center mb-2">
-                    <FiStar className="w-5 h-5 mr-2 text-blue-600" />
-                    <h3 className="text-lg font-medium">优化完成</h3>
-                  </div>
-                  <p className="text-gray-600">AI已成功优化您的简历</p>
-                </div>
-                
-                {optimizationResults && (
-                  <OptimizedResultsModal
-                    optimizationResults={optimizationResults}
-                    onConfirm={() => {
-                      setShowResults(false)
-                      navigate('/editor')
-                    }}
-                  />
-                )}
-              </div>
-            </div>
-          )}
-        </div>
+        )}
       </div>
     </div>
   );

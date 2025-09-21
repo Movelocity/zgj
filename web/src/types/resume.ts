@@ -227,3 +227,15 @@ export const ResumeExample: ResumeData = {
   ]
 }
 */
+
+export type OptimizedSections = {
+  personalInfo: string[];
+  summary: boolean;
+  workExperience: {
+    [key: string]: string[];
+  };
+  skills: boolean;
+  projects: {
+    [key: string]: string[];
+  };
+}
