@@ -70,6 +70,8 @@ const Modal: React.FC<ModalProps> = ({
   contentClassName = '',
   zIndex = 1000,
 }) => {
+  if (!open) return null;
+
   // 处理ESC键关闭
   React.useEffect(() => {
     if (!open || !escClosable) return;
@@ -97,7 +99,7 @@ const Modal: React.FC<ModalProps> = ({
     };
   }, [open]);
 
-  if (!open) return null;
+  
 
   // 尺寸配置
   const sizeClasses = {
@@ -142,16 +144,15 @@ const Modal: React.FC<ModalProps> = ({
               <h3 className="text-lg font-medium text-gray-900">{title}</h3>
             )}
             {showCloseButton && (
-              <button
-                onClick={()=>{
+              <div
+                onClick={(e) => {
+                  e.stopPropagation();
                   onClose();
-                  console.log('onClose');
                 }}
-                className="text-gray-400 hover:text-gray-600 cursor-pointer transition-colors"
-                type="button"
+                className="text-gray-400 hover:text-gray-600 cursor-pointer transition-colors p-1 rounded-md hover:bg-gray-100"
               >
                 <FiX className="w-6 h-6" />
-              </button>
+              </div>
             )}
           </div>
         )}

@@ -664,6 +664,8 @@ func (s *appService) callWorkflowStreamAPIDirect(ctx context.Context, c *gin.Con
 		return fmt.Errorf("序列化请求数据失败: %w", err)
 	}
 
+	// fmt.Println("[request workflow stream]", string(jsonData))
+
 	// 创建HTTP请求
 	req, err := http.NewRequestWithContext(ctx, "POST", apiURL, bytes.NewBuffer(jsonData))
 	if err != nil {

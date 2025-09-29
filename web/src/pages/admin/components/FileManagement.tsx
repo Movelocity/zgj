@@ -16,7 +16,7 @@ import { adminAPI } from '@/api/admin';
 import { showSuccess, showError, showInfo } from '@/utils/toast';
 import Button from '@/components/ui/Button';
 import Modal from '@/components/ui/Modal';
-import { API_BASE_URL, TOKEN_KEY } from '@/utils/constants';
+import { TOKEN_KEY } from '@/utils/constants';
 
 interface FileInfo {
   id: string;
@@ -214,7 +214,7 @@ const FileManagement: React.FC = () => {
     try {
       // 下载文件需要鉴权，所以先下载到浏览器，再下给用户
       // 使用 axios 直接请求，指定 responseType 为 blob 来正确处理二进制数据
-      const response = await axios.get(`${API_BASE_URL}/api/files/${file.id}/preview?as_attachment=true`, {
+      const response = await axios.get(`/api/files/${file.id}/preview?as_attachment=true`, {
         responseType: 'blob',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem(TOKEN_KEY)}`

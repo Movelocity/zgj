@@ -1,6 +1,7 @@
 import apiClient from './client';
 import type { Workflow, WorkflowExecution } from '@/types/workflow';
 import type { ApiResponse, PaginationParams, PaginationResponse } from '@/types/global';
+import { TOKEN_KEY } from '@/utils/constants';
 
 export const workflowAPI = {
   // 获取工作流列表
@@ -40,7 +41,7 @@ export const workflowAPI = {
     onMessage?: (data: any) => void, 
     onError?: (error: any) => void
   ): Promise<void> => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem(TOKEN_KEY);
     const body = { inputs, response_mode: 'streaming' };
     try {
       const response = await fetch(`/api/workflow/${id}/execute`, {

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { adminAPI } from '@/api/admin';
 import { showSuccess, showError } from '@/utils/toast';
 import { Modal, Button } from '@/components/ui';
+import { WorkflowStreamTester } from '@/components/workflow/WorkflowStreamTester';
 import type { Workflow, CreateWorkflowRequest, UpdateWorkflowRequest } from '@/types/workflow';
 
 interface WorkflowModalProps {
@@ -236,24 +237,34 @@ const WorkflowModal: React.FC<WorkflowModalProps> = ({ mode, workflow, onClose }
               </label>
               
 
-              <label className="flex items-center">
-                <Button size="xs" className="ml-2 text-sm text-blue-500 " onClick={() => setIsTestModalOpen(true)}>流式调用</Button>
-                <Modal
-                  open={isTestModalOpen}
-                  onClose={() => setIsTestModalOpen(false)}
-                  title="流式测试"
-                  size="xl"
-                  showFooter={true}
-                >
-                  <div className="p-6 space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-4">
-                        <h4 className="text-md font-medium text-gray-900">基本信息</h4>
+              {mode === 'edit' && (
+                <div className="flex items-center">
+                  <Button 
+                    size="xs" 
+                    className="ml-2 text-sm text-blue-500" 
+                    onClick={() => setIsTestModalOpen(true)}
+                    disabled={!formData.api_url || !formData.api_key || !!jsonErrors.inputs}
+                  >
+                    流式调用
+                  </Button>
+                  {isTestModalOpen && (
+                    <Modal
+                      open={isTestModalOpen}
+                      onClose={() => setIsTestModalOpen(false)}
+                      title="流式工作流测试"
+                      size="full"
+                      showFooter={false}
+                    >
+                      <div className="p-6">
+                        <WorkflowStreamTester
+                          workflowId={workflow?.id || 'test-workflow'}
+                          inputsTemplate={inputsJson}
+                        />
                       </div>
-                    </div>
-                  </div>
-                </Modal>
-              </label>
+                    </Modal>
+                  )}
+                </div>
+              )}
             </div>
 
           </div>

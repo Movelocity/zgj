@@ -1,6 +1,6 @@
 import axios from 'axios';
 import type { AxiosResponse, AxiosError } from 'axios';
-import { API_BASE_URL, TOKEN_KEY } from '@/utils/constants';
+import { TOKEN_KEY } from '@/utils/constants';
 import type { ApiResponse } from '@/types/global';
 
 // 调试日志管理器
@@ -52,7 +52,7 @@ export const debugLogger = new DebugLogger();
 
 // 创建axios实例
 const apiClient = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: "",
   timeout: 1000 * 300,
   headers: {
     'Content-Type': 'application/json',
