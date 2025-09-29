@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { adminAPI } from '@/api/admin';
 import { showSuccess, showError } from '@/utils/toast';
-import { Modal } from '@/components/ui';
+import { Modal, Button } from '@/components/ui';
 import type { Workflow, CreateWorkflowRequest, UpdateWorkflowRequest } from '@/types/workflow';
 
 interface WorkflowModalProps {
-  mode: 'create' | 'edit' | 'view';
+  mode: 'create' | 'edit';
   workflow: Workflow | null;
   onClose: (refresh?: boolean) => void;
 }
@@ -26,11 +26,10 @@ const WorkflowModal: React.FC<WorkflowModalProps> = ({ mode, workflow, onClose }
   const [outputsJson, setOutputsJson] = useState('{}');
   const [jsonErrors, setJsonErrors] = useState({ inputs: '', outputs: '' });
 
-  const isReadonly = mode === 'view';
   const title = mode === 'create' ? '创建工作流' : mode === 'edit' ? '编辑工作流' : '工作流详情';
 
   useEffect(() => {
-    if (workflow && (mode === 'edit' || mode === 'view')) {
+    if (workflow && (mode === 'edit')) {
       setFormData({
         api_url: workflow.api_url,
         api_key: workflow.api_key,
@@ -71,7 +70,6 @@ const WorkflowModal: React.FC<WorkflowModalProps> = ({ mode, workflow, onClose }
 
 
   const handleConfirm = async () => {
-    if (isReadonly) return;
 
     // 检查JSON格式错误
     if (jsonErrors.inputs || jsonErrors.outputs) {
@@ -104,6 +102,8 @@ const WorkflowModal: React.FC<WorkflowModalProps> = ({ mode, workflow, onClose }
     }
   };
 
+  const [isTestModalOpen, setIsTestModalOpen] = useState(false);
+
   return (
     <Modal
       open={true}
@@ -112,8 +112,8 @@ const WorkflowModal: React.FC<WorkflowModalProps> = ({ mode, workflow, onClose }
       size="xl"
       showFooter={true}
       confirmText={mode === 'create' ? '创建' : '保存'}
-      cancelText={isReadonly ? '关闭' : '取消'}
-      onConfirm={!isReadonly ? handleConfirm : undefined}
+      cancelText={'取消'}
+      // onConfirm={handleConfirm}
       confirmLoading={loading}
       confirmDisabled={!!jsonErrors.inputs || !!jsonErrors.outputs}
     >
@@ -131,11 +131,8 @@ const WorkflowModal: React.FC<WorkflowModalProps> = ({ mode, workflow, onClose }
                 type="text"
                 value={formData.name}
                 onChange={(e) => handleFieldChange('name', e.target.value)}
-                readOnly={isReadonly}
                 required
-                className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  isReadonly ? 'bg-gray-50' : ''
-                }`}
+                className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500`}
                 placeholder="请输入工作流名称"
               />
             </div>
@@ -147,11 +144,8 @@ const WorkflowModal: React.FC<WorkflowModalProps> = ({ mode, workflow, onClose }
               <textarea
                 value={formData.description}
                 onChange={(e) => handleFieldChange('description', e.target.value)}
-                readOnly={isReadonly}
                 rows={3}
-                className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  isReadonly ? 'bg-gray-50' : ''
-                }`}
+                className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500`}
                 placeholder="请输入工作流描述"
               />
             </div>
@@ -164,15 +158,12 @@ const WorkflowModal: React.FC<WorkflowModalProps> = ({ mode, workflow, onClose }
                 type="url"
                 value={formData.api_url}
                 onChange={(e) => handleFieldChange('api_url', e.target.value)}
-                readOnly={isReadonly}
                 required
                 autoComplete="off"
                 autoCorrect="off"
                 autoCapitalize="off"
                 spellCheck="false"
-                className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  isReadonly ? 'bg-gray-50' : ''
-                }`}
+                className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500`}
                 placeholder="http://dify.hollway.fun/v1/workflows/run"
               />
             </div>
@@ -185,15 +176,12 @@ const WorkflowModal: React.FC<WorkflowModalProps> = ({ mode, workflow, onClose }
                 type="text"
                 value={formData.api_key}
                 onChange={(e) => handleFieldChange('api_key', e.target.value)}
-                readOnly={isReadonly}
                 required
                 autoComplete="off"
                 autoCorrect="off"
                 autoCapitalize="off"
                 spellCheck="false"
-                className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  isReadonly ? 'bg-gray-50' : ''
-                }`}
+                className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500`}
                 placeholder="请输入API密钥"
               />
             </div>
@@ -201,67 +189,7 @@ const WorkflowModal: React.FC<WorkflowModalProps> = ({ mode, workflow, onClose }
 
           {/* 配置选项 */}
           <div className="space-y-4">
-            <h4 className="text-md font-medium text-gray-900">配置选项</h4>
-            
-            <div className="space-y-3">
-              <label className="flex items-center">
-                <input
-                  type="checkbox"
-                  checked={formData.enabled}
-                  onChange={(e) => handleFieldChange('enabled', e.target.checked)}
-                  disabled={isReadonly}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
-                />
-                <span className="ml-2 text-sm text-gray-700">启用工作流</span>
-              </label>
-              
-              {/* <label className="flex items-center">
-                <input
-                  type="checkbox"
-                  checked={formData.is_public}
-                  onChange={(e) => handleFieldChange('is_public', e.target.checked)}
-                  disabled={isReadonly}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
-                />
-                <span className="ml-2 text-sm text-gray-700">公开工作流</span>
-              </label> */}
-            </div>
 
-            {/* 工作流统计信息（仅查看和编辑模式显示） */}
-            {workflow && (mode === 'view' || mode === 'edit') && (
-              <div className="bg-gray-50 p-4 rounded-md">
-                <h5 className="text-sm font-medium text-gray-700 mb-2">统计信息</h5>
-                <div className="grid grid-cols-1 gap-2 text-sm">
-                  <div>
-                    <span className="text-gray-500">使用次数:</span>
-                    <span className="ml-2 font-medium">{workflow.used}</span>
-                  </div>
-                  <div>
-                    <span className="text-gray-500">创建时间:</span>
-                    <span className="ml-2 font-medium">
-                      {new Date(workflow.created_at).toLocaleString()}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-gray-500">更新时间:</span>
-                    <span className="ml-2 font-medium">
-                      {new Date(workflow.updated_at).toLocaleString()}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-gray-500">创建者ID:</span>
-                    <span className="ml-2 font-medium">{workflow.creator_id || '系统'}</span>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div className="space-y-4">
-          <h4 className="text-md font-medium text-gray-900">参数配置</h4>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* 输入参数 */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -270,11 +198,8 @@ const WorkflowModal: React.FC<WorkflowModalProps> = ({ mode, workflow, onClose }
               <textarea
                 value={inputsJson}
                 onChange={(e) => handleJsonChange('inputs', e.target.value)}
-                readOnly={isReadonly}
                 rows={8}
-                className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm ${
-                  isReadonly ? 'bg-gray-50' : ''
-                } ${jsonErrors.inputs ? 'border-red-500' : ''}`}
+                className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm ${jsonErrors.inputs ? 'border-red-500' : ''}`}
                 placeholder='{"field_name": {"field_type": "string", "required": true}}'
               />
               {jsonErrors.inputs && (
@@ -290,19 +215,78 @@ const WorkflowModal: React.FC<WorkflowModalProps> = ({ mode, workflow, onClose }
               <textarea
                 value={outputsJson}
                 onChange={(e) => handleJsonChange('outputs', e.target.value)}
-                readOnly={isReadonly}
                 rows={8}
-                className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm ${
-                  isReadonly ? 'bg-gray-50' : ''
-                } ${jsonErrors.outputs ? 'border-red-500' : ''}`}
+                className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm ${jsonErrors.outputs ? 'border-red-500' : ''}`}
                 placeholder='{"field_name": {"field_type": "string", "required": true}}'
               />
               {jsonErrors.outputs && (
                 <p className="mt-1 text-sm text-red-600">{jsonErrors.outputs}</p>
               )}
             </div>
+            
+            <div className="flex gap-2">
+              <label className="flex items-center">
+                <input
+                  type="checkbox"
+                  checked={formData.enabled}
+                  onChange={(e) => handleFieldChange('enabled', e.target.checked)}
+                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                />
+                <span className="ml-2 text-sm text-gray-700">启用工作流</span>
+              </label>
+              
+
+              <label className="flex items-center">
+                <Button size="xs" className="ml-2 text-sm text-blue-500 " onClick={() => setIsTestModalOpen(true)}>流式调用</Button>
+                <Modal
+                  open={isTestModalOpen}
+                  onClose={() => setIsTestModalOpen(false)}
+                  title="流式测试"
+                  size="xl"
+                  showFooter={true}
+                >
+                  <div className="p-6 space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-4">
+                        <h4 className="text-md font-medium text-gray-900">基本信息</h4>
+                      </div>
+                    </div>
+                  </div>
+                </Modal>
+              </label>
+            </div>
+
           </div>
         </div>
+
+        {/* 工作流统计信息（仅编辑模式显示） */}
+        {workflow && (mode === 'edit') && (
+          <div className="bg-gray-50 p-4 rounded-md">
+            <h5 className="text-sm font-medium text-gray-700 mb-2">统计信息</h5>
+            <div className="grid grid-cols-1 gap-2 text-sm">
+              <div>
+                <span className="text-gray-500">使用次数:</span>
+                <span className="ml-2 font-medium">{workflow.used}</span>
+              </div>
+              <div>
+                <span className="text-gray-500">创建时间:</span>
+                <span className="ml-2 font-medium">
+                  {new Date(workflow.created_at).toLocaleString()}
+                </span>
+              </div>
+              <div>
+                <span className="text-gray-500">更新时间:</span>
+                <span className="ml-2 font-medium">
+                  {new Date(workflow.updated_at).toLocaleString()}
+                </span>
+              </div>
+              <div>
+                <span className="text-gray-500">创建者ID:</span>
+                <span className="ml-2 font-medium">{workflow.creator_id || '系统'}</span>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </Modal>
   );

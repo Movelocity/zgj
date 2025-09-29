@@ -34,9 +34,9 @@ class DebugLogger {
     }
     
     // 控制台输出
-    const { type, method, url } = entry;
-    const emoji = type === 'request' ? '🚀' : type === 'response' ? '✅' : '❌';
-    console.log(`${emoji} [API] ${method?.toUpperCase()} ${url}`, entry);
+    // const { type, method, url } = entry;
+    // const emoji = type === 'request' ? '🚀' : type === 'response' ? '✅' : '❌';
+    // console.log(`${emoji} [API] ${method?.toUpperCase()} ${url}`, entry);
   }
 
   getLogs() {

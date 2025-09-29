@@ -30,7 +30,70 @@ export const workflowAPI = {
 
   // 执行工作流
   executeWorkflow: (id: string, inputs: any): Promise<ApiResponse<any>> => {
-    return apiClient.post(`/api/workflow/${id}/execute`, { inputs });
+    return apiClient.post(`/api/workflow/${id}/execute`, { inputs, response_mode: 'blocking' });
+  },
+
+  // 流式执行工作流
+  executeWorkflowStream: async (
+    id: string, 
+    inputs: any, 
+    onMessage?: (data: any) => void, 
+    onError?: (error: any) => void
+  ): Promise<void> => {
+    const token = localStorage.getItem('token');
+    const body = { inputs, response_mode: 'streaming' };
+    try {
+      const response = await fetch(`/api/workflow/${id}/execute`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'Accept': 'text/event-stream'
+        },
+        body: JSON.stringify(body)
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const reader = response.body?.getReader();
+      if (!reader) {
+        throw new Error('无法获取响应流');
+      }
+
+      const decoder = new TextDecoder();
+      
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        
+        const chunk = decoder.decode(value);
+        const lines = chunk.split('\n');
+        
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const data = line.substring(6).trim();
+            
+            if (data === '[DONE]') {
+              return;
+            }
+            
+            if (data) {
+              try {
+                const parsedData = JSON.parse(data);
+                onMessage?.(parsedData);
+              } catch (e) {
+                console.warn('Failed to parse SSE data:', data);
+              }
+            }
+          }
+        }
+      }
+    } catch (error) {
+      onError?.(error);
+      throw error;
+    }
   },
 
   // 获取工作流执行历史

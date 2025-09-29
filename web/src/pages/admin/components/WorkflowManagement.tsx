@@ -12,7 +12,7 @@ const WorkflowManagement: React.FC = () => {
   const [workflows, setWorkflows] = useState<Workflow[]>([]);
   const [loading, setLoading] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
-  const [modalMode, setModalMode] = useState<'create' | 'edit' | 'view'>('create');
+  const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
   const [selectedWorkflow, setSelectedWorkflow] = useState<Workflow | null>(null);
   const [debugModalOpen, setDebugModalOpen] = useState(false);
   const [debugWorkflow, setDebugWorkflow] = useState<Workflow | null>(null);
@@ -241,7 +241,7 @@ const WorkflowManagement: React.FC = () => {
                         <Button
                           variant="text"
                           onClick={() => handleDebug(workflow)}
-                          className="text-green-600 hover:text-green-900"
+                          className="text-green-600 hover:text-green-700"
                           title="调试工作流"
                         >
                           <FiPlay className="mr-1" size={14} />

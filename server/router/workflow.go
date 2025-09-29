@@ -15,7 +15,7 @@ func InitWorkflowRouter(privateGroup *gin.RouterGroup, publicGroup *gin.RouterGr
 		WorkflowRouter.GET("/:id", app.GetWorkflow)              // 获取特定工作流
 		WorkflowRouter.POST("", app.CreateWorkflow)              // 创建工作流
 		WorkflowRouter.DELETE("/:id", app.DeleteWorkflow)        // 删除工作流
-		WorkflowRouter.POST("/:id/execute", app.ExecuteWorkflow) // 执行工作流
+		WorkflowRouter.POST("/:id/execute", app.ExecuteWorkflow) // 执行工作流/流式执行工作流
 	}
 
 	// 管理员路由 - 工作流管理

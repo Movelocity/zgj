@@ -154,21 +154,33 @@ func DeleteWorkflow(c *gin.Context) {
 // ExecuteWorkflow 执行工作流
 func ExecuteWorkflow(c *gin.Context) {
 	workflowID := c.Param("id")
-	userID := c.GetString("userID")
-	var req appService.ExecuteWorkflowRequest
+	userID := c.GetString("userID") // 从中间件设置的上下文参数中获取用户ID
+	var req appService.WorkflowAPIRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		utils.FailWithMessage(err.Error(), c)
 		return
 	}
 
-	// 调用服务层
-	result, err := service.AppService.ExecuteWorkflow(workflowID, userID, req.Inputs)
-	if err != nil {
-		utils.FailWithMessage(err.Error(), c)
+	switch req.ResponseMode {
+	case "blocking":
+		// 调用服务层
+		result, err := service.AppService.ExecuteWorkflow(workflowID, userID, req.Inputs)
+		if err != nil {
+			utils.FailWithMessage(err.Error(), c)
+			return
+		}
+		utils.OkWithData(result, c)
+	case "streaming":
+		// 调用服务层流式执行
+		if err := service.AppService.ExecuteWorkflowStream(c, workflowID, userID, req.Inputs); err != nil {
+			// 错误已经在服务层处理并发送给客户端
+			return
+		}
+	default:
+		utils.FailWithMessage("响应模式不支持", c)
 		return
 	}
 
-	utils.OkWithData(result, c)
 }
 
 // GetAllWorkflows 获取所有工作流（管理员）
@@ -200,3 +212,20 @@ func AdminUpdateWorkflow(c *gin.Context) {
 
 	utils.OkWithMessage("更新成功", c)
 }
+
+// ExecuteWorkflowStream 流式执行工作流
+// func ExecuteWorkflowStream(c *gin.Context) {
+// 	workflowID := c.Param("id")
+// 	userID := c.GetString("userID")
+// 	var req appService.WorkflowAPIRequest
+// 	if err := c.ShouldBindJSON(&req); err != nil {
+// 		utils.FailWithMessage(err.Error(), c)
+// 		return
+// 	}
+
+// 	// 调用服务层流式执行
+// 	if err := service.AppService.ExecuteWorkflowStream(c, workflowID, userID, req.Inputs); err != nil {
+// 		// 错误已经在服务层处理并发送给客户端
+// 		return
+// 	}
+// }

@@ -1,18 +1,23 @@
 package app
 
 import (
+	"bufio"
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
+	"sync"
 	"time"
 
 	"server/global"
 	"server/model"
 	"server/utils"
 
+	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
 
@@ -581,4 +586,239 @@ func (s *appService) callWorkflowAPI(apiURL, apiKey, userID string, inputs map[s
 	}
 
 	return &apiResponse, nil
+}
+
+// 流式执行管理器
+var (
+	streamContexts = make(map[string]*StreamContext)
+	streamMutex    = sync.RWMutex{}
+)
+
+// ExecuteWorkflowStream 流式执行工作流
+func (s *appService) ExecuteWorkflowStream(c *gin.Context, workflowID, userID string, inputs map[string]interface{}) error {
+	// 获取工作流信息
+	var workflow model.Workflow
+	if err := global.DB.Where("id = ?", workflowID).First(&workflow).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return errors.New("工作流不存在")
+		}
+		return errors.New("查询工作流失败")
+	}
+
+	// 设置SSE响应头
+	s.setSSEHeaders(c)
+
+	// 创建流式执行上下文
+	ctx, cancel := context.WithCancel(c.Request.Context())
+	streamCtx := &StreamContext{
+		WorkflowID: workflowID,
+		UserID:     userID,
+		Inputs:     inputs,
+		CancelFunc: cancel,
+		Done:       make(chan struct{}),
+		Error:      make(chan error, 1),
+		StartTime:  time.Now(),
+	}
+
+	// 注册流式上下文
+	streamID := fmt.Sprintf("%s_%s_%d", workflowID, userID, time.Now().UnixNano())
+	streamMutex.Lock()
+	streamContexts[streamID] = streamCtx
+	streamMutex.Unlock()
+
+	// 清理函数
+	defer func() {
+		streamMutex.Lock()
+		delete(streamContexts, streamID)
+		streamMutex.Unlock()
+		close(streamCtx.Done)
+		close(streamCtx.Error)
+	}()
+
+	// 直接在当前goroutine中处理流式请求
+	return s.handleWorkflowStreamDirect(ctx, c, streamCtx, workflow)
+}
+
+// handleWorkflowStreamDirect 直接处理工作流流式执行
+func (s *appService) handleWorkflowStreamDirect(ctx context.Context, c *gin.Context, streamCtx *StreamContext, workflow model.Workflow) error {
+	defer func() {
+		streamCtx.ExecutionTime = int(time.Since(streamCtx.StartTime).Milliseconds())
+	}()
+
+	// 调用远程工作流流式API
+	return s.callWorkflowStreamAPIDirect(ctx, c, streamCtx, workflow.ApiURL, workflow.ApiKey)
+}
+
+// callWorkflowStreamAPIDirect 直接调用远程工作流流式API
+func (s *appService) callWorkflowStreamAPIDirect(ctx context.Context, c *gin.Context, streamCtx *StreamContext, apiURL, apiKey string) error {
+	// 构建请求体
+	requestBody := WorkflowAPIRequest{
+		Inputs:       streamCtx.Inputs,
+		ResponseMode: "streaming",
+		User:         streamCtx.UserID,
+	}
+
+	// 序列化请求体
+	jsonData, err := json.Marshal(requestBody)
+	if err != nil {
+		return fmt.Errorf("序列化请求数据失败: %w", err)
+	}
+
+	// 创建HTTP请求
+	req, err := http.NewRequestWithContext(ctx, "POST", apiURL, bytes.NewBuffer(jsonData))
+	if err != nil {
+		return fmt.Errorf("创建HTTP请求失败: %w", err)
+	}
+
+	// 设置请求头
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", apiKey))
+	req.Header.Set("Accept", "text/event-stream")
+
+	// 创建HTTP客户端并发送请求
+	client := &http.Client{Timeout: 300 * time.Second} // 5分钟超时
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("发送HTTP请求失败: %w", err)
+	}
+	defer resp.Body.Close()
+
+	// 检查HTTP状态码
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("API请求失败，状态码: %d, 响应: %s", resp.StatusCode, string(body))
+	}
+
+	// 处理SSE流
+	return s.processSSEStreamDirect(ctx, c, streamCtx, resp.Body)
+}
+
+// processSSEStreamDirect 直接处理SSE流并转发到gin.Context
+func (s *appService) processSSEStreamDirect(ctx context.Context, c *gin.Context, streamCtx *StreamContext, body io.ReadCloser) error {
+	scanner := bufio.NewScanner(body)
+	scanner.Split(bufio.ScanLines)
+
+	var finalOutputs map[string]interface{}
+	var finalStatus string
+	var errorMessage string
+
+	for scanner.Scan() {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+		}
+
+		line := scanner.Text()
+		if len(line) == 0 {
+			continue
+		}
+
+		// 处理SSE数据行
+		if strings.HasPrefix(line, "data: ") {
+			data := strings.TrimPrefix(line, "data: ")
+			data = strings.TrimSuffix(data, "\r")
+
+			if data == "[DONE]" {
+				break
+			}
+
+			// 转发给客户端
+			fmt.Fprintf(c.Writer, "data: %s\n\n", data)
+			c.Writer.Flush()
+
+			// 检查是否为workflow_finished事件
+			if strings.HasPrefix(data, `{"event": "workflow_finished"`) {
+				outputs, status, err := s.parseWorkflowFinishedEvent(data)
+				if err == nil {
+					finalOutputs = outputs
+					finalStatus = status
+				}
+			}
+		} else if strings.HasPrefix(line, "event: ") {
+			// 转发事件行
+			fmt.Fprintf(c.Writer, "%s\n", line)
+			c.Writer.Flush()
+		}
+	}
+
+	if err := scanner.Err(); err != nil {
+		errorMessage = err.Error()
+		finalStatus = "failed"
+	}
+
+	// 记录执行日志
+	response := &ExecuteWorkflowResponse{
+		Success: finalStatus == "succeeded",
+		Data:    map[string]interface{}{"outputs": finalOutputs},
+		Message: "工作流执行完成",
+	}
+
+	if finalStatus == "failed" {
+		response.Success = false
+		response.Message = fmt.Sprintf("工作流执行失败: %s", errorMessage)
+	}
+
+	s.LogWorkflowExecution(streamCtx.WorkflowID, streamCtx.UserID, streamCtx.Inputs, response, finalStatus, errorMessage, streamCtx.ExecutionTime)
+
+	return nil
+}
+
+// parseWorkflowFinishedEvent 解析workflow_finished事件
+func (s *appService) parseWorkflowFinishedEvent(data string) (map[string]interface{}, string, error) {
+	var event WorkflowStreamEvent
+	if err := json.Unmarshal([]byte(data), &event); err != nil {
+		return nil, "", err
+	}
+
+	if event.Event != "workflow_finished" {
+		return nil, "", errors.New("不是workflow_finished事件")
+	}
+
+	// 解析事件数据
+	dataBytes, err := json.Marshal(event.Data)
+	if err != nil {
+		return nil, "", err
+	}
+
+	var finishedData WorkflowFinishedEventData
+	if err := json.Unmarshal(dataBytes, &finishedData); err != nil {
+		return nil, "", err
+	}
+
+	return finishedData.Outputs, finishedData.Status, nil
+}
+
+// setSSEHeaders 设置SSE响应头
+func (s *appService) setSSEHeaders(c *gin.Context) {
+	c.Header("Content-Type", "text/event-stream")
+	c.Header("Cache-Control", "no-cache")
+	c.Header("Connection", "keep-alive")
+	c.Header("Access-Control-Allow-Origin", "*")
+	c.Header("Access-Control-Allow-Headers", "Cache-Control")
+}
+
+// writeSSEError 写入SSE错误
+// func (s *appService) writeSSEError(c *gin.Context, message string) {
+// 	errorData := map[string]interface{}{
+// 		"event": "error",
+// 		"data":  map[string]string{"message": message},
+// 	}
+// 	jsonData, _ := json.Marshal(errorData)
+// 	fmt.Fprintf(c.Writer, "data: %s\n\n", jsonData)
+// 	c.Writer.Flush()
+// }
+
+// CancelWorkflowStream 取消流式执行
+func (s *appService) CancelWorkflowStream(streamID string) error {
+	streamMutex.RLock()
+	streamCtx, exists := streamContexts[streamID]
+	streamMutex.RUnlock()
+
+	if !exists {
+		return errors.New("流式执行不存在")
+	}
+
+	streamCtx.CancelFunc()
+	return nil
 }

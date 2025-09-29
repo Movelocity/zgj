@@ -116,3 +116,46 @@ type WorkflowAPIData struct {
 	CreatedAt   int64                  `json:"created_at"`
 	FinishedAt  int64                  `json:"finished_at"`
 }
+
+// StreamExecuteWorkflowRequest 流式执行工作流请求
+// type StreamExecuteWorkflowRequest struct {
+// 	Inputs map[string]interface{} `json:"inputs" binding:"required"`
+// }
+
+// // WorkflowStreamAPIRequest 工作流流式API请求结构体
+// type WorkflowAPIRequest struct {
+// 	Inputs       map[string]interface{} `json:"inputs"`
+// 	ResponseMode string                 `json:"response_mode"` // "streaming"
+// 	User         string                 `json:"user"`
+// }
+
+// WorkflowStreamEvent SSE事件结构体
+type WorkflowStreamEvent struct {
+	Event string      `json:"event"`
+	Data  interface{} `json:"data"`
+}
+
+// WorkflowFinishedEventData workflow_finished事件的数据结构
+type WorkflowFinishedEventData struct {
+	ID          string                 `json:"id"`
+	WorkflowID  string                 `json:"workflow_id"`
+	Outputs     map[string]interface{} `json:"outputs"`
+	Status      string                 `json:"status"`
+	ElapsedTime float64                `json:"elapsed_time"`
+	TotalTokens int64                  `json:"total_tokens"`
+	TotalSteps  string                 `json:"total_steps"`
+	CreatedAt   int64                  `json:"created_at"`
+	FinishedAt  int64                  `json:"finished_at"`
+}
+
+// StreamContext 流式执行上下文
+type StreamContext struct {
+	WorkflowID    string
+	UserID        string
+	Inputs        map[string]interface{}
+	CancelFunc    func()
+	Done          chan struct{}
+	Error         chan error
+	StartTime     time.Time
+	ExecutionTime int
+}

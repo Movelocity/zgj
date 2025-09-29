@@ -129,10 +129,10 @@ const Modal: React.FC<ModalProps> = ({
     <div
       className={`fixed inset-0 bg-black/50 flex items-center justify-center p-4 ${className}`}
       style={{ zIndex }}
-      onClick={handleMaskClick}
+      onMouseDown={handleMaskClick}
     >
       <div
-        className={`bg-white rounded-lg shadow-xl w-full ${sizeClasses[size]} max-h-[90vh] overflow-hidden ${contentClassName}`}
+        className={`bg-white rounded-lg shadow-xl w-full ${sizeClasses[size]} ${contentClassName}`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* 模态框头部 */}
@@ -143,7 +143,10 @@ const Modal: React.FC<ModalProps> = ({
             )}
             {showCloseButton && (
               <button
-                onClick={onClose}
+                onClick={()=>{
+                  onClose();
+                  console.log('onClose');
+                }}
                 className="text-gray-400 hover:text-gray-600 cursor-pointer transition-colors"
                 type="button"
               >
