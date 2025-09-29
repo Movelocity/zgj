@@ -113,7 +113,7 @@ const WorkflowModal: React.FC<WorkflowModalProps> = ({ mode, workflow, onClose }
       showFooter={true}
       confirmText={mode === 'create' ? '创建' : '保存'}
       cancelText={'取消'}
-      // onConfirm={handleConfirm}
+      onConfirm={handleConfirm}
       confirmLoading={loading}
       confirmDisabled={!!jsonErrors.inputs || !!jsonErrors.outputs}
     >
