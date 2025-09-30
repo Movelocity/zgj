@@ -216,9 +216,9 @@ export default function ResumeDetails() {
     <div className="h-screen flex flex-col">
       {/* 头部导航 */}
       <div className="bg-white border-b border-gray-200 px-4 shadow-sm fixed top-0 w-full z-[1000]">
-        <div className="max-w-7xl mx-auto flex items-center justify-between h-14">
+        <div className=" flex items-center justify-between h-14">
           <div className="flex items-center">
-            <Button variant="ghost" onClick={() => navigate("/resumes/cards")} icon={<ArrowLeftIcon className="w-4 h-4" />}>
+            <Button variant="ghost" onClick={() => navigate("/resumes")} icon={<ArrowLeftIcon className="w-4 h-4" />}>
               返回
             </Button>
             <div className="flex items-center ml-4">

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { FiUpload, FiFileText, FiDownload, FiTrash2, FiCalendar, FiPlus, FiEdit, FiGrid } from 'react-icons/fi';
-import { useNavigate, Link } from 'react-router-dom';
+import { FiUpload, FiFileText, FiDownload, FiTrash2, FiCalendar, FiPlus, FiEdit } from 'react-icons/fi';
+import { useNavigate } from 'react-router-dom';
 import Button from '@/components/ui/Button';
 import { resumeAPI } from '@/api/resume';
 import { fileAPI } from '@/api/file';
@@ -129,7 +129,7 @@ const ResumeList: React.FC = () => {
 
   // 查看简历详情
   const handleViewResume = (resumeId: string) => {
-    navigate(`/resume/${resumeId}`);
+    navigate(`/editor/${resumeId}`);
   };
 
   // 下载简历
@@ -165,12 +165,12 @@ const ResumeList: React.FC = () => {
         <div className="flex justify-between items-center mb-8">
           <div className="flex items-center space-x-4">
             <h1 className="text-3xl font-bold text-gray-900">我的简历</h1>
-            <Link to="/resumes/cards">
+            {/* <Link to="/resumes/cards">
               <Button variant="ghost" size="sm" className="flex items-center space-x-2">
                 <FiGrid className="w-4 h-4" />
                 <span>卡片视图</span>
               </Button>
-            </Link>
+            </Link> */}
           </div>
           <div className="flex items-center space-x-3">
             <input
