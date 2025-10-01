@@ -8,7 +8,6 @@ import ChatPanel from './components/ChatPanel';
 import ResumeEditor from './components/ResumeEditor';
 import { ResumeExample, type ResumeData } from '@/types/resume';
 import type { 
-  OptimizedSections,
   ResumeUpdateRequest
 } from '@/types/resume';
 import { resumeAPI } from '@/api/resume';
@@ -39,13 +38,7 @@ export default function ResumeDetails() {
 
   // 简历数据状态 - AI优化后的内容
   const [resumeData, setResumeData] = useState<ResumeData>(ResumeExample);
-  const [optimizedSections] = useState<OptimizedSections>({
-    personalInfo: [],
-    summary: false,
-    workExperience: {},
-    skills: false,
-    projects: {},
-  });
+  const [newResumeData, setNewResumeData] = useState<ResumeData>(ResumeExample);  // AI优化后的内容，需人工确认后合并
 
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -187,6 +180,10 @@ export default function ResumeDetails() {
     }));
   }
 
+  const handleSetNewResumeData = async (data: ResumeData) => {
+    setNewResumeData(data);
+  }
+
   const loadTimeOutRef = useRef<NodeJS.Timeout | null>(null);
   useEffect(() => {
     if (loadTimeOutRef.current) {
@@ -301,8 +298,9 @@ export default function ResumeDetails() {
             {/* 左侧优化后简历 (7/10) */}
             <div className="w-full md:w-[70%] border-r border-gray-200 bg-white h-screen overflow-auto py-16">
               <ResumeEditor 
-                optimizedSections={optimizedSections}
                 resumeData={resumeData}
+                newResumeData={newResumeData}
+                onNewResumeDataChange={handleSetNewResumeData}
                 onResumeDataChange={handleSetResumeData}
               />
             </div>
@@ -311,7 +309,7 @@ export default function ResumeDetails() {
             <div className="hidden md:block w-[30%] bg-gray-50 h-screen overflow-auto pt-14">
               <ChatPanel 
                 resumeData={resumeData}
-                onResumeDataChange={handleSetResumeData}
+                onResumeDataChange={handleSetNewResumeData}
               />
             </div>
           </>

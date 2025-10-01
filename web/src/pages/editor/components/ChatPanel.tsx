@@ -19,6 +19,8 @@ interface ChatPanelProps {
   onResumeDataChange: (data: ResumeData) => void;
 }
 
+// TOOD: 消息内容 markdown 渲染
+
 export default function ChatPanel({ resumeData, onResumeDataChange }: ChatPanelProps) {
   const [messages, setMessages] = useState<Message[]>([
     {

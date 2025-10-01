@@ -4,21 +4,34 @@ import Button from "@/components/ui/Button"
 import type { ResumeData, OptimizedSections, WorkExperience, Education, Project } from '@/types/resume';
 
 interface OptimizedResumeViewProps {
-  optimizedSections: OptimizedSections;
+  // optimizedSections: OptimizedSections;
   resumeData: ResumeData;
+  newResumeData: ResumeData;
   onResumeDataChange?: (data: ResumeData) => void;
-  onStartEditing?: () => void;
-  isEditing?: boolean;
+  onNewResumeDataChange?: (data: ResumeData) => void;  // actually mean onMerge
+  // onStartEditing?: () => void;
+  // isEditing?: boolean;
 }
 
+// TODO: 如果某个字段存在对应的 newResumeData，显示为optimizedSection, 确定接收后更新newResumeData和resumeData, 并移除高光标记
+
 export default function ResumeEditor({ 
-  optimizedSections,
+  // optimizedSections,
   resumeData, 
+  newResumeData,
+  onNewResumeDataChange = () => {},
   onResumeDataChange = () => {}, 
 }: OptimizedResumeViewProps) {
   const { personalInfo, summary, workExperience, education, skills, projects } = resumeData;
   const [editingField, setEditingField] = useState<string | null>(null);
   const editingValueRef = useRef<string>('');
+  const [optimizedSections, setOptimizedSections] = useState<OptimizedSections>({
+    personalInfo: [],
+    summary: false,
+    workExperience: {},
+    skills: false,
+    projects: {},
+  });
 
   // 检查某个字段是否被优化过
   const isOptimized = (section: string, itemId?: string, field?: string): boolean => {
