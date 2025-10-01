@@ -1,5 +1,4 @@
 import ReactMarkdown from 'react-markdown';
-import type { ReactNode } from 'react';
 
 interface MarkdownRendererProps {
   content: string;
@@ -16,31 +15,32 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
       <ReactMarkdown
         components={{
           // 段落样式
-          p: ({ children }: { children: ReactNode }) => (
-            <p className="mb-2 last:mb-0 leading-relaxed break-words">{children}</p>
+          p: ({ children, ...props }) => (
+            <p className="mb-2 last:mb-0 leading-relaxed break-words" {...props}>{children}</p>
           ),
           // 标题样式
-          h1: ({ children }: { children: ReactNode }) => (
-            <h1 className="text-lg font-semibold mb-2 break-words">{children}</h1>
+          h1: ({ children, ...props }) => (
+            <h1 className="text-lg font-semibold mb-2 break-words" {...props}>{children}</h1>
           ),
-          h2: ({ children }: { children: ReactNode }) => (
-            <h2 className="text-base font-semibold mb-2 break-words">{children}</h2>
+          h2: ({ children, ...props }) => (
+            <h2 className="text-base font-semibold mb-2 break-words" {...props}>{children}</h2>
           ),
-          h3: ({ children }: { children: ReactNode }) => (
-            <h3 className="text-sm font-semibold mb-1 break-words">{children}</h3>
+          h3: ({ children, ...props }) => (
+            <h3 className="text-sm font-semibold mb-1 break-words" {...props}>{children}</h3>
           ),
           // 列表样式
-          ul: ({ children }: { children: ReactNode }) => (
-            <ul className="list-disc list-inside mb-2 space-y-1 break-words">{children}</ul>
+          ul: ({ children, ...props }) => (
+            <ul className="list-disc list-inside mb-2 space-y-1 break-words" {...props}>{children}</ul>
           ),
-          ol: ({ children }: { children: ReactNode }) => (
-            <ol className="list-decimal list-inside mb-2 space-y-1 break-words">{children}</ol>
+          ol: ({ children, ...props }) => (
+            <ol className="list-decimal list-inside mb-2 space-y-1 break-words" {...props}>{children}</ol>
           ),
-          li: ({ children }: { children: ReactNode }) => (
-            <li className="break-words">{children}</li>
+          li: ({ children, ...props }) => (
+            <li className="break-words" {...props}>{children}</li>
           ),
           // 代码块样式
-          code: ({ inline, children }: { inline?: boolean; children: ReactNode }) => {
+          code: (props) => {
+            const { inline, children } = props as any;
             if (inline) {
               return (
                 <code className="bg-gray-200 px-1 py-0.5 rounded text-xs font-mono break-all">
@@ -55,44 +55,45 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
             );
           },
           // 引用样式
-          blockquote: ({ children }: { children: ReactNode }) => (
-            <blockquote className="border-l-4 border-gray-300 pl-3 mb-2 text-gray-700 break-words">
+          blockquote: ({ children, ...props }) => (
+            <blockquote className="border-l-4 border-gray-300 pl-3 mb-2 text-gray-700 break-words" {...props}>
               {children}
             </blockquote>
           ),
           // 强调样式
-          strong: ({ children }: { children: ReactNode }) => (
-            <strong className="font-semibold break-words">{children}</strong>
+          strong: ({ children, ...props }) => (
+            <strong className="font-semibold break-words" {...props}>{children}</strong>
           ),
-          em: ({ children }: { children: ReactNode }) => (
-            <em className="italic break-words">{children}</em>
+          em: ({ children, ...props }) => (
+            <em className="italic break-words" {...props}>{children}</em>
           ),
           // 链接样式
-          a: ({ href, children }: { href?: string; children: ReactNode }) => (
+          a: ({ href, children, ...props }) => (
             <a 
               href={href} 
               className="text-blue-600 hover:text-blue-800 underline break-all"
               target="_blank"
               rel="noopener noreferrer"
+              {...props}
             >
               {children}
             </a>
           ),
           // 表格样式
-          table: ({ children }: { children: ReactNode }) => (
+          table: ({ children, ...props }) => (
             <div className="overflow-x-auto mb-2">
-              <table className="min-w-full border-collapse border border-gray-300 text-xs">
+              <table className="min-w-full border-collapse border border-gray-300 text-xs" {...props}>
                 {children}
               </table>
             </div>
           ),
-          th: ({ children }: { children: ReactNode }) => (
-            <th className="border border-gray-300 px-2 py-1 bg-gray-100 font-semibold text-left break-words">
+          th: ({ children, ...props }) => (
+            <th className="border border-gray-300 px-2 py-1 bg-gray-100 font-semibold text-left break-words" {...props}>
               {children}
             </th>
           ),
-          td: ({ children }: { children: ReactNode }) => (
-            <td className="border border-gray-300 px-2 py-1 break-words">
+          td: ({ children, ...props }) => (
+            <td className="border border-gray-300 px-2 py-1 break-words" {...props}>
               {children}
             </td>
           ),
