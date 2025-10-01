@@ -124,6 +124,31 @@ export default function ChatPanel({ resumeData, onResumeDataChange }: ChatPanelP
       }, 500);
     }
 
+    if (query === "/simulate") {
+      onResumeDataChange({
+        ...resumeData,
+        summary: "测试总结",
+        workExperience: [
+          ...resumeData.workExperience,
+          {
+            id: (Date.now() + 1).toString(),
+            company: "测试公司",
+            position: "测试职位",
+            duration: "2020-2021",
+            description: "测试描述"
+          }
+        ]
+      });
+      const aiResponse: Message = {
+        id: (Date.now() + 1).toString(),
+        type: 'assistant',
+        content: "简历内容更新已触发",
+        timestamp: new Date(),
+      };
+      updateMessages(aiResponse);
+      return;
+    }
+
     const aiResponse: Message = {
       id: (Date.now() + 1).toString(),
       type: 'assistant',

@@ -10,6 +10,7 @@ import { ResumeExample, type ResumeData } from '@/types/resume';
 import type { 
   ResumeUpdateRequest
 } from '@/types/resume';
+import { ensureItemsHaveIds } from '@/utils/id';
 import { resumeAPI } from '@/api/resume';
 import { showError, showSuccess } from '@/utils/toast';
 import { TimeBasedProgressUpdater, RESUME_PROCESSING_STEPS } from '@/utils/progress';
@@ -136,12 +137,20 @@ export default function ResumeDetails() {
             setLoading(false);
           }
         } else {
+          // 确保从API加载的数据中所有列表项都有唯一ID
+          const processedData = {
+            ...structured_data,
+            workExperience: ensureItemsHaveIds(structured_data.workExperience || []),
+            education: ensureItemsHaveIds(structured_data.education || []),
+            projects: ensureItemsHaveIds(structured_data.projects || [])
+          };
+          
           setEditForm({
             name: name,
             text_content: text_content,
-            structured_data: structured_data,
+            structured_data: processedData,
           });
-          setResumeData(structured_data);
+          setResumeData(processedData);
           setLoading(false);
           setProgress(0);
           setProgressText('');

@@ -234,6 +234,9 @@ export type OptimizedSections = {
   workExperience: {
     [key: string]: string[];
   };
+  education: {
+    [key: string]: string[];
+  };
   skills: boolean;
   projects: {
     [key: string]: string[];

@@ -1,16 +1,15 @@
-import React, { useState, useRef } from 'react';
-import { Mail, Phone, MapPin, Sparkles, Check, X, Plus, ChevronUp, ChevronDown, Trash2 } from 'lucide-react';
+import React, { useState, useRef, useMemo } from 'react';
+import { Mail, Phone, MapPin, Sparkles, Check, X, Plus, ChevronUp, ChevronDown, Trash2, CheckCircle, XCircle } from 'lucide-react';
 import Button from "@/components/ui/Button"
 import type { ResumeData, OptimizedSections, WorkExperience, Education, Project } from '@/types/resume';
+import { generateId } from '@/utils/id';
 
 interface OptimizedResumeViewProps {
   // optimizedSections: OptimizedSections;
   resumeData: ResumeData;
   newResumeData: ResumeData;
   onResumeDataChange?: (data: ResumeData) => void;
-  onNewResumeDataChange?: (data: ResumeData) => void;  // actually mean onMerge
-  // onStartEditing?: () => void;
-  // isEditing?: boolean;
+  onNewResumeDataChange?: (data: ResumeData) => void;  // 更新newResumeData，用于弃用更新
 }
 
 // TODO: 如果某个字段存在对应的 newResumeData，显示为optimizedSection, 确定接收后更新newResumeData和resumeData, 并移除高光标记
@@ -25,17 +24,83 @@ export default function ResumeEditor({
   const { personalInfo, summary, workExperience, education, skills, projects } = resumeData;
   const [editingField, setEditingField] = useState<string | null>(null);
   const editingValueRef = useRef<string>('');
-  const [optimizedSections, setOptimizedSections] = useState<OptimizedSections>({
-    personalInfo: [],
-    summary: false,
-    workExperience: {},
-    skills: false,
-    projects: {},
-  });
+
+  // 计算实际的更新状态 - 比较 resumeData 和 newResumeData
+  const actualOptimizedSections = useMemo((): OptimizedSections => {
+    const result: OptimizedSections = {
+      personalInfo: [],
+      summary: false,
+      workExperience: {},
+      education: {},
+      skills: false,
+      projects: {},
+    };
+
+    // 检查个人信息字段
+    if (resumeData.personalInfo.name !== newResumeData.personalInfo.name) result.personalInfo.push('name');
+    if (resumeData.personalInfo.title !== newResumeData.personalInfo.title) result.personalInfo.push('title');
+    if (resumeData.personalInfo.email !== newResumeData.personalInfo.email) result.personalInfo.push('email');
+    if (resumeData.personalInfo.phone !== newResumeData.personalInfo.phone) result.personalInfo.push('phone');
+    if (resumeData.personalInfo.location !== newResumeData.personalInfo.location) result.personalInfo.push('location');
+
+    // 检查个人总结
+    result.summary = resumeData.summary !== newResumeData.summary;
+
+    // 检查技能
+    const skillsChanged = JSON.stringify(resumeData.skills.sort()) !== JSON.stringify(newResumeData.skills.sort());
+    result.skills = skillsChanged;
+
+    // 检查工作经历
+    resumeData.workExperience.forEach(work => {
+      const newWork = newResumeData.workExperience.find(w => w.id === work.id);
+      if (newWork) {
+        const changedFields: string[] = [];
+        if (work.company !== newWork.company) changedFields.push('company');
+        if (work.position !== newWork.position) changedFields.push('position');
+        if (work.duration !== newWork.duration) changedFields.push('duration');
+        if (work.description !== newWork.description) changedFields.push('description');
+        if (changedFields.length > 0) {
+          result.workExperience[work.id] = changedFields;
+        }
+      }
+    });
+
+    // 检查项目经历
+    resumeData.projects.forEach(project => {
+      const newProject = newResumeData.projects.find(p => p.id === project.id);
+      if (newProject) {
+        const changedFields: string[] = [];
+        if (project.name !== newProject.name) changedFields.push('name');
+        if (project.duration !== newProject.duration) changedFields.push('duration');
+        if (project.description !== newProject.description) changedFields.push('description');
+        if (project.technologies !== newProject.technologies) changedFields.push('technologies');
+        if (changedFields.length > 0) {
+          result.projects[project.id] = changedFields;
+        }
+      }
+    });
+
+    // 检查教育背景
+    resumeData.education.forEach(edu => {
+      const newEdu = newResumeData.education.find(e => e.id === edu.id);
+      if (newEdu) {
+        const changedFields: string[] = [];
+        if (edu.school !== newEdu.school) changedFields.push('school');
+        if (edu.degree !== newEdu.degree) changedFields.push('degree');
+        if (edu.duration !== newEdu.duration) changedFields.push('duration');
+        if (edu.description !== newEdu.description) changedFields.push('description');
+        if (changedFields.length > 0) {
+          result.education[edu.id] = changedFields;
+        }
+      }
+    });
+
+    return result;
+  }, [resumeData, newResumeData]);
 
   // 检查某个字段是否被优化过
   const isOptimized = (section: string, itemId?: string, field?: string): boolean => {
-    const sectionData = optimizedSections[section as keyof typeof optimizedSections];
+    const sectionData = actualOptimizedSections[section as keyof typeof actualOptimizedSections];
     
     if (typeof sectionData === 'boolean') {
       return sectionData;
@@ -51,6 +116,72 @@ export default function ResumeEditor({
     }
     
     return false;
+  };
+
+  // 接收某个字段的更新
+  const acceptUpdate = (section: string, itemId?: string, field?: string) => {
+    const newData = { ...resumeData };
+    
+    if (section === 'personalInfo' && field) {
+      (newData.personalInfo as any)[field] = (newResumeData.personalInfo as any)[field];
+    } else if (section === 'summary') {
+      newData.summary = newResumeData.summary;
+    } else if (section === 'skills') {
+      newData.skills = [...newResumeData.skills];
+    } else if (section === 'workExperience' && itemId && field) {
+      const workIndex = newData.workExperience.findIndex(w => w.id === itemId);
+      const newWork = newResumeData.workExperience.find(w => w.id === itemId);
+      if (workIndex !== -1 && newWork) {
+        (newData.workExperience[workIndex] as any)[field] = (newWork as any)[field];
+      }
+    } else if (section === 'projects' && itemId && field) {
+      const projectIndex = newData.projects.findIndex(p => p.id === itemId);
+      const newProject = newResumeData.projects.find(p => p.id === itemId);
+      if (projectIndex !== -1 && newProject) {
+        (newData.projects[projectIndex] as any)[field] = (newProject as any)[field];
+      }
+    } else if (section === 'education' && itemId && field) {
+      const eduIndex = newData.education.findIndex(e => e.id === itemId);
+      const newEdu = newResumeData.education.find(e => e.id === itemId);
+      if (eduIndex !== -1 && newEdu) {
+        (newData.education[eduIndex] as any)[field] = (newEdu as any)[field];
+      }
+    }
+    
+    onResumeDataChange(newData);
+  };
+
+  // 弃用某个字段的更新
+  const rejectUpdate = (section: string, itemId?: string, field?: string) => {
+    const newData = { ...newResumeData };
+    
+    if (section === 'personalInfo' && field) {
+      (newData.personalInfo as any)[field] = (resumeData.personalInfo as any)[field];
+    } else if (section === 'summary') {
+      newData.summary = resumeData.summary;
+    } else if (section === 'skills') {
+      newData.skills = [...resumeData.skills];
+    } else if (section === 'workExperience' && itemId && field) {
+      const workIndex = newData.workExperience.findIndex(w => w.id === itemId);
+      const originalWork = resumeData.workExperience.find(w => w.id === itemId);
+      if (workIndex !== -1 && originalWork) {
+        (newData.workExperience[workIndex] as any)[field] = (originalWork as any)[field];
+      }
+    } else if (section === 'projects' && itemId && field) {
+      const projectIndex = newData.projects.findIndex(p => p.id === itemId);
+      const originalProject = resumeData.projects.find(p => p.id === itemId);
+      if (projectIndex !== -1 && originalProject) {
+        (newData.projects[projectIndex] as any)[field] = (originalProject as any)[field];
+      }
+    } else if (section === 'education' && itemId && field) {
+      const eduIndex = newData.education.findIndex(e => e.id === itemId);
+      const originalEdu = resumeData.education.find(e => e.id === itemId);
+      if (eduIndex !== -1 && originalEdu) {
+        (newData.education[eduIndex] as any)[field] = (originalEdu as any)[field];
+      }
+    }
+    
+    onNewResumeDataChange(newData);
   };
 
   // 开始编辑某个字段
@@ -110,10 +241,6 @@ export default function ResumeEditor({
     setEditingField(null);
   };
 
-  // 生成唯一ID
-  const generateId = () => {
-    return Date.now().toString() + Math.random().toString(36).substr(2, 9);
-  };
 
   // 添加工作经历
   const addWorkExperience = () => {
@@ -220,16 +347,52 @@ export default function ResumeEditor({
     onResumeDataChange(newData);
   };
 
-  // 高亮组件
-  const HighlightedText = ({ children, isHighlighted = false }: { children: React.ReactNode; isHighlighted?: boolean }) => {
+  // 高亮组件 - 带接收/弃用按钮
+  const HighlightedText = ({ 
+    children, 
+    isHighlighted = false, 
+    section, 
+    itemId, 
+    field 
+  }: { 
+    children: React.ReactNode; 
+    isHighlighted?: boolean;
+    section?: string;
+    itemId?: string;
+    field?: string;
+  }) => {
     if (!isHighlighted) return <>{children}</>;
     
     return (
       <span className="bg-yellow-100 border-l-2 border-yellow-400 pl-1 relative group">
         {children}
-        <div className="absolute -top-8 left-0 bg-yellow-500 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
-          <Sparkles className="w-3 h-3 inline mr-1" />
-          AI 优化内容
+        <div className="absolute -top-10 left-0 bg-yellow-500 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-20 flex items-center space-x-2">
+          <div className="flex items-center">
+            <Sparkles className="w-3 h-3 inline mr-1" />
+            AI 优化内容
+          </div>
+          <div className="flex space-x-1 ml-2">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                if (section) acceptUpdate(section, itemId, field);
+              }}
+              className="w-5 h-5 bg-green-600 hover:bg-green-700 rounded flex items-center justify-center transition-colors"
+              title="接收更新"
+            >
+              <CheckCircle className="w-3 h-3" />
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                if (section) rejectUpdate(section, itemId, field);
+              }}
+              className="w-5 h-5 bg-red-600 hover:bg-red-700 rounded flex items-center justify-center transition-colors"
+              title="弃用更新"
+            >
+              <XCircle className="w-3 h-3" />
+            </button>
+          </div>
         </div>
       </span>
     );
@@ -309,7 +472,10 @@ export default function ResumeEditor({
     isHighlighted = false, 
     multiline = false,
     placeholder = '点击编辑',
-    className = ''
+    className = '',
+    section,
+    itemId,
+    field
   }: { 
     fieldId: string; 
     value: string; 
@@ -317,6 +483,9 @@ export default function ResumeEditor({
     multiline?: boolean;
     placeholder?: string;
     className?: string;
+    section?: string;
+    itemId?: string;
+    field?: string;
   }) => {
     const isCurrentlyEditing = editingField === fieldId;
     const inputRef = useRef<HTMLInputElement>(null);
@@ -367,7 +536,12 @@ export default function ResumeEditor({
     );
 
     return isHighlighted ? (
-      <HighlightedText isHighlighted={true}>
+      <HighlightedText 
+        isHighlighted={true}
+        section={section}
+        itemId={itemId}
+        field={field}
+      >
         {textElement}
       </HighlightedText>
     ) : textElement;
@@ -392,6 +566,8 @@ export default function ResumeEditor({
               value={personalInfo.title}
               placeholder="点击输入职位"
               isHighlighted={isOptimized('personalInfo', undefined, 'title')}
+              section="personalInfo"
+              field="title"
             />
           </h2>
           <div className="flex flex-wrap gap-4 text-gray-600">
@@ -401,6 +577,9 @@ export default function ResumeEditor({
                 fieldId="email"
                 value={personalInfo.email}
                 placeholder="点击输入邮箱"
+                isHighlighted={isOptimized('personalInfo', undefined, 'email')}
+                section="personalInfo"
+                field="email"
               />
             </div>
             <div className="flex items-center">
@@ -409,6 +588,9 @@ export default function ResumeEditor({
                 fieldId="phone"
                 value={personalInfo.phone}
                 placeholder="点击输入电话"
+                isHighlighted={isOptimized('personalInfo', undefined, 'phone')}
+                section="personalInfo"
+                field="phone"
               />
             </div>
             <div className="flex items-center">
@@ -417,6 +599,9 @@ export default function ResumeEditor({
                 fieldId="location"
                 value={personalInfo.location}
                 placeholder="点击输入地址"
+                isHighlighted={isOptimized('personalInfo', undefined, 'location')}
+                section="personalInfo"
+                field="location"
               />
             </div>
           </div>
@@ -432,6 +617,7 @@ export default function ResumeEditor({
               placeholder="点击添加个人总结..."
               multiline={true}
               isHighlighted={isOptimized('summary')}
+              section="summary"
             />
           </div>
         </div>
@@ -456,6 +642,10 @@ export default function ResumeEditor({
                           fieldId={`work-${work.id}-position`}
                           value={work.position}
                           placeholder={`职位名称`}
+                          isHighlighted={isOptimized('workExperience', work.id, 'position')}
+                          section="workExperience"
+                          itemId={work.id}
+                          field="position"
                         />
                       </h4>
                       <p className="text-blue-600">
@@ -463,6 +653,10 @@ export default function ResumeEditor({
                           fieldId={`work-${work.id}-company`}
                           value={work.company}
                           placeholder="公司名称"
+                          isHighlighted={isOptimized('workExperience', work.id, 'company')}
+                          section="workExperience"
+                          itemId={work.id}
+                          field="company"
                         />
                       </p>
                     </div>
@@ -471,6 +665,10 @@ export default function ResumeEditor({
                         fieldId={`work-${work.id}-duration`}
                         value={work.duration}
                         placeholder="工作时间"
+                        isHighlighted={isOptimized('workExperience', work.id, 'duration')}
+                        section="workExperience"
+                        itemId={work.id}
+                        field="duration"
                       />
                     </span>
                   </div>
@@ -481,6 +679,9 @@ export default function ResumeEditor({
                       placeholder="点击添加工作描述..."
                       multiline={true}
                       isHighlighted={isOptimized('workExperience', work.id, 'description')}
+                      section="workExperience"
+                      itemId={work.id}
+                      field="description"
                     />
                   </div>
                 </div>
@@ -511,6 +712,10 @@ export default function ResumeEditor({
                           fieldId={`project-${project.id}-name`}
                           value={project.name}
                           placeholder="项目名称"
+                          isHighlighted={isOptimized('projects', project.id, 'name')}
+                          section="projects"
+                          itemId={project.id}
+                          field="name"
                         />
                       </h4>
                       <p className="text-blue-600 text-sm">
@@ -518,6 +723,10 @@ export default function ResumeEditor({
                           fieldId={`project-${project.id}-technologies`}
                           value={project.technologies}
                           placeholder="技术栈"
+                          isHighlighted={isOptimized('projects', project.id, 'technologies')}
+                          section="projects"
+                          itemId={project.id}
+                          field="technologies"
                         />
                       </p>
                     </div>
@@ -526,6 +735,10 @@ export default function ResumeEditor({
                         fieldId={`project-${project.id}-duration`}
                         value={project.duration}
                         placeholder="项目时间"
+                        isHighlighted={isOptimized('projects', project.id, 'duration')}
+                        section="projects"
+                        itemId={project.id}
+                        field="duration"
                       />
                     </span>
                   </div>
@@ -536,6 +749,9 @@ export default function ResumeEditor({
                       placeholder="点击添加项目描述..."
                       multiline={true}
                       isHighlighted={isOptimized('projects', project.id, 'description')}
+                      section="projects"
+                      itemId={project.id}
+                      field="description"
                     />
                   </div>
                 </div>
@@ -566,6 +782,10 @@ export default function ResumeEditor({
                           fieldId={`education-${edu.id}-degree`}
                           value={edu.degree}
                           placeholder="学历/专业"
+                          isHighlighted={isOptimized('education', edu.id, 'degree')}
+                          section="education"
+                          itemId={edu.id}
+                          field="degree"
                         />
                       </h4>
                       <p className="text-blue-600">
@@ -573,6 +793,10 @@ export default function ResumeEditor({
                           fieldId={`education-${edu.id}-school`}
                           value={edu.school}
                           placeholder="学校名称"
+                          isHighlighted={isOptimized('education', edu.id, 'school')}
+                          section="education"
+                          itemId={edu.id}
+                          field="school"
                         />
                       </p>
                     </div>
@@ -581,6 +805,10 @@ export default function ResumeEditor({
                         fieldId={`education-${edu.id}-duration`}
                         value={edu.duration}
                         placeholder="就读时间"
+                        isHighlighted={isOptimized('education', edu.id, 'duration')}
+                        section="education"
+                        itemId={edu.id}
+                        field="duration"
                       />
                     </span>
                   </div>
@@ -590,6 +818,10 @@ export default function ResumeEditor({
                       value={edu.description}
                       placeholder="点击添加教育描述..."
                       multiline={true}
+                      isHighlighted={isOptimized('education', edu.id, 'description')}
+                      section="education"
+                      itemId={edu.id}
+                      field="description"
                     />
                   </div>
                 </div>
@@ -610,6 +842,7 @@ export default function ResumeEditor({
                 value={skills.join(', ')}
                 placeholder="点击添加技能，用逗号分隔..."
                 isHighlighted={isOptimized('skills')}
+                section="skills"
               />
             </div>
           ) : (
@@ -618,6 +851,8 @@ export default function ResumeEditor({
                 fieldId="skills"
                 value=""
                 placeholder="点击添加专业技能..."
+                isHighlighted={isOptimized('skills')}
+                section="skills"
               />
             </p>
           )}
