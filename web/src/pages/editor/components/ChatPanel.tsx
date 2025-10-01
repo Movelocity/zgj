@@ -1,6 +1,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import Button from '@/components/ui/Button';
+import MarkdownRenderer from '@/components/ui/MarkdownRenderer';
 import { Send, Bot, Lightbulb, Sparkles } from 'lucide-react';
 import { FiMessageSquare } from 'react-icons/fi';
 import { type ResumeData } from '@/types/resume';
@@ -276,8 +277,15 @@ export default function ChatPanel({ resumeData, onResumeDataChange }: ChatPanelP
                     : 'bg-gray-100'
                 }`}
               >
-                <div className="flex items-start space-x-2">
-                  <p className="text-sm leading-relaxed">{message.content}</p>
+                <div className="flex items-start space-x-2 min-w-0">
+                  {message.type === 'assistant' ? (
+                    <MarkdownRenderer 
+                      content={message.content} 
+                      className="text-sm leading-relaxed flex-1 min-w-0"
+                    />
+                  ) : (
+                    <p className="text-sm leading-relaxed">{message.content}</p>
+                  )}
                 </div>
               </div>
             </div>
