@@ -2,8 +2,8 @@ import React from 'react';
 import type { ButtonHTMLAttributes } from 'react';
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger' | 'text';
-  size?: 'xs' | 'sm' | 'md' | 'lg' | 'zero';
+  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger' | 'text' | 'none';
+  size?: 'xs' | 'xs2' | 'sm' | 'md' | 'lg' | 'zero';
   loading?: boolean;
   icon?: React.ReactNode;
   iconPosition?: 'left' | 'right';
@@ -29,11 +29,13 @@ const Button: React.FC<ButtonProps> = ({
     ghost: 'text-gray-700 hover:bg-gray-100',
     danger: 'bg-red-700 text-white hover:bg-red-800',
     text: 'text-gray-700 hover:text-blue-600',
+    none: '',
   };
   
   const sizeClasses = {
     zero: '',
     xs: 'px-2 py-1 text-xs',
+    xs2: 'px-4 py-1 text-xs',
     sm: 'px-3 py-1.5 text-sm',
     md: 'px-4 py-2 text-sm',
     lg: 'px-6 py-3 text-base',
