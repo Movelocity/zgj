@@ -187,6 +187,21 @@ export const ResumeExample: ResumeData = {
   ]
 }
 
+export const EmptyResumeData: ResumeData = {
+  personalInfo: {
+    name: '',
+    title: '',
+    email: '',
+    phone: '',
+    location: ''
+  },
+  summary: '',
+  workExperience: [],
+  education: [],
+  skills: [],
+  projects: []
+}
+
 /** Prompt Example
 {
   "personalInfo": {

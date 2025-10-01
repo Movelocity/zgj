@@ -5,17 +5,15 @@ import type { ResumeData, OptimizedSections, WorkExperience, Education, Project 
 import { generateId } from '@/utils/id';
 
 interface OptimizedResumeViewProps {
-  // optimizedSections: OptimizedSections;
   resumeData: ResumeData;
   newResumeData: ResumeData;
   onResumeDataChange?: (data: ResumeData) => void;
   onNewResumeDataChange?: (data: ResumeData) => void;  // 更新newResumeData，用于弃用更新
 }
 
-// TODO: 如果某个字段存在对应的 newResumeData，显示为optimizedSection, 确定接收后更新newResumeData和resumeData, 并移除高光标记
+// 如果某个字段存在对应的 newResumeData，显示为optimizedSection, 确定接收后更新newResumeData和resumeData, 并移除高光标记
 
 export default function ResumeEditor({ 
-  // optimizedSections,
   resumeData, 
   newResumeData,
   onNewResumeDataChange = () => {},
@@ -26,7 +24,7 @@ export default function ResumeEditor({
   const editingValueRef = useRef<string>('');
 
   // 计算实际的更新状态 - 比较 resumeData 和 newResumeData
-  const actualOptimizedSections = useMemo((): OptimizedSections => {
+  const optimizedSections = useMemo((): OptimizedSections => {
     const result: OptimizedSections = {
       personalInfo: [],
       summary: false,
@@ -36,19 +34,40 @@ export default function ResumeEditor({
       projects: {},
     };
 
+    console.log('resumeData', resumeData);
+    console.log('newResumeData', newResumeData);
+
     // 检查个人信息字段
-    if (resumeData.personalInfo.name !== newResumeData.personalInfo.name) result.personalInfo.push('name');
-    if (resumeData.personalInfo.title !== newResumeData.personalInfo.title) result.personalInfo.push('title');
-    if (resumeData.personalInfo.email !== newResumeData.personalInfo.email) result.personalInfo.push('email');
-    if (resumeData.personalInfo.phone !== newResumeData.personalInfo.phone) result.personalInfo.push('phone');
+    if (newResumeData.personalInfo.name !== '') {
+      if (resumeData.personalInfo.name !== newResumeData.personalInfo.name) {
+        result.personalInfo.push('name');
+      }
+    }
+    if (newResumeData.personalInfo.title !== '') {
+      if (resumeData.personalInfo.title !== newResumeData.personalInfo.title) {
+        result.personalInfo.push('title');
+      }
+    }
+    if (newResumeData.personalInfo.email !== '') {
+      if (resumeData.personalInfo.email !== newResumeData.personalInfo.email) {
+        result.personalInfo.push('email');
+      }
+    }
+    if (newResumeData.personalInfo.phone !== '') {
+      if (resumeData.personalInfo.phone !== newResumeData.personalInfo.phone) {
+        result.personalInfo.push('phone');
+      }
+    }
     if (resumeData.personalInfo.location !== newResumeData.personalInfo.location) result.personalInfo.push('location');
 
     // 检查个人总结
     result.summary = resumeData.summary !== newResumeData.summary;
 
     // 检查技能
-    const skillsChanged = JSON.stringify(resumeData.skills.sort()) !== JSON.stringify(newResumeData.skills.sort());
-    result.skills = skillsChanged;
+    if (newResumeData.skills.length > 0) {
+      const skillsChanged = JSON.stringify(resumeData.skills.sort()) !== JSON.stringify(newResumeData.skills.sort());
+      result.skills = skillsChanged;
+    }
 
     // 检查工作经历
     resumeData.workExperience.forEach(work => {
@@ -96,11 +115,11 @@ export default function ResumeEditor({
     });
 
     return result;
-  }, [resumeData, newResumeData]);
+  }, [resumeData, newResumeData.personalInfo, newResumeData.summary, newResumeData.skills, newResumeData.workExperience, newResumeData.projects, newResumeData.education]);
 
   // 检查某个字段是否被优化过
   const isOptimized = (section: string, itemId?: string, field?: string): boolean => {
-    const sectionData = actualOptimizedSections[section as keyof typeof actualOptimizedSections];
+    const sectionData = optimizedSections[section as keyof typeof optimizedSections];
     
     if (typeof sectionData === 'boolean') {
       return sectionData;
@@ -364,7 +383,7 @@ export default function ResumeEditor({
     if (!isHighlighted) return <>{children}</>;
     
     return (
-      <span className="bg-yellow-100 border-l-2 border-yellow-400 pl-1 relative group">
+      <span className="bg-yellow-100 relative group">
         {children}
         <div className="absolute -top-10 left-0 bg-yellow-500 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-20 flex items-center space-x-2">
           <div className="flex items-center">

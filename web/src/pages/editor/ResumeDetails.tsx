@@ -6,7 +6,7 @@ import Button from "@/components/ui/Button"
 import { useGlobalStore } from '@/store';
 import ChatPanel from './components/ChatPanel';
 import ResumeEditor from './components/ResumeEditor';
-import { ResumeExample, type ResumeData } from '@/types/resume';
+import { ResumeExample, EmptyResumeData, type ResumeData } from '@/types/resume';
 import type { 
   ResumeUpdateRequest
 } from '@/types/resume';
@@ -39,7 +39,7 @@ export default function ResumeDetails() {
 
   // 简历数据状态 - AI优化后的内容
   const [resumeData, setResumeData] = useState<ResumeData>(ResumeExample);
-  const [newResumeData, setNewResumeData] = useState<ResumeData>(ResumeExample);  // AI优化后的内容，需人工确认后合并
+  const [newResumeData, setNewResumeData] = useState<ResumeData>(EmptyResumeData);  // AI优化后的内容，需人工确认后合并
 
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
