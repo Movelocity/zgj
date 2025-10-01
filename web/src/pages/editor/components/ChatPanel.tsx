@@ -1,5 +1,5 @@
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import Button from '@/components/ui/Button';
 import MarkdownRenderer from '@/components/ui/MarkdownRenderer';
 import { Send, Bot, Lightbulb, Sparkles } from 'lucide-react';
@@ -41,6 +41,8 @@ export default function ChatPanel({ resumeData, onResumeDataChange }: ChatPanelP
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const scrollGradientTopRef = useRef<HTMLDivElement>(null);
+  const scrollGradientBottomRef = useRef<HTMLDivElement>(null);
   const [suggestions, setSuggestions] = useState<string[]>([
     "[highlight]整体优化简历",
     "突出优势",
@@ -250,6 +252,24 @@ export default function ChatPanel({ resumeData, onResumeDataChange }: ChatPanelP
     return text.slice(0, maxLength) + '...';
   };
 
+  // 滚动特效
+  const handleScroll = useCallback(() => {
+    if (scrollRef.current && scrollGradientTopRef.current && scrollGradientBottomRef.current) {
+      console.log('scrollTop', scrollRef.current.scrollTop);
+      if(scrollRef.current.scrollTop > 100) {
+        scrollGradientTopRef.current.style.height = '24px';
+      } else {
+        scrollGradientTopRef.current.style.height = '0';
+      }
+
+      if(scrollRef.current.scrollTop < scrollRef.current.scrollHeight - scrollRef.current.clientHeight - 100) {
+        scrollGradientBottomRef.current.style.height = '24px';
+      } else {
+        scrollGradientBottomRef.current.style.height = '0';
+      }
+    }
+  }, []);
+
   return (
     <div className="bg-white h-full flex flex-col">
       <div className="px-4 py-3 border-b border-gray-200 flex items-center gap-1">
@@ -262,41 +282,39 @@ export default function ChatPanel({ resumeData, onResumeDataChange }: ChatPanelP
         </p> */}
       </div>
 
-      <div className="flex-1 p-4 overflow-y-auto space-y-4 pb-24" ref={scrollRef}>
-        {messages.map((message) => (
-          <div key={message.id} className="space-y-2">
-            <div
-              className={`flex ${
-                message.type === 'user' ? 'justify-end' : 'justify-start'
-              }`}
-            >
-              <div
-                className={`max-w-[90%] rounded-lg px-3 py-1.5 ${
-                  message.type === 'user'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-100'
-                }`}
-              >
-                <div className="flex items-start space-x-2 min-w-0">
-                  {message.type === 'assistant' ? (
-                    <MarkdownRenderer 
-                      content={message.content} 
-                      className="text-sm leading-relaxed flex-1 min-w-0"
-                    />
-                  ) : (
+      <div className="flex-1 relative">
+        <div ref={scrollGradientBottomRef} className="from-white to-transparent absolute z-10 transition-opacity pointer-events-none opacity-100 bg-linear-to-t bottom-0 left-0 w-full"></div>
+        <div ref={scrollGradientTopRef} className="from-white to-transparent absolute z-10 transition-opacity pointer-events-none opacity-100 bg-linear-to-b top-0 left-0 w-full"></div>
+
+        <div 
+          className="absolute p-4 space-y-4 top-0 left-0 w-full h-full overflow-y-auto pb-24"
+          onScroll={handleScroll}
+          ref={scrollRef}
+        >
+          {messages.map((message) => (
+            <div key={message.id} className="space-y-2">
+              {message.type === 'user' ? (
+                // 用户消息保持气泡样式
+                <div className="flex justify-end">
+                  <div className="max-w-[90%] rounded-lg px-3 py-1.5 bg-blue-600 text-white">
                     <p className="text-sm leading-relaxed">{message.content}</p>
-                  )}
+                  </div>
                 </div>
-              </div>
+              ) : (
+                // Bot消息改为全宽无边框渲染
+                <div className="w-full">
+                  <MarkdownRenderer 
+                    content={message.content} 
+                    className="text-sm leading-relaxed text-gray-800"
+                  />
+                </div>
+              )}
             </div>
+          ))}
 
-          </div>
-        ))}
-
-        {/* 打字指示器，在首字响应前显示 */}
-        {isTyping && (
-          <div className="flex justify-start">
-            <div className="bg-gray-100 rounded-lg p-3 max-w-[85%]">
+          {/* 打字指示器，在首字响应前显示 */}
+          {isTyping && (
+            <div className="w-full py-2">
               <div className="flex items-center space-x-2">
                 <FiMessageSquare className="w-4 h-4 text-blue-600" />
                 <div className="flex space-x-1">
@@ -306,8 +324,8 @@ export default function ChatPanel({ resumeData, onResumeDataChange }: ChatPanelP
                 </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
       
       <div className="px-2 py-1 border-gray-200 w-full">
