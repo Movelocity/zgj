@@ -66,7 +66,7 @@ export default function ResumeEditor({
     editingValueRef.current = currentValue;
   };
 
-  // 保存编辑
+  /* 保存编辑。自动处理格式 */
   const saveEdit = (fieldId: string, inputElement: HTMLInputElement | HTMLTextAreaElement) => {
     // 从输入框直接获取最新值
     const currentValue = inputElement.value;
@@ -393,6 +393,7 @@ export default function ResumeEditor({
       }
     };
     
+    // 点击进行正常编辑
     if (isCurrentlyEditing) {
       return (
         <div className="flex items-start relative">
@@ -453,8 +454,6 @@ export default function ResumeEditor({
             onClick={() => startEditing(fieldId, currentDisplayValue)}
           >
             {content}
-            {/* AI 优化标识 */}
-            {/* <Sparkles className="w-3 h-3 inline ml-1 text-blue-500" /> */}
           </span>
           
           {/* 操作按钮 */}
@@ -577,152 +576,6 @@ export default function ResumeEditor({
           </div>
         </div>
 
-        {/* 个人总结 */}
-        <div className="mb-3 p-4 -m-4 rounded-lg">
-          <h3 className="text-lg text-gray-800 border-l-4 border-blue-600 pl-3 mb-3">个人总结</h3>
-          <div className="text-gray-700 leading-relaxed">
-            <EditableText 
-              fieldId="summary"
-              value={summary}
-              placeholder="点击添加个人总结..."
-              multiline={true}
-              section="summary"
-            />
-          </div>
-        </div>
-
-        {/* 工作经历 */}
-        <div className="mb-3 p-4 -m-4 rounded-lg relative">
-          <ListSectionTitle title="工作经历" onAdd={addWorkExperience} />
-          {workExperience.length > 0 ? (
-            <div className="space-y-4">
-              {workExperience.map((work, index) => (
-                <div key={work.id} className="relative group border-l-2 border-gray-200 pl-4">
-                  <ListItemActions 
-                    type="workExperience" 
-                    id={work.id} 
-                    index={index} 
-                    total={workExperience.length} 
-                  />
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <h4 className="text-gray-800 font-medium">
-                        <EditableText 
-                          fieldId={`work-${work.id}-position`}
-                          value={work.position}
-                          placeholder={`职位名称`}
-                          section="workExperience"
-                          itemId={work.id}
-                          field="position"
-                        />
-                      </h4>
-                      <p className="text-blue-600">
-                        <EditableText 
-                          fieldId={`work-${work.id}-company`}
-                          value={work.company}
-                          placeholder="公司名称"
-                          section="workExperience"
-                          itemId={work.id}
-                          field="company"
-                        />
-                      </p>
-                    </div>
-                    <span className="text-gray-500 text-sm ml-4">
-                      <EditableText 
-                        fieldId={`work-${work.id}-duration`}
-                        value={work.duration}
-                        placeholder="工作时间"
-                        section="workExperience"
-                        itemId={work.id}
-                        field="duration"
-                      />
-                    </span>
-                  </div>
-                  <div className="text-gray-700 text-sm leading-relaxed whitespace-pre-line">
-                    <EditableText 
-                      fieldId={`work-${work.id}-description`}
-                      value={work.description}
-                      placeholder="点击添加工作描述..."
-                      multiline={true}
-                      section="workExperience"
-                      itemId={work.id}
-                      field="description"
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-gray-500 italic">暂无工作经历，点击上方加号添加...</p>
-          )}
-        </div>
-
-        {/* 项目经验 */}
-        <div className="mb-3 p-4 -m-4 rounded-lg relative">
-          <ListSectionTitle title="项目经验" onAdd={addProject} />
-          {projects.length > 0 ? (
-            <div className="space-y-4">
-              {projects.map((project, index) => (
-                <div key={project.id} className="relative group border-l-2 border-gray-200 pl-4">
-                  <ListItemActions 
-                    type="projects" 
-                    id={project.id} 
-                    index={index} 
-                    total={projects.length} 
-                  />
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <h4 className="text-gray-800 font-medium">
-                        <EditableText 
-                          fieldId={`project-${project.id}-name`}
-                          value={project.name}
-                          placeholder="项目名称"
-                          section="projects"
-                          itemId={project.id}
-                          field="name"
-                        />
-                      </h4>
-                      <p className="text-blue-600 text-sm">
-                        <EditableText 
-                          fieldId={`project-${project.id}-technologies`}
-                          value={project.technologies}
-                          placeholder="技术栈"
-                          section="projects"
-                          itemId={project.id}
-                          field="technologies"
-                        />
-                      </p>
-                    </div>
-                    <span className="text-gray-500 text-sm ml-4">
-                      <EditableText 
-                        fieldId={`project-${project.id}-duration`}
-                        value={project.duration}
-                        placeholder="项目时间"
-                        section="projects"
-                        itemId={project.id}
-                        field="duration"
-                      />
-                    </span>
-                  </div>
-                  <div className="text-gray-700 text-sm leading-relaxed whitespace-pre-line">
-                    <EditableText 
-                      fieldId={`project-${project.id}-description`}
-                      value={project.description}
-                      placeholder="点击添加项目描述..."
-                      multiline={true}
-                      section="projects"
-                      itemId={project.id}
-                      field="description"
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-gray-500 italic">暂无项目经验，点击上方加号添加...</p>
-          )}
-        </div>
-
         {/* 教育背景 */}
         <div className="mb-3 p-4 -m-4 rounded-lg relative">
           <ListSectionTitle title="教育背景" onAdd={addEducation} />
@@ -793,7 +646,7 @@ export default function ResumeEditor({
         <div className="mb-3 p-4 -m-4 rounded-lg">
           <h3 className="text-lg text-gray-800 border-l-4 border-blue-600 pl-3 mb-3">专业技能</h3>
           {skills.length > 0 ? (
-            <div className="text-gray-700">
+            <div className="text-gray-700 pl-4">
               <EditableText 
                 fieldId="skills"
                 value={skills.join(', ')}
@@ -802,7 +655,7 @@ export default function ResumeEditor({
               />
             </div>
           ) : (
-            <p className="text-gray-500 italic">
+            <p className="text-gray-500 italic pl-4">
               <EditableText 
                 fieldId="skills"
                 value=""
@@ -811,6 +664,152 @@ export default function ResumeEditor({
               />
             </p>
           )}
+        </div>
+
+        {/* 工作经历 */}
+        <div className="mb-3 p-4 -m-4 rounded-lg relative">
+          <ListSectionTitle title="工作经历" onAdd={addWorkExperience} />
+          {workExperience.length > 0 ? (
+            <div className="space-y-4">
+              {workExperience.map((work, index) => (
+                <div key={work.id} className="relative group border-l-2 border-gray-200 pl-4">
+                  <ListItemActions 
+                    type="workExperience" 
+                    id={work.id} 
+                    index={index} 
+                    total={workExperience.length} 
+                  />
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1">
+                      <h4 className="text-gray-800 font-medium">
+                        <EditableText 
+                          fieldId={`work-${work.id}-position`}
+                          value={work.position}
+                          placeholder={`职位名称`}
+                          section="workExperience"
+                          itemId={work.id}
+                          field="position"
+                        />
+                      </h4>
+                      <p className="text-blue-600">
+                        <EditableText 
+                          fieldId={`work-${work.id}-company`}
+                          value={work.company}
+                          placeholder="公司名称"
+                          section="workExperience"
+                          itemId={work.id}
+                          field="company"
+                        />
+                      </p>
+                    </div>
+                    <span className="text-gray-500 text-sm ml-4">
+                      <EditableText 
+                        fieldId={`work-${work.id}-duration`}
+                        value={work.duration}
+                        placeholder="工作时间"
+                        section="workExperience"
+                        itemId={work.id}
+                        field="duration"
+                      />
+                    </span>
+                  </div>
+                  <div className="text-gray-700 text-sm leading-relaxed whitespace-pre-line">
+                    <EditableText 
+                      fieldId={`work-${work.id}-description`}
+                      value={work.description}
+                      placeholder="点击添加工作描述..."
+                      multiline={true}
+                      section="workExperience"
+                      itemId={work.id}
+                      field="description"
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-gray-500 italic pl-4">暂无工作经历，点击上方加号添加...</p>
+          )}
+        </div>
+
+        {/* 项目经验 */}
+        <div className="mb-3 p-4 -m-4 rounded-lg relative">
+          <ListSectionTitle title="项目经验" onAdd={addProject} />
+          {projects.length > 0 ? (
+            <div className="space-y-4">
+              {projects.map((project, index) => (
+                <div key={project.id} className="relative group border-l-2 border-gray-200 pl-4">
+                  <ListItemActions 
+                    type="projects" 
+                    id={project.id} 
+                    index={index} 
+                    total={projects.length} 
+                  />
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1">
+                      <h4 className="text-gray-800 font-medium">
+                        <EditableText 
+                          fieldId={`project-${project.id}-name`}
+                          value={project.name}
+                          placeholder="项目名称"
+                          section="projects"
+                          itemId={project.id}
+                          field="name"
+                        />
+                      </h4>
+                      <p className="text-blue-600 text-sm">
+                        <EditableText 
+                          fieldId={`project-${project.id}-technologies`}
+                          value={project.technologies}
+                          placeholder="技术栈"
+                          section="projects"
+                          itemId={project.id}
+                          field="technologies"
+                        />
+                      </p>
+                    </div>
+                    <span className="text-gray-500 text-sm ml-4">
+                      <EditableText 
+                        fieldId={`project-${project.id}-duration`}
+                        value={project.duration}
+                        placeholder="项目时间"
+                        section="projects"
+                        itemId={project.id}
+                        field="duration"
+                      />
+                    </span>
+                  </div>
+                  <div className="text-gray-700 text-sm leading-relaxed whitespace-pre-line">
+                    <EditableText 
+                      fieldId={`project-${project.id}-description`}
+                      value={project.description}
+                      placeholder="点击添加项目描述..."
+                      multiline={true}
+                      section="projects"
+                      itemId={project.id}
+                      field="description"
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-gray-500 italic">暂无项目经验，点击上方加号添加...</p>
+          )}
+        </div>
+
+        {/* 个人总结 */}
+        <div className="mb-3 p-4 -m-4 rounded-lg">
+          <h3 className="text-lg text-gray-800 border-l-4 border-blue-600 pl-3 mb-3">个人总结</h3>
+          <div className="text-gray-700 leading-relaxed pl-4">
+            <EditableText 
+              fieldId="summary"
+              value={summary}
+              placeholder="点击添加个人总结..."
+              multiline={true}
+              section="summary"
+            />
+          </div>
         </div>
       </div>
     </div>

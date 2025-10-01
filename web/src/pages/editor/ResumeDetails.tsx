@@ -43,7 +43,6 @@ export default function ResumeDetails() {
 
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  // const [resume, setResume] = useState<ResumeDetailType | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentStage, setCurrentStage] = useState<'parsing' | 'structuring' | 'analyzing' | 'completed'>('parsing');
   const [progress, setProgress] = useState(0);
@@ -144,6 +143,7 @@ export default function ResumeDetails() {
             education: ensureItemsHaveIds(structured_data.education || []),
             projects: ensureItemsHaveIds(structured_data.projects || [])
           };
+          console.log("processedData", processedData);
           
           setEditForm({
             name: name,

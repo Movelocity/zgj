@@ -24,6 +24,6 @@ export const generateId = (): string => {
 export const ensureItemsHaveIds = <T extends { id?: string }>(items: T[]): (T & { id: string })[] => {
   return items.map(item => ({
     ...item,
-    id: item.id || generateId()
+    id: (item.id && item.id.length>3)? item.id : generateId()
   }));
 };

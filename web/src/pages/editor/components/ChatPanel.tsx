@@ -1,5 +1,5 @@
 
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import Button from '@/components/ui/Button';
 import MarkdownRenderer from '@/components/ui/MarkdownRenderer';
 import { Send, Bot, Lightbulb, Sparkles } from 'lucide-react';
@@ -51,11 +51,11 @@ export default function ChatPanel({ resumeData, onResumeDataChange }: ChatPanelP
   ]);
   const [isResponding, setIsResponding] = useState(false);
 
-  useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
-  }, [messages]);
+  // useEffect(() => {
+  //   if (scrollRef.current) {
+  //     scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+  //   }
+  // }, [messages]);
 
   const updateMessages = (message: Message) => {
     const msg = {...message} // 防止对象引用不变，无法更新state
@@ -73,8 +73,8 @@ export default function ChatPanel({ resumeData, onResumeDataChange }: ChatPanelP
     }
   };
 
-  const handleSendMessage = async () => {
-    const query = inputValue.trim();
+  const handleSendMessage = async (forceInput?: string) => {
+    const query = forceInput ? forceInput : inputValue.trim();
     if (!query) return;
 
     const userMessage: Message = {
@@ -122,6 +122,7 @@ export default function ChatPanel({ resumeData, onResumeDataChange }: ChatPanelP
         updateMessages(aiResponse);
         setIsTyping(false);
       }, 500);
+      return;
     }
 
     if (query === "/simulate") {
@@ -267,10 +268,6 @@ export default function ChatPanel({ resumeData, onResumeDataChange }: ChatPanelP
     }
   };
 
-  const handleSuggestionClick = (suggestion: string) => {
-    setInputValue(suggestion);
-  };
-
   const truncate = (text: string, maxLength: number) => {
     if (!text) return '';
     if (text.length <= maxLength) return text;
@@ -280,7 +277,7 @@ export default function ChatPanel({ resumeData, onResumeDataChange }: ChatPanelP
   // 滚动特效
   const handleScroll = useCallback(() => {
     if (scrollRef.current && scrollGradientTopRef.current && scrollGradientBottomRef.current) {
-      console.log('scrollTop', scrollRef.current.scrollTop);
+      // console.log('scrollTop', scrollRef.current.scrollTop);
       if(scrollRef.current.scrollTop > 100) {
         scrollGradientTopRef.current.style.height = '24px';
       } else {
@@ -356,7 +353,7 @@ export default function ChatPanel({ resumeData, onResumeDataChange }: ChatPanelP
       <div className="px-2 py-1 border-gray-200 w-full">
         {/* 快捷建议 */}
         {suggestions && suggestions.length > 0 && (
-          <div className="flex gap-2 max-w-screen overflow-hidden overflow-x-auto pb-2">
+          <div className="flex gap-2 max-w-screen overflow-hidden overflow-x-auto p-2">
             {suggestions.map((suggestion, index) => {
               let text = suggestion;
               let highlight = false;
@@ -371,7 +368,13 @@ export default function ChatPanel({ resumeData, onResumeDataChange }: ChatPanelP
                   variant={highlight ? 'primary' : 'outline'}
                   size="xs"
                   className="px-2"
-                  onClick={() => handleSuggestionClick(text)}
+                  onClick={() => {
+                    if (!highlight) {
+                      handleSendMessage(text);
+                    } else {
+                      setInputValue(text);
+                    }
+                  }}
                 >
                   <span className="text-nowrap">{truncate(text, 16)}</span>
                 </Button>
@@ -392,7 +395,7 @@ export default function ChatPanel({ resumeData, onResumeDataChange }: ChatPanelP
             className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           <button 
-            onClick={handleSendMessage}
+            onClick={() => handleSendMessage()}
             disabled={!inputValue.trim() || isTyping || isResponding}
             className="m-0.5 px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
           >
@@ -403,19 +406,19 @@ export default function ChatPanel({ resumeData, onResumeDataChange }: ChatPanelP
         <div className="mt-3 flex flex-wrap gap-2">
           <button 
             className="text-xs px-2 py-1 text-gray-600 hover:bg-gray-100 rounded transition-colors"
-            onClick={() => handleSuggestionClick('请帮我整体检查简历')}
+            onClick={() => setInputValue("请帮我整体检查简历")}
           >
             整体检查
           </button>
           <button 
             className="text-xs px-2 py-1 text-gray-600 hover:bg-gray-100 rounded transition-colors"
-            onClick={() => handleSuggestionClick('突出我的核心竞争力')}
+            onClick={() => setInputValue("突出我的核心竞争力")}
           >
             突出优势
           </button>
           <button 
             className="text-xs px-2 py-1 text-gray-600 hover:bg-gray-100 rounded transition-colors"
-            onClick={() => handleSuggestionClick('针对特定岗位优化')}
+            onClick={() => setInputValue("针对特定岗位优化")}
           >
             岗位匹配
           </button>
