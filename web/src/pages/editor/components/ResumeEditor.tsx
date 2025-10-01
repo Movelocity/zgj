@@ -469,7 +469,7 @@ export default function ResumeEditor({
               className="bg-gray-100 hover:bg-gray-200 rounded text-gray-700"
               title={showingOriginal ? "查看原始版本" : "查看AI优化版本"}
             >
-              {showingOriginal ? "查看原版" : "查看新版"}
+              {showingOriginal ? "查看新版" : "查看原版"}
             </Button>
             
             {/* 接收按钮 */}
