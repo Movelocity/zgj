@@ -63,7 +63,9 @@ export default function ChatPanel({ resumeData, onResumeDataChange }: ChatPanelP
       }
       return [...prev, msg];
     });
-    setIsTyping(false);
+    if (msg.content) {
+      setIsTyping(false);
+    }
   };
 
   const handleSendMessage = async () => {
@@ -120,64 +122,84 @@ export default function ChatPanel({ resumeData, onResumeDataChange }: ChatPanelP
     const aiResponse: Message = {
       id: (Date.now() + 1).toString(),
       type: 'assistant',
-      content: "测试中...",
+      content: "",
       timestamp: new Date()
     };
 
-    // actual chat
+    const onMessage = (data: any) => {
+      console.log('Received event:', data);
+
+      // 处理不同类型的事件
+      switch (data.event) {
+        case 'workflow_started':
+          console.log(`[${aiResponse.id}] 工作流启动`);
+          break;
+        
+        case 'node_started':
+          console.log(`[${aiResponse.id}] 节点启动: ${data.data?.id || '未知节点'}`);
+          break;
+        
+        case 'node_finished':
+          console.log(`[${aiResponse.id}] 节点完成: ${data.data?.id || '未知节点'}`);
+          break;
+        
+        case 'workflow_finished':
+          setIsTyping(false);
+          setIsResponding(false);
+          console.log(`[${aiResponse.id}] 工作流完成`);
+          break;
+        
+        case 'error':
+          console.log(`[${aiResponse.id}] 错误: `+data.data?.message);
+          break;
+        
+        case 'message':  // chat-messages
+          aiResponse.content += data.answer || '';
+          updateMessages(aiResponse);
+          console.log(`[${aiResponse.id}] `+data.answer);
+          break;
+
+        case 'text_chunk':  // /workflows/run
+          aiResponse.content += data.data?.text || '';
+          updateMessages(aiResponse);
+          console.log(`[${aiResponse.id}] `+data.data?.text);
+          break;
+
+        default:
+          console.log(`[${aiResponse.id}] 收到事件: ${data.event}`);
+          break;
+      }
+    }
+
+    const onError = (error: any) => {
+      console.error('Stream error:', error);
+    }
+
     try {
-      setIsResponding(true);
-      // await 是为了捕获错误
-      await workflowAPI.executeWorkflowStream({
-        id: "",
-        name: "basic-chat",
-        inputs: {
-          __query: query
-        },
-        onMessage: (data) => {
-          console.log('Received event:', data);
-
-          // 处理不同类型的事件
-          switch (data.event) {
-            case 'workflow_started':
-              console.log(`[${aiResponse.id}] 工作流启动`);
-              aiResponse.content = ""
-              updateMessages(aiResponse);
-              break;
-            
-            case 'node_started':
-              console.log(`[${aiResponse.id}] 节点启动: ${data.data?.id || '未知节点'}`);
-              break;
-            
-            case 'node_finished':
-              console.log(`[${aiResponse.id}] 节点完成: ${data.data?.id || '未知节点'}`);
-              break;
-            
-            case 'workflow_finished':
-              setIsTyping(false);
-              setIsResponding(false);
-              console.log(`[${aiResponse.id}] 工作流完成`);
-              break;
-            
-            case 'error':
-              console.log(`[${aiResponse.id}] 错误: `+data.data?.message);
-              break;
-            
-            case 'message':
-              aiResponse.content += data.answer || '';
-              updateMessages(aiResponse);
-              console.log(`[${aiResponse.id}] `+data.answer);
-              break;
-
-            default:
-              console.log(`[${aiResponse.id}] 收到事件: ${data.event}`);
-              break;
-          }
-        },
-        onError: (error) => {
-          console.error('Stream error:', error);
-        },
-    });
+      if (query === "整体优化简历") {  // 整体优化简历应用
+        setIsResponding(true);
+        // await 是为了在外层捕获错误
+        await workflowAPI.executeWorkflowStream({
+          id: "",
+          name: "common-analysis",
+          inputs: {
+            origin_resume: JSON.stringify(resumeData),
+          },
+          onMessage: onMessage,
+          onError: onError,
+        });
+      } else {  // 通用对话应用
+        setIsResponding(true);
+        await workflowAPI.executeWorkflowStream({
+          id: "",
+          name: "basic-chat",
+          inputs: {
+            __query: query
+          },
+          onMessage: onMessage,
+          onError: onError,
+        });
+      }
     } catch (error: any) {
       console.error('Execution error:', error);
     } finally {
@@ -237,7 +259,7 @@ export default function ChatPanel({ resumeData, onResumeDataChange }: ChatPanelP
         </p> */}
       </div>
 
-      <div className="flex-1 p-4 overflow-y-auto space-y-4 pb-48" ref={scrollRef}>
+      <div className="flex-1 p-4 overflow-y-auto space-y-4 pb-24" ref={scrollRef}>
         {messages.map((message) => (
           <div key={message.id} className="space-y-2">
             <div
