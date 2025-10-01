@@ -281,7 +281,7 @@ func (s *appService) ExecuteWorkflow(workflowID, userID string, inputs map[strin
 
 	// 获取工作流信息
 	var workflow model.Workflow
-	if err := global.DB.Where("id = ? AND (creator_id = ? OR is_public = ?)", workflowID, userID, true).First(&workflow).Error; err != nil {
+	if err := global.DB.Where("id = ?", workflowID).First(&workflow).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, errors.New("工作流不存在")
 		}
