@@ -1,3 +1,5 @@
+import type { ResumeData } from '@/types/resume';
+
 // 辅助函数
 export const formatFileSize = (bytes: number): string => {
   if (bytes === 0) return '0 Bytes';
@@ -73,3 +75,40 @@ export const throttle = <T extends (...args: any[]) => void>(
     }
   };
 };
+
+const truncate = (text: string, maxLength: number): string => {
+  return text.length > maxLength ? text.slice(0, maxLength) + '...' : text;
+}
+
+export const parseResumeSummary = (resumeData: ResumeData): ResumeData => {
+  return {
+    personalInfo: resumeData.personalInfo,
+    summary: truncate(resumeData.summary, 100),
+    workExperience: resumeData.workExperience.map(w => ({
+      ...w,
+      description: truncate(w.description, 100)
+    })),
+    education: resumeData.education.map(e => ({
+      ...e,
+      description: truncate(e.description, 100)
+    })),
+    skills: resumeData.skills,
+    projects: resumeData.projects.map(p => ({
+      ...p,
+      description: truncate(p.description, 100)
+    }))
+  }
+}
+
+/** 智能解析JSON，
+ * 形如 ```json\n{}``` 等格式的文本，都能顺利解析出其中的有效json，
+ * 主要是通过匹配首尾括号的位置来截取和校验有效json
+ * 
+ */
+export const smartJsonParser = <T>(json: string): T => {
+  const jsonStart = json.indexOf('{');
+  const jsonEnd = json.lastIndexOf('}');
+  const jsonStr = json.slice(jsonStart, jsonEnd + 1);
+  console.debug('jsonStr', jsonStr);
+  return JSON.parse(jsonStr);
+}

@@ -187,6 +187,7 @@ export const ResumeExample: ResumeData = {
   ]
 }
 
+
 export const EmptyResumeData: ResumeData = {
   personalInfo: {
     name: '',

@@ -1,11 +1,11 @@
-
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import Button from '@/components/ui/Button';
 import MarkdownRenderer from '@/components/ui/MarkdownRenderer';
 import { Send, Bot, Lightbulb, Sparkles } from 'lucide-react';
-import { FiMessageSquare } from 'react-icons/fi';
+import { FiMessageSquare, FiFileText } from 'react-icons/fi';
 import { type ResumeData } from '@/types/resume';
 import { workflowAPI } from '@/api/workflow';
+import { parseResumeSummary, smartJsonParser } from '@/utils/helpers';
 
 interface Message {
   id: string;
@@ -50,12 +50,23 @@ export default function ChatPanel({ resumeData, onResumeDataChange }: ChatPanelP
     "整体检查"
   ]);
   const [isResponding, setIsResponding] = useState(false);
+  const [isFormatting, setIsFormatting] = useState(false);
 
-  // useEffect(() => {
-  //   if (scrollRef.current) {
-  //     scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-  //   }
-  // }, [messages]);
+  const lastScrollTop = useRef(0);
+  const lastAbortScrollMessageId = useRef('');
+  useEffect(() => {
+    if (scrollRef.current) {
+      const currentScrollTop = scrollRef.current.scrollTop;
+      if (currentScrollTop < lastScrollTop.current) { 
+        // 滚动进度不再单调递增，说明用户手动修改了滚动状态
+        lastAbortScrollMessageId.current = messages[messages.length - 1].id;
+        return;
+      }
+      // 继续自动滚动
+      lastScrollTop.current = scrollRef.current.scrollTop;
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [messages]);
 
   const updateMessages = (message: Message) => {
     const msg = {...message} // 防止对象引用不变，无法更新state
@@ -86,7 +97,7 @@ export default function ChatPanel({ resumeData, onResumeDataChange }: ChatPanelP
     setMessages(prev => [...prev, userMessage]);
     setInputValue('');
     setSuggestions([])
-    if (isResponding) return;
+    if (isResponding || isFormatting) return;
 
     setIsTyping(true);
 
@@ -158,7 +169,7 @@ export default function ChatPanel({ resumeData, onResumeDataChange }: ChatPanelP
     };
 
     const onMessage = (data: any) => {
-      console.log('Received event:', data);
+      console.debug('Received event:', data);
 
       // 处理不同类型的事件
       switch (data.event) {
@@ -193,7 +204,7 @@ export default function ChatPanel({ resumeData, onResumeDataChange }: ChatPanelP
         case 'text_chunk':  // /workflows/run
           aiResponse.content += data.data?.text || '';
           updateMessages(aiResponse);
-          console.log(`[${aiResponse.id}] `+data.data?.text);
+          console.log(data.data?.text);
           break;
 
         default:
@@ -219,6 +230,8 @@ export default function ChatPanel({ resumeData, onResumeDataChange }: ChatPanelP
           onMessage: onMessage,
           onError: onError,
         });
+
+        postProcess(aiResponse.content);
       } else {  // 通用对话应用
         setIsResponding(true);
         await workflowAPI.executeWorkflowStream({
@@ -234,7 +247,43 @@ export default function ChatPanel({ resumeData, onResumeDataChange }: ChatPanelP
     } catch (error: any) {
       console.error('Execution error:', error);
     } finally {
+      setIsTyping(false);
       setIsResponding(false);
+      lastAbortScrollMessageId.current = '';
+    }
+  };
+
+  /** 已得到输出，重新调用阻塞式api，得到结构化的简历内容 */
+  const postProcess = async (content: string): Promise<void> => {
+    try{
+      setIsFormatting(true);
+      if (scrollRef.current) {
+        scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+      }
+      console.log("开始解析格式化简历...")
+      // 1. 创建原有简历摘要，自由基本信息和id
+      const lightResume = parseResumeSummary(resumeData);
+      // 2. 调用阻塞式api，得到结构化的简历内容
+      const uploadData = {
+        current_resume: JSON.stringify(lightResume),
+        new_resume: content
+      }
+      const structurResumeResult = await workflowAPI.executeWorkflow("smart-format", uploadData, true);
+      if (structurResumeResult.code !== 0) {
+        console.error('Execution error:', structurResumeResult.data.message);
+        return;
+      }
+      const structuredResumeData = structurResumeResult.data.data.outputs?.output;
+      console.log('structuredResumeData', structuredResumeData);
+
+      if (structuredResumeData && typeof structuredResumeData === 'string') {
+        const finalResumeData = smartJsonParser<ResumeData>(structuredResumeData as string);
+        onResumeDataChange(finalResumeData);
+      }
+    } catch (error) {
+      console.error('Execution error:', error);
+    } finally {
+      setIsFormatting(false);
     }
   };
 
@@ -277,7 +326,6 @@ export default function ChatPanel({ resumeData, onResumeDataChange }: ChatPanelP
   // 滚动特效
   const handleScroll = useCallback(() => {
     if (scrollRef.current && scrollGradientTopRef.current && scrollGradientBottomRef.current) {
-      // console.log('scrollTop', scrollRef.current.scrollTop);
       if(scrollRef.current.scrollTop > 100) {
         scrollGradientTopRef.current.style.height = '24px';
       } else {
@@ -334,6 +382,47 @@ export default function ChatPanel({ resumeData, onResumeDataChange }: ChatPanelP
             </div>
           ))}
 
+          {isFormatting && (
+            <div className="w-full px-4 animate-in fade-in-0 slide-in-from-bottom-2 duration-300">
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow duration-200">
+                <div className="flex items-center space-x-3 mb-3">
+                  <div className="relative">
+                    <FiFileText className="w-5 h-5 text-blue-600 animate-pulse" />
+                    <div className="absolute -top-1 -right-1 w-2 h-2 bg-blue-500 rounded-full animate-ping"></div>
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="text-sm font-medium text-blue-900 mb-1">将内容更新到编辑区</h4>
+                  </div>
+                  <div className="text-xs text-blue-500 font-mono bg-blue-100 px-2 py-1 rounded">
+                    AI
+                  </div>
+                </div>
+                
+                {/* 进度条动画 */}
+                <div className="w-full bg-blue-100 rounded-full h-2 overflow-hidden mb-3">
+                  <div className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full animate-pulse relative">
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer"></div>
+                  </div>
+                </div>
+                
+                {/* 处理步骤指示器 */}
+                {/* <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <div className="flex space-x-1">
+                      <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-bounce"></div>
+                      <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                      <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                    </div>
+                    <span className="text-xs text-blue-600 ml-2">解析中</span>
+                  </div>
+                  <div className="text-xs text-blue-400">
+                    <Sparkles className="w-3 h-3 inline animate-spin" />
+                  </div>
+                </div> */}
+              </div>
+            </div>
+          )}
+
           {/* 打字指示器，在首字响应前显示 */}
           {isTyping && (
             <div className="w-full py-2">
@@ -369,7 +458,7 @@ export default function ChatPanel({ resumeData, onResumeDataChange }: ChatPanelP
                   size="xs"
                   className="px-2"
                   onClick={() => {
-                    if (!highlight) {
+                    if (highlight) {
                       handleSendMessage(text);
                     } else {
                       setInputValue(text);
