@@ -1,8 +1,9 @@
 import React, { useState, useRef, useMemo } from 'react';
-import { Mail, Phone, MapPin, Sparkles, Check, X, Plus, ChevronUp, ChevronDown, Trash2, CheckCircle, XCircle } from 'lucide-react';
+import { Mail, Phone, MapPin, Sparkles, Plus, ChevronUp, ChevronDown, Trash2, CheckCircle, XCircle } from 'lucide-react';
 import Button from "@/components/ui/Button"
 import type { ResumeData, OptimizedSections, WorkExperience, Education, Project } from '@/types/resume';
 import { generateId } from '@/utils/id';
+import cn from 'classnames';
 
 interface OptimizedResumeViewProps {
   resumeData: ResumeData;
@@ -512,31 +513,34 @@ export default function ResumeEditor({
     
     if (isCurrentlyEditing) {
       return (
-        <div className="flex items-start space-x-2 min-h-[2.5rem]">
+        <div className="flex items-start relative">
           {multiline ? (
             <textarea
               ref={textareaRef}
               defaultValue={editingValueRef.current}
-              className="flex-1 min-h-20 p-2 border border-gray-300 rounded resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="flex-1 min-h-20 p-2 resize-none outline-none bg-gray-200"
               autoFocus
             />
           ) : (
             <input
               ref={inputRef}
               defaultValue={editingValueRef.current}
-              className="flex-1 h-8 px-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="flex-1 h-8 px-2 focus:outline-none outline-none bg-gray-200"
               autoFocus
             />
           )}
-          <div className="flex space-x-1 flex-shrink-0">
-            <Button size="sm" onClick={() => {
+          <div className="flex flex-shrink-0 absolute right-1 top-full pt-1 z-10 gap-1">
+            <Button 
+              size="xs" 
+              className="px-4"
+              onClick={() => {
               const element = multiline ? textareaRef.current : inputRef.current;
               if (element) saveEdit(fieldId, element);
             }}>
-              <Check className="w-4 h-4" />
+              确定
             </Button>
-            <Button size="sm" variant="outline" onClick={cancelEdit}>
-              <X className="w-4 h-4" />
+            <Button size="xs" variant="danger" className="px-4" onClick={cancelEdit}>
+              取消
             </Button>
           </div>
         </div>
@@ -545,25 +549,31 @@ export default function ResumeEditor({
 
     const content = value || placeholder;
     const baseClasses = multiline ? 'min-h-[2rem] block' : 'min-h-[1.5rem] inline-block';
-    const textElement = (
+    return (
       <span 
-        className={`cursor-pointer hover:bg-gray-100 px-1 py-0.5 rounded transition-colors ${baseClasses} ${className} ${!value ? 'text-gray-400 italic' : ''}`}
+        className={cn(
+          'cursor-pointer hover:bg-gray-100 px-1 py-0.5 rounded transition-colors',
+          baseClasses, 
+          className, 
+          !value ? 'text-gray-400 italic' : '',
+          isHighlighted ? 'bg-yellow-100' : ''
+        )}
         onClick={() => startEditing(fieldId, value)}
       >
         {content}
       </span>
     );
 
-    return isHighlighted ? (
-      <HighlightedText 
-        isHighlighted={true}
-        section={section}
-        itemId={itemId}
-        field={field}
-      >
-        {textElement}
-      </HighlightedText>
-    ) : textElement;
+    // return isHighlighted ? (
+    //   <HighlightedText 
+    //     isHighlighted={true}
+    //     section={section}
+    //     itemId={itemId}
+    //     field={field}
+    //   >
+    //     {textElement}
+    //   </HighlightedText>
+    // ) : textElement;
   };
 
   return (
