@@ -312,7 +312,7 @@ export default function ChatPanel({ resumeData, onResumeDataChange }: ChatPanelP
         <div ref={scrollGradientTopRef} className="from-white to-transparent absolute z-10 transition-opacity pointer-events-none opacity-100 bg-linear-to-b top-0 left-0 w-full"></div>
 
         <div 
-          className="absolute p-4 space-y-4 top-0 left-0 w-full h-full overflow-y-auto pb-24"
+          className="absolute p-5 space-y-4 top-0 left-0 w-full h-full overflow-y-auto"
           onScroll={handleScroll}
           ref={scrollRef}
         >
