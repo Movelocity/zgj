@@ -1,0 +1,4 @@
+.markdown-content li > p {
+  display: inline;
+  margin: 0;
+}

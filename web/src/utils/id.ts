@@ -9,8 +9,8 @@
  */
 export const generateId = (): string => {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-  let result = '';
-  for (let i = 0; i < 8; i++) {
+  let result = '#';
+  for (let i = 0; i < 7; i++) {
     result += chars.charAt(Math.floor(Math.random() * chars.length));
   }
   return result;

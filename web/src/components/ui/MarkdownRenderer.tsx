@@ -1,4 +1,5 @@
 import ReactMarkdown from 'react-markdown';
+import './markdown.css';
 
 interface MarkdownRendererProps {
   content: string;
