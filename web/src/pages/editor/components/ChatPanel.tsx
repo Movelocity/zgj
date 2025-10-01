@@ -1,8 +1,10 @@
 
 import { useState, useRef, useEffect } from 'react';
 import Button from '@/components/ui/Button';
-import { Send, Bot, Lightbulb } from 'lucide-react';
+import { Send, Bot, Lightbulb, Sparkles } from 'lucide-react';
 import { FiMessageSquare } from 'react-icons/fi';
+import { type ResumeData } from '@/types/resume';
+import { workflowAPI } from '@/api/workflow';
 
 interface Message {
   id: string;
@@ -12,24 +14,37 @@ interface Message {
   suggestions?: string[];
 }
 
-export default function ChatPanel() {
+interface ChatPanelProps {
+  resumeData: ResumeData;
+  onResumeDataChange: (data: ResumeData) => void;
+}
+
+export default function ChatPanel({ resumeData, onResumeDataChange }: ChatPanelProps) {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
       type: 'assistant',
-      content: '您好！我是您的简历专家助手。我已经为您优化了简历内容，左侧黄色标记的部分是我建议的改进。您可以随时与我对话，我会根据您的需求进一步优化简历。',
+      // content: '您好！我是您的简历专家助手。我已经为您优化了简历内容，左侧黄色标记的部分是我建议的改进。您可以随时与我对话，我会根据您的需求进一步优化简历。',
+      content: "您好，我是简历专家，您可以随时与我对话，我会根据您的需求进一步优化简历",
       timestamp: new Date(),
-      suggestions: [
-        '帮我优化个人总结',
-        '改进工作经历描述',
-        '调整技能关键词',
-        '优化项目经验'
-      ]
+      // suggestions: [
+      //   '帮我优化个人总结',
+      //   '改进工作经历描述',
+      //   '调整技能关键词',
+      //   '优化项目经验'
+      // ]
     }
   ]);
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [suggestions, setSuggestions] = useState<string[]>([
+    "[highlight]整体优化简历",
+    "突出优势",
+    "岗位匹配",
+    "整体检查"
+  ]);
+  const [isResponding, setIsResponding] = useState(false);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -37,32 +52,137 @@ export default function ChatPanel() {
     }
   }, [messages]);
 
+  const updateMessages = (message: Message) => {
+    const msg = {...message} // 防止对象引用不变，无法更新state
+    // console.log(`[${msg.id}] 更新消息: `, msg);
+    // 按id过滤匹配，更新对应的消息
+    setMessages(prev => {
+      const matched = prev.find(m => m.id === msg.id);
+      if (matched) {
+        return prev.map(m => m.id === msg.id ? msg : m);
+      }
+      return [...prev, msg];
+    });
+    setIsTyping(false);
+  };
+
   const handleSendMessage = async () => {
-    if (!inputValue.trim()) return;
+    const query = inputValue.trim();
+    if (!query) return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
       type: 'user',
-      content: inputValue,
+      content: query,
       timestamp: new Date()
     };
-
     setMessages(prev => [...prev, userMessage]);
     setInputValue('');
+    setSuggestions([])
+    if (isResponding) return;
+
     setIsTyping(true);
 
-    // 模拟AI回复
-    setTimeout(() => {
+    if (query === "/print") {
+      console.log("resumeData", JSON.stringify(resumeData, null, 2));
       const aiResponse: Message = {
         id: (Date.now() + 1).toString(),
         type: 'assistant',
-        content: generateAIResponse(inputValue),
+        content: "简历内容已答应到控制台，请查看",
         timestamp: new Date(),
-        suggestions: generateSuggestions(inputValue)
       };
-      setMessages(prev => [...prev, aiResponse]);
+      updateMessages(aiResponse);
+      setSuggestions(["什么是控制台？"]);
+      return;
+    }
+    
+    if (query === "/clear") {
+      setMessages([]);
       setIsTyping(false);
-    }, 1500);
+      return;
+    }
+    
+    if (query === "/test"){
+      // 模拟AI回复
+      setTimeout(() => {
+        const aiResponse: Message = {
+          id: (Date.now() + 1).toString(),
+          type: 'assistant',
+          content: generateAIResponse(query),
+          timestamp: new Date(),
+          suggestions: generateSuggestions(query)
+        };
+        updateMessages(aiResponse);
+        setIsTyping(false);
+      }, 500);
+    }
+
+    const aiResponse: Message = {
+      id: (Date.now() + 1).toString(),
+      type: 'assistant',
+      content: "测试中...",
+      timestamp: new Date()
+    };
+
+    // actual chat
+    try {
+      setIsResponding(true);
+      // await 是为了捕获错误
+      await workflowAPI.executeWorkflowStream({
+        id: "",
+        name: "basic-chat",
+        inputs: {
+          __query: query
+        },
+        onMessage: (data) => {
+          console.log('Received event:', data);
+
+          // 处理不同类型的事件
+          switch (data.event) {
+            case 'workflow_started':
+              console.log(`[${aiResponse.id}] 工作流启动`);
+              aiResponse.content = ""
+              updateMessages(aiResponse);
+              break;
+            
+            case 'node_started':
+              console.log(`[${aiResponse.id}] 节点启动: ${data.data?.id || '未知节点'}`);
+              break;
+            
+            case 'node_finished':
+              console.log(`[${aiResponse.id}] 节点完成: ${data.data?.id || '未知节点'}`);
+              break;
+            
+            case 'workflow_finished':
+              setIsTyping(false);
+              setIsResponding(false);
+              console.log(`[${aiResponse.id}] 工作流完成`);
+              break;
+            
+            case 'error':
+              console.log(`[${aiResponse.id}] 错误: `+data.data?.message);
+              break;
+            
+            case 'message':
+              aiResponse.content += data.answer || '';
+              updateMessages(aiResponse);
+              console.log(`[${aiResponse.id}] `+data.answer);
+              break;
+
+            default:
+              console.log(`[${aiResponse.id}] 收到事件: ${data.event}`);
+              break;
+          }
+        },
+        onError: (error) => {
+          console.error('Stream error:', error);
+        },
+    });
+    } catch (error: any) {
+      console.error('Execution error:', error);
+    } finally {
+      setIsResponding(false);
+    }
   };
 
   const generateAIResponse = (userInput: string): string => {
@@ -91,7 +211,7 @@ export default function ChatPanel() {
     } else if (input.includes('技能')) {
       return ['调整技能顺序', '添加热门关键词', '分类技能展示'];
     } else {
-      return ['整体润色', '格式调整', '内容扩充', '重点突出'];
+      return ['整体润色xxxx', '格式调整yyyyy', '内容扩充', '重点突出'];
     }
   };
 
@@ -99,19 +219,25 @@ export default function ChatPanel() {
     setInputValue(suggestion);
   };
 
+  const truncate = (text: string, maxLength: number) => {
+    if (!text) return '';
+    if (text.length <= maxLength) return text;
+    return text.slice(0, maxLength) + '...';
+  };
+
   return (
-    <div className="bg-white rounded-lg shadow-sm h-full flex flex-col">
-      <div className="p-4 border-b border-gray-200">
-        <div className="flex items-center text-lg font-medium">
-          <Bot className="w-5 h-5 mr-2 text-blue-600" />
+    <div className="bg-white h-full flex flex-col">
+      <div className="px-4 py-3 border-b border-gray-200 flex items-center gap-1">
+        <div className="flex gap-1 items-center text-lg font-medium">
+          <Bot className="w-5 h-5 text-blue-600" />
           简历专家
         </div>
-        <p className="text-sm text-gray-600 mt-1">
+        {/* <p className="text-sm text-gray-600 mt-1">
           与AI专家对话，实时优化您的简历
-        </p>
+        </p> */}
       </div>
 
-      <div className="flex-1 p-4 overflow-y-auto space-y-4" ref={scrollRef}>
+      <div className="flex-1 p-4 overflow-y-auto space-y-4 pb-48" ref={scrollRef}>
         {messages.map((message) => (
           <div key={message.id} className="space-y-2">
             <div
@@ -120,7 +246,7 @@ export default function ChatPanel() {
               }`}
             >
               <div
-                className={`max-w-[90%] rounded-lg p-3 ${
+                className={`max-w-[90%] rounded-lg px-3 py-1.5 ${
                   message.type === 'user'
                     ? 'bg-blue-600 text-white'
                     : 'bg-gray-100'
@@ -132,26 +258,10 @@ export default function ChatPanel() {
               </div>
             </div>
 
-            {/* 快捷建议 */}
-            {message.suggestions && message.suggestions.length > 0 && (
-              <div className="flex flex-wrap gap-2 ml-6">
-                {message.suggestions.map((suggestion, index) => (
-                  <Button
-                    key={index}
-                    icon={<Lightbulb className="w-3 h-3 mr-1" />}
-                    variant="outline"
-                    size="xs"
-                    onClick={() => handleSuggestionClick(suggestion)}
-                  >
-                    {suggestion}
-                  </Button>
-                ))}
-              </div>
-            )}
           </div>
         ))}
 
-        {/* 打字指示器 */}
+        {/* 打字指示器，在首字响应前显示 */}
         {isTyping && (
           <div className="flex justify-start">
             <div className="bg-gray-100 rounded-lg p-3 max-w-[85%]">
@@ -167,9 +277,37 @@ export default function ChatPanel() {
           </div>
         )}
       </div>
+      
+      <div className="px-2 py-1 border-gray-200 w-full">
+        {/* 快捷建议 */}
+        {suggestions && suggestions.length > 0 && (
+          <div className="flex gap-2 max-w-screen overflow-hidden overflow-x-auto pb-2">
+            {suggestions.map((suggestion, index) => {
+              let text = suggestion;
+              let highlight = false;
+              if (suggestion.includes("[highlight]")) {
+                text = suggestion.replace("[highlight]", "");
+                highlight = true;
+              }
+              return (
+                <Button
+                  key={index}
+                  icon={highlight ? <Sparkles className="w-3 h-3 mr-1" /> : <Lightbulb className="w-3 h-3 mr-1" />}
+                  variant={highlight ? 'primary' : 'outline'}
+                  size="xs"
+                  className="px-2"
+                  onClick={() => handleSuggestionClick(text)}
+                >
+                  <span className="text-nowrap">{truncate(text, 16)}</span>
+                </Button>
+                )
+            })}
+          </div>
+        )}
+      </div>
 
-      <div className="p-4 border-t border-gray-200">
-        <div className="flex space-x-2">
+      <div className="px-4 py-2 border-t border-gray-200">
+        <div className="flex gap-1">
           <input
             type="text"
             value={inputValue}
@@ -180,8 +318,8 @@ export default function ChatPanel() {
           />
           <button 
             onClick={handleSendMessage}
-            disabled={!inputValue.trim() || isTyping}
-            className="px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={!inputValue.trim() || isTyping || isResponding}
+            className="m-0.5 px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
           >
             <Send className="w-4 h-4" />
           </button>

@@ -299,7 +299,7 @@ export default function ResumeDetails() {
         ) : (
           <>
             {/* 左侧优化后简历 (7/10) */}
-            <div className="w-[70%] border-r border-gray-200 bg-white h-screen overflow-auto py-16">
+            <div className="w-full md:w-[70%] border-r border-gray-200 bg-white h-screen overflow-auto py-16">
               <ResumeEditor 
                 optimizedSections={optimizedSections}
                 resumeData={resumeData}
@@ -308,8 +308,11 @@ export default function ResumeDetails() {
             </div>
 
             {/* 右侧AI对话界面 (3/10) */}
-            <div className="w-[30%] p-2 bg-gray-50 h-screen overflow-auto pt-14">
-              <ChatPanel />
+            <div className="hidden md:block w-[30%] bg-gray-50 h-screen overflow-auto pt-14">
+              <ChatPanel 
+                resumeData={resumeData}
+                onResumeDataChange={handleSetResumeData}
+              />
             </div>
           </>
         )}

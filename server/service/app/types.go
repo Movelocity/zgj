@@ -94,6 +94,7 @@ type WorkflowAPIRequest struct {
 	Inputs       map[string]interface{} `json:"inputs"`
 	ResponseMode string                 `json:"response_mode"`
 	User         string                 `json:"user"`
+	Query        string                 `json:"query"`
 }
 
 // WorkflowAPIResponse 工作流API响应结构体

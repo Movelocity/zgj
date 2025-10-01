@@ -3,6 +3,14 @@ import type { Workflow, WorkflowExecution } from '@/types/workflow';
 import type { ApiResponse, PaginationParams, PaginationResponse } from '@/types/global';
 import { TOKEN_KEY } from '@/utils/constants';
 
+type ExecuteWorkflowStreamParams = {
+  id: string, 
+  name?: string,
+  inputs: any, 
+  onMessage?: (data: any) => void, 
+  onError?: (error: any) => void, 
+}
+
 export const workflowAPI = {
   // 获取工作流列表
   getWorkflows: (): Promise<ApiResponse<Workflow[]>> => {
@@ -30,21 +38,24 @@ export const workflowAPI = {
   },
 
   // 执行工作流
-  executeWorkflow: (id: string, inputs: any): Promise<ApiResponse<any>> => {
-    return apiClient.post(`/api/workflow/${id}/execute`, { inputs, response_mode: 'blocking' });
+  executeWorkflow: (id: string, inputs: any, idAsName: boolean = false): Promise<ApiResponse<any>> => {
+    const url = idAsName ? `/api/workflow/v2/${id}/execute` : `/api/workflow/v1/${id}/execute`;
+    return apiClient.post(url, { inputs, response_mode: 'blocking' });
   },
 
   // 流式执行工作流
-  executeWorkflowStream: async (
-    id: string, 
-    inputs: any, 
-    onMessage?: (data: any) => void, 
-    onError?: (error: any) => void
-  ): Promise<void> => {
+  executeWorkflowStream: async ({
+    id, 
+    name,
+    inputs, 
+    onMessage, 
+    onError, 
+}: ExecuteWorkflowStreamParams): Promise<void> => {
     const token = localStorage.getItem(TOKEN_KEY);
     const body = { inputs, response_mode: 'streaming' };
     try {
-      const response = await fetch(`/api/workflow/${id}/execute`, {
+      const url = name ? `/api/workflow/v2/${name}/execute` : `/api/workflow/v1/${id}/execute`;
+      const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

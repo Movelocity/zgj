@@ -94,11 +94,10 @@ export const WorkflowStreamTester: React.FC<WorkflowStreamTesterProps> = ({
     setEvents([]);
 
     try {
-      await workflowAPI.executeWorkflowStream(
-        workflowId,
-        parsedInputs,
-        // onMessage callback
-        (data) => {
+      await workflowAPI.executeWorkflowStream({
+        id: workflowId,
+        inputs: parsedInputs,
+        onMessage: (data) => {
           console.log('Received event:', data);
           setEvents(prev => [...prev, { ...data, timestamp: new Date().toISOString() }]);
 
@@ -136,13 +135,12 @@ export const WorkflowStreamTester: React.FC<WorkflowStreamTesterProps> = ({
               break;
           }
         },
-        // onError callback
-        (error) => {
+        onError: (error) => {
           console.error('Stream error:', error);
           setProgress(`执行失败: ${error.message}`);
           showError(`工作流执行失败: ${error.message}`);
         }
-      );
+      });
     } catch (error: any) {
       console.error('Execution error:', error);
       setProgress(`执行失败: ${error.message}`);

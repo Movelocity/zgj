@@ -27,11 +27,10 @@ export const StreamWorkflowExecutor: React.FC<StreamWorkflowExecutorProps> = ({
     setEvents([]);
 
     try {
-      await workflowAPI.executeWorkflowStream(
-        workflowId,
+      await workflowAPI.executeWorkflowStream({
+        id: workflowId,
         inputs,
-        // onMessage callback
-        (data) => {
+        onMessage: (data) => {
           console.log('Received event:', data);
           setEvents(prev => [...prev, data]);
           onProgress?.(data);
@@ -68,12 +67,12 @@ export const StreamWorkflowExecutor: React.FC<StreamWorkflowExecutorProps> = ({
           }
         },
         // onError callback
-        (error) => {
+        onError: (error) => {
           console.error('Stream error:', error);
           setProgress(`执行失败: ${error.message}`);
           showError(`工作流执行失败: ${error.message}`);
         }
-      );
+      });
     } catch (error: any) {
       console.error('Execution error:', error);
       setProgress(`执行失败: ${error.message}`);

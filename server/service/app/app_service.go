@@ -658,13 +658,23 @@ func (s *appService) callWorkflowStreamAPIDirect(ctx context.Context, c *gin.Con
 		User:         streamCtx.UserID,
 	}
 
+	// inputs 中的 __query pop 出来，赋给 requestBody.Query
+	// __xx 为特殊变量，单独处理
+	query, ok := streamCtx.Inputs["__query"]
+	if ok {
+		requestBody.Query = query.(string)
+		delete(streamCtx.Inputs, "__query")
+	}
+
 	// 序列化请求体
 	jsonData, err := json.Marshal(requestBody)
 	if err != nil {
 		return fmt.Errorf("序列化请求数据失败: %w", err)
 	}
 
-	// fmt.Println("[request workflow stream]", string(jsonData))
+	fmt.Println("apiURL", apiURL)
+	fmt.Println("apiKey", apiKey)
+	fmt.Println("[request workflow stream]", string(jsonData))
 
 	// 创建HTTP请求
 	req, err := http.NewRequestWithContext(ctx, "POST", apiURL, bytes.NewBuffer(jsonData))
@@ -823,4 +833,23 @@ func (s *appService) CancelWorkflowStream(streamID string) error {
 
 	streamCtx.CancelFunc()
 	return nil
+}
+
+func (s *appService) ExecuteWorkflowByName(c *gin.Context, workflowName, userID string, inputs map[string]interface{}, responseMode string) (*ExecuteWorkflowResponse, error) {
+
+	// 获取工作流信息
+	var workflow model.Workflow
+	if err := global.DB.Where("name = ?", workflowName).First(&workflow).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errors.New("工作流不存在")
+		}
+		return nil, errors.New("查询工作流失败")
+	}
+
+	if responseMode == "blocking" {
+		return s.ExecuteWorkflow(workflow.ID, userID, inputs)
+	} else {
+		s.ExecuteWorkflowStream(c, workflow.ID, userID, inputs)
+		return nil, nil
+	}
 }

@@ -151,6 +151,31 @@ func DeleteWorkflow(c *gin.Context) {
 	utils.OkWithMessage("删除成功", c)
 }
 
+func ExecuteWorkflowByName(c *gin.Context) {
+	workflowName := c.Param("name")
+	userID := c.GetString("userID")
+	var req appService.WorkflowAPIRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		utils.FailWithMessage(err.Error(), c)
+		return
+	}
+
+	if req.ResponseMode == "" {
+		req.ResponseMode = "blocking"
+	}
+
+	// 调用服务层
+	result, err := service.AppService.ExecuteWorkflowByName(c, workflowName, userID, req.Inputs, req.ResponseMode)
+	if err != nil {
+		utils.FailWithMessage(err.Error(), c)
+		return
+	}
+
+	if req.ResponseMode == "blocking" {
+		utils.OkWithData(result, c)
+	} // streaming 类型不用在这里响应
+}
+
 // ExecuteWorkflow 执行工作流
 func ExecuteWorkflow(c *gin.Context) {
 	workflowID := c.Param("id")
