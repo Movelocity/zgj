@@ -268,12 +268,12 @@ export default function ChatPanel({ resumeData, onResumeDataChange }: ChatPanelP
         current_resume: JSON.stringify(lightResume),
         new_resume: content
       }
-      const structurResumeResult = await workflowAPI.executeWorkflow("smart-format", uploadData, true);
-      if (structurResumeResult.code !== 0) {
-        console.error('Execution error:', structurResumeResult.data.message);
+      const structuredResumeResult = await workflowAPI.executeWorkflow("smart-format", uploadData, true);
+      if (structuredResumeResult.code !== 0) {
+        console.error('Execution error:', structuredResumeResult.data.message);
         return;
       }
-      const structuredResumeData = structurResumeResult.data.data.outputs?.output;
+      const structuredResumeData = structuredResumeResult.data.data.outputs?.output;
       console.log('structuredResumeData', structuredResumeData);
 
       if (structuredResumeData && typeof structuredResumeData === 'string') {

@@ -241,9 +241,6 @@ const ResumeList: React.FC = () => {
                       编号/版本
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      文件信息
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       上传时间
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -257,27 +254,14 @@ const ResumeList: React.FC = () => {
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
                           <FiFileText className="w-5 h-5 text-blue-600 mr-3 flex-shrink-0" />
-                          <div>
-                            <div className="text-sm font-medium text-gray-900">
-                              {resume.name}
-                            </div>
-                            {/* <div className="text-sm text-gray-500">
-                              {resume.original_filename}
-                            </div> */}
+                          <div className="text-sm font-medium text-gray-900">
+                            {resume.name}
                           </div>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-900">{resume.resume_number}</div>
                         <div className="text-sm text-gray-500">v{resume.version}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">
-                          {resume.file_id ? '文件' : '纯文本'}
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          {resume.file_id ? '查看详情' : '文本简历'}
-                        </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center text-sm text-gray-500">

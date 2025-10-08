@@ -14,6 +14,8 @@ import { ensureItemsHaveIds } from '@/utils/id';
 import { resumeAPI } from '@/api/resume';
 import { showError, showSuccess } from '@/utils/toast';
 import { TimeBasedProgressUpdater, RESUME_PROCESSING_STEPS } from '@/utils/progress';
+import { workflowAPI } from '@/api/workflow';
+import { parseResumeSummary, smartJsonParser } from '@/utils/helpers';
 
 // 定义哪些内容是AI优化过的
 // const optimizedSectionsExample: OptimizedSections = {
@@ -27,6 +29,19 @@ import { TimeBasedProgressUpdater, RESUME_PROCESSING_STEPS } from '@/utils/progr
 //     '1': ['description'] // 第一个项目的描述被优化：更详细的技术实现和业务价值
 //   }
 // };
+
+// 版本2
+/**
+resume block: 
+{
+  "title": "教育背景",
+  "type": "list" | "text",
+  "data": [
+    {"id": "1", "name": "xx大学", "description": "主修课程xxx", "time": "2021.09 - 至今", "highlight": "熟悉xx等技术"},
+    {"id": "2", "name": "xx大学", "description": "主修课程xxx", "time": "2021.09 - 至今", "highlight": "熟悉xx等技术"}
+  ] | "xxx"
+}
+*/
 
 export default function ResumeDetails() {
   const { setShowBanner } = useGlobalStore();
@@ -145,17 +160,113 @@ export default function ResumeDetails() {
           };
           console.log("processedData", processedData);
           
-          setEditForm({
-            name: name,
-            text_content: text_content,
-            structured_data: processedData,
-          });
-          setResumeData(processedData);
-          setLoading(false);
-          setProgress(0);
-          setProgressText('');
-          setCurrentStage('parsing');
-          setShowCompleted(false);
+          // 第三阶段：检查 URL hash 是否包含 new_resume 参数
+          const hash = window.location.hash;
+          if (hash === '#new_resume') {
+            // 去除 hash 参数
+            window.history.replaceState(null, '', window.location.pathname + window.location.search);
+            
+            // 开始第三阶段：简历分析
+            setCurrentStage('analyzing');
+            setLoading(true);
+            
+            const updater = progressUpdater || initProgressUpdater();
+            updater.startStep(2); // 开始第三步
+            
+            try {
+              // 1. 调用阻塞式 API common-analysis
+              console.log('开始简历分析优化...');
+              const analysisResult = await workflowAPI.executeWorkflow("common-analysis", {
+                origin_resume: JSON.stringify(processedData)
+              }, true);
+              
+              if (analysisResult.code !== 0) {
+                throw new Error('简历分析失败');
+              }
+              
+              const analysisContent = analysisResult.data.data.outputs?.output;
+              console.log('分析结果:', analysisContent);
+              
+              if (!analysisContent || typeof analysisContent !== 'string') {
+                throw new Error('分析结果格式错误');
+              }
+              
+              // 2. 格式化结果
+              console.log('开始格式化简历...');
+              const lightResume = parseResumeSummary(processedData);
+              const formatResult = await workflowAPI.executeWorkflow("smart-format", {
+                current_resume: JSON.stringify(lightResume),
+                new_resume: analysisContent
+              }, true);
+              
+              if (formatResult.code !== 0) {
+                throw new Error('简历格式化失败');
+              }
+              
+              const structuredResumeData = formatResult.data.data.outputs?.output;
+              console.log('格式化结果:', structuredResumeData);
+              
+              if (structuredResumeData && typeof structuredResumeData === 'string') {
+                const finalResumeData = smartJsonParser<ResumeData>(structuredResumeData as string);
+                
+                // 确保格式化后的数据所有列表项都有唯一ID
+                const finalProcessedData = {
+                  ...finalResumeData,
+                  workExperience: ensureItemsHaveIds(finalResumeData.workExperience || []),
+                  education: ensureItemsHaveIds(finalResumeData.education || []),
+                  projects: ensureItemsHaveIds(finalResumeData.projects || [])
+                };
+                
+                // 更新简历数据
+                setEditForm({
+                  name: name,
+                  text_content: text_content,
+                  structured_data: finalProcessedData,
+                });
+                setResumeData(finalProcessedData);
+                
+                // 保存到后端
+                await resumeAPI.updateResume(id, {
+                  structured_data: finalProcessedData,
+                });
+                
+                updater.completeCurrentStep();
+                console.log('简历优化完成');
+              } else {
+                throw new Error('格式化结果格式错误');
+              }
+            } catch (error) {
+              console.error('第三阶段处理失败:', error);
+              updater.stop();
+              showError(error instanceof Error ? error.message : '简历分析优化失败');
+              // 即使失败也显示原始数据
+              setEditForm({
+                name: name,
+                text_content: text_content,
+                structured_data: processedData,
+              });
+              setResumeData(processedData);
+            } finally {
+              setLoading(false);
+              setProgress(0);
+              setProgressText('');
+              setCurrentStage('parsing');
+              setShowCompleted(false);
+            }
+          } else {
+            // 没有 new_resume 参数，直接显示数据
+            setEditForm({
+              name: name,
+              text_content: text_content,
+              structured_data: processedData,
+            });
+            setResumeData(processedData);
+            setLoading(false);
+            setProgress(0);
+            setProgressText('');
+            setCurrentStage('parsing');
+            setShowCompleted(false);
+          }
         }
       }
     } catch (error) {
