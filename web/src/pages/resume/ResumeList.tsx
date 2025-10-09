@@ -1,11 +1,19 @@
-import React, { useState, useEffect } from 'react';
-import { FiUpload, FiFileText, FiDownload, FiTrash2, FiCalendar, FiPlus, FiEdit } from 'react-icons/fi';
+import React, { useState, useEffect, useMemo } from 'react';
+import { FiUpload, FiFileText, FiDownload, FiTrash2, FiCalendar, FiPlus, FiEdit, FiChevronRight, FiChevronDown } from 'react-icons/fi';
 import { useNavigate } from 'react-router-dom';
 import Button from '@/components/ui/Button';
 import { resumeAPI } from '@/api/resume';
 import { fileAPI } from '@/api/file';
 import type { ResumeInfo, ResumeUploadData, CreateTextResumeData } from '@/types/resume';
 import { showSuccess, showError, showWarning } from '@/utils/toast';
+
+// 分组后的简历数据结构
+interface GroupedResume {
+  resumeNumber: string;
+  latest: ResumeInfo;  // 最新版本
+  history: ResumeInfo[]; // 历史版本（按版本号降序）
+  hasHistory: boolean; // 是否有历史版本
+}
 
 const ResumeList: React.FC = () => {
   const navigate = useNavigate();
@@ -20,6 +28,57 @@ const ResumeList: React.FC = () => {
     name: '',
     text_content: ''
   });
+  // 管理展开的简历组
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+
+  // 使用 useMemo 对简历进行分组整合
+  const groupedResumes = useMemo(() => {
+    const groups = new Map<string, GroupedResume>();
+
+    // 按 resume_number 分组
+    resumes.forEach((resume) => {
+      const resumeNumber = resume.resume_number;
+      
+      if (!groups.has(resumeNumber)) {
+        groups.set(resumeNumber, {
+          resumeNumber,
+          latest: resume,
+          history: [],
+          hasHistory: false,
+        });
+      } else {
+        const group = groups.get(resumeNumber)!;
+        // 比较版本号，确保 latest 是最新的
+        if (resume.version > group.latest.version) {
+          group.history.push(group.latest);
+          group.latest = resume;
+        } else {
+          group.history.push(resume);
+        }
+      }
+    });
+
+    // 对每个组的历史版本按版本号降序排序
+    groups.forEach((group) => {
+      group.history.sort((a, b) => b.version - a.version);
+      group.hasHistory = group.history.length > 0;
+    });
+
+    return Array.from(groups.values());
+  }, [resumes]);
+
+  // 切换展开/收起状态
+  const toggleExpand = (resumeNumber: string) => {
+    setExpandedGroups((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(resumeNumber)) {
+        newSet.delete(resumeNumber);
+      } else {
+        newSet.add(resumeNumber);
+      }
+      return newSet;
+    });
+  };
 
   // 加载简历列表
   const loadResumes = async (page = 1) => {
@@ -163,15 +222,6 @@ const ResumeList: React.FC = () => {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* 页面标题和操作按钮 */}
         <div className="flex justify-between items-center mb-8">
-          <div className="flex items-center space-x-4">
-            <h1 className="text-3xl font-bold text-gray-900">我的简历</h1>
-            {/* <Link to="/resumes/cards">
-              <Button variant="ghost" size="sm" className="flex items-center space-x-2">
-                <FiGrid className="w-4 h-4" />
-                <span>卡片视图</span>
-              </Button>
-            </Link> */}
-          </div>
           <div className="flex items-center space-x-3">
             <input
               type="file"
@@ -181,15 +231,6 @@ const ResumeList: React.FC = () => {
               onChange={handleUpload}
               disabled={uploading}
             />
-            {/* <Button
-              onClick={() => setShowCreateTextModal(true)}
-              variant="outline"
-              disabled={uploading}
-              className="flex items-center space-x-2"
-            >
-              <FiPlus className="w-4 h-4" />
-              <span>创建简历</span>
-            </Button> */}
             <Button
               onClick={() => document.getElementById('resume-upload')?.click()}
               disabled={uploading}
@@ -234,6 +275,7 @@ const ResumeList: React.FC = () => {
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
+                    <th className="w-8 px-2 py-3"></th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       简历信息
                     </th>
@@ -249,55 +291,134 @@ const ResumeList: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {resumes.map((resume) => (
-                    <tr key={resume.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <FiFileText className="w-5 h-5 text-blue-600 mr-3 flex-shrink-0" />
-                          <div className="text-sm font-medium text-gray-900">
-                            {resume.name}
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{resume.resume_number}</div>
-                        <div className="text-sm text-gray-500">v{resume.version}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center text-sm text-gray-500">
-                          <FiCalendar className="w-4 h-4 mr-1" />
-                          {formatDate(resume.created_at)}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <div className="flex items-center space-x-2">
-                          <button
-                            onClick={() => handleViewResume(resume.id)}
-                            className="text-green-600 hover:text-green-900 p-1 rounded cursor-pointer"
-                            title="编辑"
-                          >
-                            <FiEdit className="w-4 h-4" />
-                          </button>
-                          {resume.file_id && (
-                            <button
-                              onClick={() => handleDownload(resume)}
-                              className="text-purple-600 hover:text-purple-900 p-1 rounded cursor-pointer"
-                              title="下载"
-                            >
-                              <FiDownload className="w-4 h-4" />
-                            </button>
-                          )}
-                          <button
-                            onClick={() => handleDelete(resume.id, resume.name)}
-                            className="text-red-600 hover:text-red-900 p-1 rounded cursor-pointer"
-                            title="删除"
-                          >
-                            <FiTrash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                  {groupedResumes.map((group) => {
+                    const isExpanded = expandedGroups.has(group.resumeNumber);
+                    const resume = group.latest;
+                    
+                    return (
+                      <React.Fragment key={group.resumeNumber}>
+                        {/* 最新版本行 */}
+                        <tr className="hover:bg-gray-50">
+                          <td className="w-8 px-2 py-4">
+                            {group.hasHistory && (
+                              <button
+                                onClick={() => toggleExpand(group.resumeNumber)}
+                                className="text-gray-400 hover:text-gray-600 cursor-pointer transition-transform duration-200"
+                                title={isExpanded ? '收起历史版本' : '展开历史版本'}
+                              >
+                                {isExpanded ? (
+                                  <FiChevronDown className="w-4 h-4" />
+                                ) : (
+                                  <FiChevronRight className="w-4 h-4" />
+                                )}
+                              </button>
+                            )}
+                          </td>
+                          <td className="px-2 py-4 whitespace-nowrap">
+                            <div className="flex items-center">
+                              <FiFileText className="w-5 h-5 text-blue-600 mr-3 flex-shrink-0" />
+                              <div className="text-sm font-medium text-gray-900">
+                                {resume.name}
+                                {/* {group.hasHistory && (
+                                  <span className="ml-2 text-xs text-blue-500">
+                                    (共 {group.history.length + 1} 个版本)
+                                  </span>
+                                )} */}
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-gray-900">{resume.resume_number}</div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center text-sm text-gray-500">
+                              <FiCalendar className="w-4 h-4 mr-1" />
+                              {formatDate(resume.created_at)}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <div className="flex items-center space-x-2">
+                              <button
+                                onClick={() => handleViewResume(resume.id)}
+                                className="text-green-600 hover:text-green-900 p-1 rounded cursor-pointer"
+                                title="编辑"
+                              >
+                                <FiEdit className="w-4 h-4" />
+                              </button>
+                              {resume.file_id && (
+                                <button
+                                  onClick={() => handleDownload(resume)}
+                                  className="text-purple-600 hover:text-purple-900 p-1 rounded cursor-pointer"
+                                  title="下载"
+                                >
+                                  <FiDownload className="w-4 h-4" />
+                                </button>
+                              )}
+                              <button
+                                onClick={() => handleDelete(resume.id, resume.name)}
+                                className="text-red-600 hover:text-red-900 p-1 rounded cursor-pointer"
+                                title="删除"
+                              >
+                                <FiTrash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                        
+                        {/* 历史版本行 */}
+                        {isExpanded && group.history.map((historyResume) => (
+                          <tr key={historyResume.id} className="bg-gray-50 hover:bg-gray-100">
+                            <td className="w-8 px-2 py-4"></td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="flex items-center pl-4">
+                                {/* <FiFileText className="w-5 h-5 text-gray-400 mr-3 flex-shrink-0" /> */}
+                                <div className="text-sm font-medium text-gray-600">
+                                  {historyResume.name}
+                                  {/* <span className="ml-2 text-xs text-gray-500">(历史版本)</span> */}
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="text-sm text-gray-500">v{historyResume.version}</div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="flex items-center text-sm text-gray-500">
+                                <FiCalendar className="w-4 h-4 mr-1" />
+                                {formatDate(historyResume.created_at)}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                              <div className="flex items-center space-x-2">
+                                <button
+                                  onClick={() => handleViewResume(historyResume.id)}
+                                  className="text-green-600 hover:text-green-900 p-1 rounded cursor-pointer"
+                                  title="编辑"
+                                >
+                                  <FiEdit className="w-4 h-4" />
+                                </button>
+                                {historyResume.file_id && (
+                                  <button
+                                    onClick={() => handleDownload(historyResume)}
+                                    className="text-purple-600 hover:text-purple-900 p-1 rounded cursor-pointer"
+                                    title="下载"
+                                  >
+                                    <FiDownload className="w-4 h-4" />
+                                  </button>
+                                )}
+                                <button
+                                  onClick={() => handleDelete(historyResume.id, historyResume.name)}
+                                  className="text-red-600 hover:text-red-900 p-1 rounded cursor-pointer"
+                                  title="删除"
+                                >
+                                  <FiTrash2 className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </React.Fragment>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
