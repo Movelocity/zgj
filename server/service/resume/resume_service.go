@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"mime/multipart"
+	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -167,30 +168,50 @@ func (s *resumeService) DeleteResume(userID, resumeID string) error {
 
 // UploadResume 上传简历到新的简历表
 func (s *resumeService) UploadResume(userID string, file *multipart.FileHeader) (*UploadResumeResponse, error) {
-	// 使用统一文件服务上传文件
+	// 使用统一文件服务上传文件（支持哈希去重）
 	uploadedFile, err := fileService.FileService.UploadFile(userID, file, true)
 	if err != nil {
 		return nil, err
 	}
 
-	// 生成简历编号
-	resumeNumber := s.generateResumeNumber(userID)
+	// 检查是否存在相同文件ID的简历记录（同一个用户上传相同文件）
+	var existingResume model.ResumeRecord
+	var resumeNumber string
+	var version int
 
-	// 创建简历记录
+	err = global.DB.Where("user_id = ? AND file_id = ? AND status = ?", userID, uploadedFile.ID, "active").
+		Order("version DESC").
+		First(&existingResume).Error
+
+	if err == nil {
+		// 找到相同文件的简历记录，复用简历号，版本号+1
+		resumeNumber = existingResume.ResumeNumber
+		version = existingResume.Version + 1
+	} else if errors.Is(err, gorm.ErrRecordNotFound) {
+		// 没有找到相同文件的简历，生成新的简历编号
+		resumeNumber = s.generateResumeNumber(userID)
+		version = 1
+	} else {
+		// 数据库查询错误
+		return nil, errors.New("查询简历记录失败")
+	}
+
+	// 创建新的简历记录
+	// 注意：text_content 和 structured_data 不进行复用，保持为空或默认值
 	resume := model.ResumeRecord{
 		ID:               utils.GenerateTLID(),
 		UserID:           userID,
 		ResumeNumber:     resumeNumber,
-		Version:          1,
+		Version:          version,
 		Name:             file.Filename,
 		OriginalFilename: file.Filename,
-		FileID:           &uploadedFile.ID, // 使用文件ID而不是路径
+		FileID:           &uploadedFile.ID, // 使用文件ID
+		TextContent:      "",               // 不复用旧的text_content
+		StructuredData:   nil,              // 不复用旧的structured_data
 		Status:           "active",
 	}
 
 	if err := global.DB.Create(&resume).Error; err != nil {
-		// 如果创建简历记录失败，删除已上传的文件
-		fileService.FileService.DeleteFile(uploadedFile.ID)
 		return nil, errors.New("简历记录创建失败")
 	}
 
@@ -431,6 +452,161 @@ func (s *resumeService) MigrateOldResumeData() error {
 			}
 
 			global.DB.Create(&newResume)
+		}
+	}
+
+	return nil
+}
+
+// ReorganizeResumeVersions 重新整理简历版本
+// 按文件哈希识别相同简历，按时间重新分配版本号
+func (s *resumeService) ReorganizeResumeVersions() (*ReorganizeResult, error) {
+	// 统计信息
+	result := &ReorganizeResult{
+		ProcessedUsers:   0,
+		ProcessedResumes: 0,
+		UpdatedVersions:  0,
+		Errors:           []string{},
+	}
+
+	// 获取所有活跃用户
+	var users []model.User
+	if err := global.DB.Find(&users).Error; err != nil {
+		return nil, errors.New("查询用户列表失败: " + err.Error())
+	}
+
+	// 遍历每个用户
+	for _, user := range users {
+		if err := s.reorganizeUserResumes(user.ID, result); err != nil {
+			result.Errors = append(result.Errors, fmt.Sprintf("用户 %s: %s", user.ID, err.Error()))
+			continue
+		}
+		result.ProcessedUsers++
+	}
+
+	return result, nil
+}
+
+// reorganizeUserResumes 重新整理单个用户的简历版本
+func (s *resumeService) reorganizeUserResumes(userID string, result *ReorganizeResult) error {
+	// 查询用户的所有活跃简历记录
+	var resumes []model.ResumeRecord
+	if err := global.DB.Preload("File").
+		Where("user_id = ? AND status = ?", userID, "active").
+		Order("created_at ASC").
+		Find(&resumes).Error; err != nil {
+		return errors.New("查询简历记录失败")
+	}
+
+	if len(resumes) == 0 {
+		return nil // 用户没有简历，跳过
+	}
+
+	// 按文件哈希分组
+	// key: file hash, value: []ResumeRecord
+	hashGroups := make(map[string][]model.ResumeRecord)
+
+	// 处理有文件的简历
+	for _, resume := range resumes {
+		if resume.FileID == nil {
+			// 纯文本简历，单独处理
+			hashGroups["text_"+resume.ID] = []model.ResumeRecord{resume}
+			continue
+		}
+
+		// 获取文件的哈希值
+		var file model.File
+		if err := global.DB.Where("id = ?", *resume.FileID).First(&file).Error; err != nil {
+			result.Errors = append(result.Errors, fmt.Sprintf("简历 %s: 无法查询文件 %s", resume.ID, *resume.FileID))
+			continue
+		}
+
+		// 如果文件没有哈希值，自动计算并保存
+		if file.Hash == "" {
+			// 获取文件物理路径
+			filePath := file.GetStoragePath()
+			fullPath := global.CONFIG.Local.StorePath + "/" + filePath
+
+			// 检查文件是否存在
+			if _, err := os.Stat(fullPath); os.IsNotExist(err) {
+				result.Errors = append(result.Errors, fmt.Sprintf("简历 %s: 文件 %s 不存在于路径 %s", resume.ID, file.ID, fullPath))
+				continue
+			}
+
+			// 计算哈希值
+			hash, err := utils.CalculateFileHashFromPath(fullPath)
+			if err != nil {
+				result.Errors = append(result.Errors, fmt.Sprintf("简历 %s: 计算文件 %s 哈希失败: %v", resume.ID, file.ID, err))
+				continue
+			}
+
+			// 更新数据库
+			if err := global.DB.Model(&model.File{}).Where("id = ?", file.ID).Update("hash", hash).Error; err != nil {
+				result.Errors = append(result.Errors, fmt.Sprintf("简历 %s: 更新文件 %s 哈希值失败: %v", resume.ID, file.ID, err))
+				continue
+			}
+
+			// 更新内存中的file对象
+			file.Hash = hash
+		}
+
+		// 按哈希分组
+		hashGroups[file.Hash] = append(hashGroups[file.Hash], resume)
+	}
+
+	// 对每个哈希组，按时间重新分配版本号
+	for _, group := range hashGroups {
+		if len(group) == 0 {
+			continue
+		}
+
+		// 按创建时间排序（应该已经排序了，但再确保一次）
+		// 这里可以用sort包排序，但因为我们已经按created_at查询，所以应该是有序的
+
+		// 检查是否需要更新版本号
+		needUpdate := false
+		for i, resume := range group {
+			expectedVersion := i + 1
+			if resume.Version != expectedVersion {
+				needUpdate = true
+				break
+			}
+		}
+
+		if !needUpdate {
+			result.ProcessedResumes += len(group)
+			continue // 版本号已经正确，跳过
+		}
+
+		// 更新版本号
+		for i, resume := range group {
+			newVersion := i + 1
+			if resume.Version != newVersion {
+				if err := global.DB.Model(&model.ResumeRecord{}).
+					Where("id = ?", resume.ID).
+					Update("version", newVersion).Error; err != nil {
+					result.Errors = append(result.Errors, fmt.Sprintf("更新简历 %s 版本号失败: %s", resume.ID, err.Error()))
+					continue
+				}
+				result.UpdatedVersions++
+			}
+			result.ProcessedResumes++
+		}
+
+		// 对于有多个版本的简历，确保它们共享相同的resume_number
+		if len(group) > 1 {
+			// 使用第一个（最早的）简历的resume_number
+			baseResumeNumber := group[0].ResumeNumber
+
+			for i := 1; i < len(group); i++ {
+				if group[i].ResumeNumber != baseResumeNumber {
+					if err := global.DB.Model(&model.ResumeRecord{}).
+						Where("id = ?", group[i].ID).
+						Update("resume_number", baseResumeNumber).Error; err != nil {
+						result.Errors = append(result.Errors, fmt.Sprintf("更新简历 %s 编号失败: %s", group[i].ID, err.Error()))
+					}
+				}
+			}
 		}
 	}
 

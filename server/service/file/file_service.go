@@ -58,6 +58,27 @@ func (s *fileService) UploadFile(userID string, fileHeader *multipart.FileHeader
 		return nil, errors.New("不支持的文件类型")
 	}
 
+	// 计算文件哈希值
+	fileHash, err := utils.CalculateFileHash(fileHeader)
+	if err != nil {
+		return nil, errors.New("计算文件哈希失败")
+	}
+
+	// 检查是否已存在相同哈希的文件
+	var existingFile model.File
+	if err := global.DB.Where("hash = ?", fileHash).First(&existingFile).Error; err == nil {
+		// 文件已存在，直接返回现有文件信息
+		return &UploadFileResponse{
+			ID:        existingFile.ID,
+			Name:      existingFile.OriginalName,
+			Size:      existingFile.Size,
+			Extension: existingFile.Extension,
+			MimeType:  existingFile.MimeType,
+			CreatedBy: existingFile.CreatedBy,
+			CreatedAt: existingFile.CreatedAt,
+		}, nil
+	}
+
 	// 生成文件ID和获取扩展名
 	fileID := utils.GenerateTLID()
 	extension := s.getFileExtension(fileHeader.Filename)
@@ -152,6 +173,7 @@ func (s *fileService) UploadFile(userID string, fileHeader *multipart.FileHeader
 	// 创建文件记录
 	file := model.File{
 		ID:           fileID,
+		Hash:         fileHash,
 		DifyID:       difyId,
 		OriginalName: fileHeader.Filename,
 		Extension:    extension,
@@ -431,149 +453,29 @@ func (s *fileService) calculateDirSize(path string) int64 {
 	return size
 }
 
-// MigrateOldFiles 迁移旧文件数据到新表（管理员功能）
-func (s *fileService) MigrateOldFiles() error {
-	// 迁移简历文件
-	var resumes []model.ResumeRecord
-	if err := global.DB.Where("status = ?", "active").Find(&resumes).Error; err != nil {
-		return fmt.Errorf("查询简历记录失败: %v", err)
-	}
+// // copyFile 复制文件
+// func (s *fileService) copyFile(src, dst string) error {
+// 	sourceFile, err := os.Open(src)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	defer sourceFile.Close()
 
-	for _, resume := range resumes {
-		// 检查是否已经迁移
-		var existingFile model.File
-		if global.DB.Where("original_name = ? AND created_by = ?", resume.OriginalFilename, resume.UserID).First(&existingFile).Error == nil {
-			continue // 已存在，跳过
-		}
+// 	destFile, err := os.Create(dst)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	defer destFile.Close()
 
-		// 转换用户ID
-		userID := resume.UserID
-		if userID == "" {
-			fmt.Printf("无效的用户ID %s，跳过简历文件: %v\n", resume.UserID, errors.New("无效的用户ID"))
-			continue
-		}
+// 	_, err = destFile.ReadFrom(sourceFile)
+// 	return err
+// }
 
-		// 跳过没有文件的简历记录（纯文本简历）
-		if resume.FileID == nil || *resume.FileID == "" {
-			continue
-		}
-
-		// 从文件名推断扩展名
-		extension := s.getFileExtension(resume.OriginalFilename)
-
-		// 创建文件记录
-		file := model.File{
-			ID:           utils.GenerateTLID(),
-			OriginalName: resume.OriginalFilename,
-			Extension:    extension,
-			MimeType:     s.getMimeTypeFromExtension(extension),
-			Size:         0, // 无法获取大小，设为0
-			CreatedBy:    userID,
-			CreatedAt:    resume.CreatedAt,
-			UpdatedAt:    resume.UpdatedAt,
-		}
-
-		if err := global.DB.Create(&file).Error; err != nil {
-			fmt.Printf("迁移简历文件失败 ID=%s: %v\n", resume.ID, err)
-			continue
-		}
-
-		// 如果有物理文件，尝试移动到新位置
-		// if resume.FilePath != "" {
-		// 	oldPath := filepath.Join(global.CONFIG.Local.StorePath, strings.TrimPrefix(resume.FilePath, "/uploads/file/"))
-		// 	if _, err := os.Stat(oldPath); err == nil {
-		// 		newPath := s.GetFilePhysicalPath(&file)
-		// 		// 确保新目录存在
-		// 		if err := os.MkdirAll(filepath.Dir(newPath), 0755); err == nil {
-		// 			// 复制文件到新位置
-		// 			if err := s.copyFile(oldPath, newPath); err != nil {
-		// 				fmt.Printf("复制文件失败 %s -> %s: %v\n", oldPath, newPath, err)
-		// 			}
-		// 		}
-		// 	}
-		// }
-	}
-
-	// 迁移头像文件
-	var users []model.User
-	if err := global.DB.Where("header_img != '' AND header_img IS NOT NULL").Find(&users).Error; err != nil {
-		return fmt.Errorf("查询用户头像失败: %v", err)
-	}
-
-	for _, user := range users {
-		// 检查是否已经迁移
-		var existingFile model.File
-		filename := filepath.Base(user.HeaderImg)
-		if global.DB.Where("original_name = ? AND created_by = ?", filename, user.ID).First(&existingFile).Error == nil {
-			continue // 已存在，跳过
-		}
-
-		// 转换用户ID
-		userID := user.ID
-		if userID == "" {
-			fmt.Printf("无效的用户ID %s，跳过头像文件: %v\n", user.ID, errors.New("无效的用户ID"))
-			continue
-		}
-
-		// 创建文件记录
-		file := model.File{
-			ID:           utils.GenerateTLID(),
-			OriginalName: filename,
-			Extension:    s.getFileExtension(filename),
-			MimeType:     "image/jpeg", // 默认为jpeg
-			Size:         s.getFileSize(user.HeaderImg),
-			CreatedBy:    userID,
-			CreatedAt:    user.CreatedAt,
-			UpdatedAt:    user.UpdatedAt,
-		}
-
-		if err := global.DB.Create(&file).Error; err != nil {
-			fmt.Printf("迁移头像文件失败 UserID=%s: %v\n", user.ID, err)
-			continue
-		}
-
-		// 如果有物理文件，尝试移动到新位置
-		if user.HeaderImg != "" {
-			oldPath := filepath.Join(global.CONFIG.Local.StorePath, strings.TrimPrefix(user.HeaderImg, "/uploads/file/"))
-			if _, err := os.Stat(oldPath); err == nil {
-				newPath := s.GetFilePhysicalPath(&file)
-				// 确保新目录存在
-				if err := os.MkdirAll(filepath.Dir(newPath), 0755); err == nil {
-					// 复制文件到新位置
-					if err := s.copyFile(oldPath, newPath); err != nil {
-						fmt.Printf("复制文件失败 %s -> %s: %v\n", oldPath, newPath, err)
-					}
-				}
-			}
-		}
-	}
-
-	return nil
-}
-
-// copyFile 复制文件
-func (s *fileService) copyFile(src, dst string) error {
-	sourceFile, err := os.Open(src)
-	if err != nil {
-		return err
-	}
-	defer sourceFile.Close()
-
-	destFile, err := os.Create(dst)
-	if err != nil {
-		return err
-	}
-	defer destFile.Close()
-
-	_, err = destFile.ReadFrom(sourceFile)
-	return err
-}
-
-// getFileSize 获取文件大小
-func (s *fileService) getFileSize(filePath string) int64 {
-	fullPath := filepath.Join(global.CONFIG.Local.StorePath, strings.TrimPrefix(filePath, "/uploads/file/"))
-	if info, err := os.Stat(fullPath); err == nil {
-		return info.Size()
-	}
-	return 0
-}
+// // getFileSize 获取文件大小
+// func (s *fileService) getFileSize(filePath string) int64 {
+// 	fullPath := filepath.Join(global.CONFIG.Local.StorePath, strings.TrimPrefix(filePath, "/uploads/file/"))
+// 	if info, err := os.Stat(fullPath); err == nil {
+// 		return info.Size()
+// 	}
+// 	return 0
+// }

@@ -31,7 +31,8 @@ func InitResumeRouter(privateGroup *gin.RouterGroup, publicGroup *gin.RouterGrou
 	// 数据迁移
 	AdminMigrationRouter := adminGroup.Group("/api/admin/migration")
 	{
-		AdminMigrationRouter.POST("/resume", resume.MigrateResumeData) // 迁移简历数据
+		AdminMigrationRouter.POST("/resume", resume.MigrateResumeData)                     // 迁移简历数据
+		AdminMigrationRouter.POST("/reorganize-versions", resume.ReorganizeResumeVersions) // 重新整理简历版本
 	}
 
 }

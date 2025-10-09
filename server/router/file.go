@@ -31,10 +31,4 @@ func InitFileRouter(privateGroup *gin.RouterGroup, publicGroup *gin.RouterGroup,
 		AdminFileRouter.DELETE("/:id", file.DeleteFile)              // 删除文件
 		AdminFileRouter.POST("/batch_delete", file.BatchDeleteFiles) // 批量删除文件
 	}
-
-	// 数据迁移
-	AdminMigrationRouter := adminGroup.Group("/api/admin/migration")
-	{
-		AdminMigrationRouter.POST("/files", file.MigrateFiles) // 迁移文件数据
-	}
 }

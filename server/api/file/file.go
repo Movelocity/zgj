@@ -150,16 +150,6 @@ func BatchDeleteFiles(c *gin.Context) {
 	utils.OkWithMessage("批量删除成功", c)
 }
 
-// MigrateFiles 迁移旧文件数据（管理员功能）
-func MigrateFiles(c *gin.Context) {
-	if err := file.FileService.MigrateOldFiles(); err != nil {
-		utils.FailWithMessage("文件数据迁移失败: "+err.Error(), c)
-		return
-	}
-
-	utils.OkWithMessage("文件数据迁移成功", c)
-}
-
 // GetFileInfo 获取文件信息
 func GetFileInfo(c *gin.Context) {
 	fileID := c.Param("id")

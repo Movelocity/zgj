@@ -118,4 +118,15 @@ export const adminAPI = {
   migrateFileData: (): Promise<ApiResponse> => {
     return apiClient.post('/api/admin/migration/files');
   },
+
+  // 重新整理简历版本
+  // 按文件哈希识别相同简历，按时间重新分配版本号
+  reorganizeResumeVersions: (): Promise<ApiResponse<{
+    processed_users: number;
+    processed_resumes: number;
+    updated_versions: number;
+    errors: string[];
+  }>> => {
+    return apiClient.post('/api/admin/migration/reorganize-versions');
+  },
 };

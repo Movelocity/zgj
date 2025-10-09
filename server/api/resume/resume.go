@@ -180,3 +180,15 @@ func MigrateResumeData(c *gin.Context) {
 
 	utils.OkWithMessage("简历数据迁移成功", c)
 }
+
+// ReorganizeResumeVersions 重新整理简历版本（管理员功能）
+// 按文件哈希识别相同简历，按时间重新分配版本号
+func ReorganizeResumeVersions(c *gin.Context) {
+	result, err := resume.ResumeService.ReorganizeResumeVersions()
+	if err != nil {
+		utils.FailWithMessage("简历版本整理失败: "+err.Error(), c)
+		return
+	}
+
+	utils.OkWithData(result, c)
+}

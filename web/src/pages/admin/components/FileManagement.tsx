@@ -54,6 +54,7 @@ const FileManagement: React.FC = () => {
   const [searchKeyword, setSearchKeyword] = useState('');
   const [showStatsModal, setShowStatsModal] = useState(false);
   const [migrating, setMigrating] = useState(false);
+  const [reorganizing, setReorganizing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // 加载文件列表
@@ -203,6 +204,44 @@ const FileManagement: React.FC = () => {
     }
   };
 
+  // 重新整理简历版本
+  const handleReorganizeVersions = async () => {
+    if (!confirm('确定要重新整理简历版本吗？\n\n这将：\n1. 按文件哈希识别相同简历\n2. 按时间重新分配版本号\n3. 统一相同文件的简历编号\n\n建议在低峰时段执行。')) return;
+
+    try {
+      setReorganizing(true);
+      const response = await adminAPI.reorganizeResumeVersions();
+      
+      if (response.code === 0) {
+        const { processed_users, processed_resumes, updated_versions, errors } = response.data;
+        
+        if (errors && errors.length > 0) {
+          showInfo(
+            `处理完成，但有 ${errors.length} 个错误。\n` +
+            `处理了 ${processed_users} 个用户，${processed_resumes} 份简历，` +
+            `更新了 ${updated_versions} 个版本号。\n` +
+            `详细错误信息请查看控制台。`,
+            6000
+          );
+          console.error('整理错误:', errors);
+        } else {
+          showSuccess(
+            `成功整理了 ${processed_users} 个用户的简历！\n` +
+            `处理 ${processed_resumes} 份简历，更新 ${updated_versions} 个版本号。`
+          );
+        }
+        loadFiles();
+        loadStats();
+      } else {
+        showError(response.msg || '简历版本整理失败');
+      }
+    } catch (error) {
+      showError(error instanceof Error ? error.message : '简历版本整理失败');
+    } finally {
+      setReorganizing(false);
+    }
+  };
+
   useEffect(() => {
     loadFiles();
     loadStats();
@@ -304,6 +343,16 @@ const FileManagement: React.FC = () => {
           >
             <FiRefreshCw className={`w-4 h-4 ${migrating ? 'animate-spin' : ''}`} />
             {migrating ? '迁移中...' : '迁移数据'}
+          </Button>
+          
+          <Button
+            variant="outline"
+            onClick={handleReorganizeVersions}
+            disabled={reorganizing}
+            className="flex items-center gap-2"
+          >
+            <FiRefreshCw className={`w-4 h-4 ${reorganizing ? 'animate-spin' : ''}`} />
+            {reorganizing ? '整理中...' : '整理版本'}
           </Button>
         </div>
       </div>

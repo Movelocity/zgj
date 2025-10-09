@@ -76,3 +76,11 @@ type WorkflowExecutionListResponse struct {
 	Page     int                     `json:"page"`
 	PageSize int                     `json:"page_size"`
 }
+
+// ReorganizeResult 简历版本重整理结果
+type ReorganizeResult struct {
+	ProcessedUsers   int      `json:"processed_users"`   // 处理的用户数
+	ProcessedResumes int      `json:"processed_resumes"` // 处理的简历数
+	UpdatedVersions  int      `json:"updated_versions"`  // 更新的版本号数量
+	Errors           []string `json:"errors"`            // 错误信息列表
+}
