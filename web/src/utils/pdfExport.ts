@@ -94,6 +94,13 @@ export async function exportElementToPDF(
   let printContainer: HTMLDivElement | null = null;
   
   try {
+    // 0. 清理所有旧的打印容器和样式（防止重复导出时累积）
+    const oldContainers = document.querySelectorAll('.pdf-print-content');
+    oldContainers.forEach(container => container.remove());
+    
+    const oldStyles = document.querySelectorAll('#pdf-export-print-styles');
+    oldStyles.forEach(style => style.remove());
+    
     // 1. 克隆元素以避免影响原始DOM
     const clonedElement = element.cloneNode(true) as HTMLElement;
     
