@@ -18,24 +18,27 @@ interface Message {
 interface ChatPanelProps {
   resumeData: ResumeData;
   onResumeDataChange: (data: ResumeData) => void;
+  initialMessages?: Message[];
+  onMessagesChange?: (messages: Message[]) => void;
 }
+
+// 导出Message接口供外部使用
+export type { Message };
 
 // TOOD: 消息内容 markdown 渲染
 
-export default function ChatPanel({ resumeData, onResumeDataChange }: ChatPanelProps) {
-  const [messages, setMessages] = useState<Message[]>([
+export default function ChatPanel({ 
+  resumeData, 
+  onResumeDataChange,
+  initialMessages,
+  onMessagesChange 
+}: ChatPanelProps) {
+  const [messages, setMessages] = useState<Message[]>(initialMessages || [
     {
       id: '1',
       type: 'assistant',
-      // content: '您好！我是您的简历专家助手。我已经为您优化了简历内容，左侧黄色标记的部分是我建议的改进。您可以随时与我对话，我会根据您的需求进一步优化简历。',
       content: "您好，我是简历专家，您可以随时与我对话，我会根据您的需求进一步优化简历",
       timestamp: new Date(),
-      // suggestions: [
-      //   '帮我优化个人总结',
-      //   '改进工作经历描述',
-      //   '调整技能关键词',
-      //   '优化项目经验'
-      // ]
     }
   ]);
   const [inputValue, setInputValue] = useState('');
@@ -44,10 +47,10 @@ export default function ChatPanel({ resumeData, onResumeDataChange }: ChatPanelP
   const scrollGradientTopRef = useRef<HTMLDivElement>(null);
   const scrollGradientBottomRef = useRef<HTMLDivElement>(null);
   const [suggestions, setSuggestions] = useState<string[]>([
-    "[highlight]整体优化简历",
-    "突出优势",
-    "岗位匹配",
-    "整体检查"
+    // "[highlight]整体优化简历",
+    // "突出优势",
+    // "岗位匹配",
+    // "整体检查"
   ]);
   const [isResponding, setIsResponding] = useState(false);
   const [isFormatting, setIsFormatting] = useState(false);
@@ -74,10 +77,13 @@ export default function ChatPanel({ resumeData, onResumeDataChange }: ChatPanelP
     // 按id过滤匹配，更新对应的消息
     setMessages(prev => {
       const matched = prev.find(m => m.id === msg.id);
-      if (matched) {
-        return prev.map(m => m.id === msg.id ? msg : m);
-      }
-      return [...prev, msg];
+      const newMessages = matched 
+        ? prev.map(m => m.id === msg.id ? msg : m)
+        : [...prev, msg];
+      
+      // 通知外部消息变化
+      onMessagesChange?.(newMessages);
+      return newMessages;
     });
     if (msg.content) {
       setIsTyping(false);
@@ -94,7 +100,11 @@ export default function ChatPanel({ resumeData, onResumeDataChange }: ChatPanelP
       content: query,
       timestamp: new Date()
     };
-    setMessages(prev => [...prev, userMessage]);
+    setMessages(prev => {
+      const newMessages = [...prev, userMessage];
+      onMessagesChange?.(newMessages);
+      return newMessages;
+    });
     setInputValue('');
     setSuggestions([])
     if (isResponding || isFormatting) return;
@@ -116,6 +126,7 @@ export default function ChatPanel({ resumeData, onResumeDataChange }: ChatPanelP
     
     if (query === "/clear") {
       setMessages([]);
+      onMessagesChange?.([]);
       setIsTyping(false);
       return;
     }

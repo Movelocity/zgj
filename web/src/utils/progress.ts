@@ -26,6 +26,7 @@ export class TimeBasedProgressUpdater {
   private intervalId: NodeJS.Timeout | null = null;
   private startTime: number = 0;
   private isRunning: boolean = false;
+  private lastProgress: number = 0; // 记录上次的进度值，确保只增不减
 
   constructor(steps: ProgressStep[], callbacks: ProgressCallbacks) {
     this.steps = steps;
@@ -46,8 +47,12 @@ export class TimeBasedProgressUpdater {
     this.startTime = Date.now();
     this.isRunning = true;
 
+    // 确保新步骤的起始进度不会小于上次的进度
+    const startProgress = Math.max(step.startProgress, this.lastProgress);
+    this.lastProgress = startProgress;
+
     // 立即更新到起始进度
-    this.callbacks.onProgressUpdate(step.startProgress, step.name);
+    this.callbacks.onProgressUpdate(startProgress, step.name);
 
     // 清除之前的定时器
     if (this.intervalId) {
@@ -76,8 +81,10 @@ export class TimeBasedProgressUpdater {
       this.intervalId = null;
     }
 
-    // 设置到结束进度
-    this.callbacks.onProgressUpdate(step.endProgress, `${step.name} - 完成`);
+    // 设置到结束进度，并确保不会小于上次的进度
+    const endProgress = Math.max(step.endProgress, this.lastProgress);
+    this.lastProgress = endProgress;
+    this.callbacks.onProgressUpdate(endProgress, `${step.name} - 完成`);
     this.callbacks.onStepComplete(this.currentStepIndex, step.name);
     
     this.isRunning = false;
@@ -99,6 +106,7 @@ export class TimeBasedProgressUpdater {
       this.intervalId = null;
     }
     this.isRunning = false;
+    this.lastProgress = 0; // 重置进度值，以便下次使用
   }
 
   /**
@@ -116,11 +124,15 @@ export class TimeBasedProgressUpdater {
     // 计算当前进度
     const currentProgress = step.startProgress + (step.endProgress - step.startProgress) * progressRatio;
     
-    // 添加一些随机性，让进度看起来更自然
-    const randomOffset = (Math.random() - 0.5) * 2; // -1 到 1 的随机数
-    const adjustedProgress = Math.min(Math.max(currentProgress + randomOffset, step.startProgress), step.endProgress - 1);
+    // 确保进度只增不减，且不超过结束进度-1（留1%给完成时跳到100%）
+    const adjustedProgress = Math.min(Math.max(currentProgress, this.lastProgress), step.endProgress - 1);
+    const finalProgress = Math.round(adjustedProgress);
     
-    this.callbacks.onProgressUpdate(Math.round(adjustedProgress), step.name);
+    // 只有当进度增加时才更新
+    if (finalProgress > this.lastProgress) {
+      this.lastProgress = finalProgress;
+      this.callbacks.onProgressUpdate(finalProgress, step.name);
+    }
   }
 
   /**

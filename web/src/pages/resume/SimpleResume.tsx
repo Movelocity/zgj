@@ -206,7 +206,7 @@ const SimpleResume: React.FC = () => {
 
       if (resumeId) {
         // 直接跳转到编辑页面
-        navigate(`/editor/${resumeId}`);
+        navigate(`/editor/${resumeId}#new_resume`);
       } else {
         throw new Error('获取简历ID失败');
       }
