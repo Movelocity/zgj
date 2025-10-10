@@ -522,7 +522,7 @@ export default function ResumeEditor({
 
   return (
     <div className="h-full bg-white">
-      <div className="p-8 max-w-4xl mx-auto">
+      <div className="p-8 max-w-4xl mx-auto" data-resume-editor>
 
         {/* 个人信息头部 */}
         <div className="border-b-2 border-blue-600 pb-6 mb-6 p-4 -m-4">

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { FiMessageSquare, FiCheckCircle } from 'react-icons/fi';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Sparkles, ArrowLeftIcon } from 'lucide-react';
+import { Sparkles, ArrowLeftIcon, Download } from 'lucide-react';
 import Button from "@/components/ui/Button"
 import { useGlobalStore } from '@/store';
 import ChatPanel, { type Message } from './components/ChatPanel';
@@ -12,10 +12,11 @@ import type {
 } from '@/types/resume';
 import { ensureItemsHaveIds } from '@/utils/id';
 import { resumeAPI } from '@/api/resume';
-import { showError, showSuccess } from '@/utils/toast';
+import { showError, showSuccess, showInfo } from '@/utils/toast';
 import { TimeBasedProgressUpdater, RESUME_PROCESSING_STEPS } from '@/utils/progress';
 import { workflowAPI } from '@/api/workflow';
 import { parseResumeSummary, smartJsonParser } from '@/utils/helpers';
+import { exportResumeToPDF } from '@/utils/pdfExport';
 
 // 处理步骤类型
 type ProcessingStage = 'parsing' | 'structuring' | 'analyzing' | 'completed';
@@ -358,6 +359,18 @@ export default function ResumeDetails() {
     setNewResumeData(data);
   }
 
+  // 导出PDF
+  const handleExportPDF = async () => {
+    try {
+      showInfo('正在生成PDF，请稍候...');
+      const resumeName = editForm.name || '简历';
+      await exportResumeToPDF(resumeName);
+      showSuccess('PDF导出成功');
+    } catch (error) {
+      showError(error instanceof Error ? error.message : '导出PDF失败');
+    }
+  }
+
   const loadTimeOutRef = useRef<NodeJS.Timeout | null>(null);
   useEffect(() => {
     if (loadTimeOutRef.current) {
@@ -402,6 +415,14 @@ export default function ResumeDetails() {
               <FiMessageSquare className="w-4 h-4 text-blue-600 mr-2" />
               <span className="text-sm text-blue-700">AI 优化简历</span>
             </div>
+            <Button 
+              disabled={loading} 
+              variant="outline" 
+              onClick={handleExportPDF}
+              icon={<Download className="w-4 h-4" />}
+            >
+              导出PDF
+            </Button>
             <Button disabled={loading} variant="primary" onClick={handleSaveResume}>
               保存简历
             </Button>
