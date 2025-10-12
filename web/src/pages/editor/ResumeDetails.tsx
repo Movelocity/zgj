@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { FiMessageSquare, FiCheckCircle } from 'react-icons/fi';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Sparkles, ArrowLeftIcon, Download } from 'lucide-react';
+import { Sparkles, ArrowLeftIcon } from 'lucide-react';
 import Button from "@/components/ui/Button"
 import { useGlobalStore } from '@/store';
 import ChatPanel, { type Message } from './components/ChatPanel';
@@ -12,7 +12,7 @@ import type {
 } from '@/types/resume';
 import { ensureItemsHaveIds } from '@/utils/id';
 import { resumeAPI } from '@/api/resume';
-import { showError, showSuccess, showInfo } from '@/utils/toast';
+import { showError, showSuccess } from '@/utils/toast';
 import { TimeBasedProgressUpdater, RESUME_PROCESSING_STEPS } from '@/utils/progress';
 import { workflowAPI } from '@/api/workflow';
 import { parseResumeSummary, smartJsonParser } from '@/utils/helpers';
@@ -362,10 +362,10 @@ export default function ResumeDetails() {
   // 导出PDF
   const handleExportPDF = async () => {
     try {
-      showInfo('正在生成PDF，请稍候...');
+      console.log('正在生成PDF，请稍候...');
       const resumeName = editForm.name || '简历';
       await exportResumeToPDF(resumeName);
-      showSuccess('PDF导出成功');
+      console.log('PDF导出成功');
     } catch (error) {
       showError(error instanceof Error ? error.message : '导出PDF失败');
     }
@@ -419,7 +419,6 @@ export default function ResumeDetails() {
               disabled={loading} 
               variant="outline" 
               onClick={handleExportPDF}
-              icon={<Download className="w-4 h-4" />}
             >
               导出PDF
             </Button>

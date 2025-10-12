@@ -486,8 +486,8 @@ export default function ChatPanel({
 
       <div className="px-4 py-2 border-t border-gray-200">
         <div className="flex gap-1">
-          <input
-            type="text"
+          <textarea
+            // type="text"
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             placeholder="输入您的问题或需求..."
