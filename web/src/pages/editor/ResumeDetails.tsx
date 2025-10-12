@@ -402,8 +402,13 @@ export default function ResumeDetails() {
       <div className="bg-white border-b border-gray-200 px-4 shadow-sm fixed top-0 w-full z-[1000]">
         <div className=" flex items-center justify-between h-14">
           <div className="flex items-center">
-            <Button variant="ghost" onClick={() => navigate("/resumes")} icon={<ArrowLeftIcon className="w-4 h-4" />}>
-              返回
+            <Button
+              onClick={() => navigate("/resumes")}
+              variant="ghost"
+              className="py-2 px-0 hover:bg-gray-100 rounded-lg transition-colors"
+              title="返回"
+              icon={<ArrowLeftIcon className="w-5 h-5" />}
+            >
             </Button>
             <div className="flex items-center ml-4">
               <Sparkles className="w-6 h-6 text-blue-600 mr-2" />
@@ -503,7 +508,7 @@ export default function ResumeDetails() {
             <div className="hidden md:block w-[30%] bg-gray-50 h-screen overflow-auto pt-14">
               <ChatPanel 
                 resumeData={resumeData}
-                onResumeDataChange={handleSetNewResumeData}
+                onResumeDataChange={(data) => handleSetNewResumeData(data as ResumeData)}
                 initialMessages={chatMessages}
                 onMessagesChange={setChatMessages}
               />

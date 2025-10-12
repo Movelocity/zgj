@@ -3,7 +3,8 @@ import Button from '@/components/ui/Button';
 import MarkdownRenderer from '@/components/ui/MarkdownRenderer';
 import { Send, Bot, Lightbulb, Sparkles } from 'lucide-react';
 import { FiMessageSquare, FiFileText } from 'react-icons/fi';
-import { type ResumeData } from '@/types/resume';
+import type { ResumeData } from '@/types/resume';
+import type { ResumeV2Data } from '@/types/resumeV2';
 import { workflowAPI } from '@/api/workflow';
 import { parseResumeSummary, smartJsonParser } from '@/utils/helpers';
 
@@ -16,8 +17,8 @@ interface Message {
 }
 
 interface ChatPanelProps {
-  resumeData: ResumeData;
-  onResumeDataChange: (data: ResumeData) => void;
+  resumeData: ResumeData | ResumeV2Data;
+  onResumeDataChange: (data: ResumeData | ResumeV2Data) => void;
   initialMessages?: Message[];
   onMessagesChange?: (messages: Message[]) => void;
 }
@@ -152,7 +153,7 @@ export default function ChatPanel({
         ...resumeData,
         summary: "测试总结",
         workExperience: [
-          ...resumeData.workExperience,
+          ...(resumeData as any).workExperience,
           {
             id: (Date.now() + 1).toString(),
             company: "测试公司",
@@ -273,7 +274,7 @@ export default function ChatPanel({
       }
       console.log("开始解析格式化简历...")
       // 1. 创建原有简历摘要，自由基本信息和id
-      const lightResume = parseResumeSummary(resumeData);
+      const lightResume = parseResumeSummary(resumeData as ResumeData);
       // 2. 调用阻塞式api，得到结构化的简历内容
       const uploadData = {
         current_resume: JSON.stringify(lightResume),

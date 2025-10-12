@@ -16,6 +16,7 @@ const ResumeList = lazy(() => import('@/pages/resume/ResumeList'));
 const ResumeCardView = lazy(() => import('@/pages/resume/ResumeCardView'));
 const ResumeDetail = lazy(() => import('@/pages/resume/ResumeDetail'));
 const ResumeEditor = lazy(() => import('@/pages/editor/ResumeDetails'));
+const ResumeEditorV2 = lazy(() => import('@/pages/editor/ResumeDetailsV2'));
 const Profile = lazy(() => import('@/pages/profile/Profile'));
 const Administrator = lazy(() => import('@/pages/admin/Administrator'));
 const NotFound = lazy(() => import('@/pages/error/NotFound'));
@@ -61,6 +62,10 @@ export const routes = [
     element: <ResumeEditor />,
   },
   {
+    path: '/editor/v2/:id',
+    element: <ResumeEditorV2 />,
+  },
+  {
     path: '/profile',
     element: <Profile />,
   },
@@ -90,6 +95,8 @@ const protectedRoutes = [
   '/resumes',
   '/resumes/cards',
   '/resume/:id',
+  '/editor/:id',
+  '/editor/v2/:id',
   '/profile',
   '/api-test', // API测试页面需要登录才能访问
 ];

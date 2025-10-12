@@ -231,7 +231,7 @@ const SimpleResume: React.FC = () => {
         </div>
 
         <div className="bg-white rounded-xl shadow-lg border border-gray-200">
-          <div className="p-6">
+          <div className="p-6 pb-0">
             <div className="flex items-center mb-2">
               <FiFileText className="w-5 h-5 mr-2" />
               <h2 className="text-lg font-medium">简历优化</h2>
