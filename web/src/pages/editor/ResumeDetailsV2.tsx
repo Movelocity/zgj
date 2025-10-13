@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { FiMessageSquare, FiSave, FiDownload } from 'react-icons/fi';
+import { FiMessageSquare, FiSave } from 'react-icons/fi';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Sparkles, ArrowLeftIcon } from 'lucide-react';
 import Button from "@/components/ui/Button";
@@ -152,10 +152,10 @@ export default function ResumeDetailsV2() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="h-screen flex flex-col bg-gray-50">
       {/* Header */}
       <header className="fixed top-0 left-0 right-0 bg-white border-b border-gray-200 z-40">
-        <div className=" px-4 h-16 flex items-center justify-between">
+        <div className="px-4 h-12 flex items-center justify-between">
           <div className="flex items-center space-x-4">
             <Button
               onClick={handleGoBack}
@@ -167,7 +167,7 @@ export default function ResumeDetailsV2() {
             </Button>
             <div className="flex items-center space-x-2">
               <Sparkles className="w-5 h-5 text-blue-600" />
-              <h1 className="text-lg font-semibold">简历编辑器 V2</h1>
+              <h1 className="text-lg font-semibold">简历编辑</h1>
             </div>
             <input
               type="text"
@@ -178,7 +178,7 @@ export default function ResumeDetailsV2() {
             />
           </div>
 
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-2">
             <Button
               onClick={() => setIsChatOpen(!isChatOpen)}
               variant="outline"
@@ -190,7 +190,6 @@ export default function ResumeDetailsV2() {
             <Button
               onClick={handleExportPDF}
               variant="outline"
-              icon={<FiDownload className="w-4 h-4 mr-2" />}
             >
               导出PDF
             </Button>
@@ -207,10 +206,10 @@ export default function ResumeDetailsV2() {
       </header>
 
       {/* Main Content */}
-      <div className="pt-16">
-        <div className={`flex ${isChatOpen ? 'max-w-[1800px]' : 'max-w-7xl'} mx-auto`}>
+      <div className="flex-1 flex">
+
           {/* Editor Panel */}
-          <div className={`flex-1 ${isChatOpen ? 'pr-6' : ''} py-6 px-4`}>
+          <div className="w-full flex-1 border-r border-gray-200 bg-white h-screen overflow-auto py-16">
             <ResumeEditorV2
               resumeData={resumeData}
               onResumeDataChange={handleResumeDataChange}
@@ -219,7 +218,7 @@ export default function ResumeDetailsV2() {
 
           {/* Chat Panel */}
           {isChatOpen && (
-            <div className="w-[500px] border-l border-gray-200 bg-white">
+            <div className="hidden md:block w-[30%] bg-gray-50 h-screen overflow-auto pt-14">
               <ChatPanel
                 initialMessages={chatMessages}
                 onMessagesChange={setChatMessages}
@@ -228,7 +227,7 @@ export default function ResumeDetailsV2() {
               />
             </div>
           )}
-        </div>
+
       </div>
     </div>
   );

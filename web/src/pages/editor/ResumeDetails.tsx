@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { FiMessageSquare, FiCheckCircle } from 'react-icons/fi';
+import { FiMessageSquare, FiCheckCircle, FiSave } from 'react-icons/fi';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Sparkles, ArrowLeftIcon } from 'lucide-react';
 import Button from "@/components/ui/Button"
@@ -85,6 +85,7 @@ export default function ResumeDetails() {
   const [showCompleted, setShowCompleted] = useState(false);
   const [editForm, setEditForm] = useState<ResumeUpdateRequest>({});
   const progressUpdaterRef = useRef<TimeBasedProgressUpdater | null>(null);
+  const [isChatOpen, setIsChatOpen] = useState(true);
 
   // 初始化进度更新器
   const initProgressUpdater = useCallback(() => {
@@ -411,8 +412,8 @@ export default function ResumeDetails() {
   return (
     <div className="h-screen flex flex-col">
       {/* 头部导航 */}
-      <div className="bg-white border-b border-gray-200 px-4 shadow-sm fixed top-0 w-full z-[1000]">
-        <div className=" flex items-center justify-between h-14">
+      <header className="fixed top-0 left-0 right-0 bg-white border-b border-gray-200 z-40">
+        <div className="px-4 h-12 flex items-center justify-between">
           <div className="flex items-center">
             <Button
               onClick={() => navigate("/resumes")}
@@ -428,10 +429,13 @@ export default function ResumeDetails() {
             </div>
           </div>
           <div className="flex items-center space-x-2">
-            <div className="flex items-center mr-4 bg-blue-50 px-3 py-1 rounded-lg">
-              <FiMessageSquare className="w-4 h-4 text-blue-600 mr-2" />
-              <span className="text-sm text-blue-700">AI 优化简历</span>
-            </div>
+            <Button
+              onClick={() => setIsChatOpen(!isChatOpen)}
+              variant="outline"
+              icon={<FiMessageSquare className="w-4 h-4 mr-2" />}
+            >
+              {isChatOpen ? '关闭对话' : 'AI对话'}
+            </Button>
             <Button 
               disabled={loading} 
               variant="outline" 
@@ -439,12 +443,12 @@ export default function ResumeDetails() {
             >
               导出PDF
             </Button>
-            <Button disabled={loading} variant="primary" onClick={handleSaveResume}>
-              保存简历
+            <Button disabled={loading} variant="primary" onClick={handleSaveResume} icon={<FiSave className="w-4 h-4 mr-2" />}>
+              保存
             </Button>
           </div>
         </div>
-      </div>
+      </header>
 
       {/* 编辑区域 */}
       <div className="flex-1 flex">
@@ -507,7 +511,7 @@ export default function ResumeDetails() {
         ) : (
           <>
             {/* 左侧优化后简历 (7/10) */}
-            <div className="w-full md:w-[70%] border-r border-gray-200 bg-white h-screen overflow-auto py-16">
+            <div className="w-full flex-1 border-r border-gray-200 bg-white h-screen overflow-auto py-16">
               <ResumeEditor 
                 resumeData={resumeData}
                 newResumeData={newResumeData}
@@ -517,14 +521,14 @@ export default function ResumeDetails() {
             </div>
 
             {/* 右侧AI对话界面 (3/10) */}
-            <div className="hidden md:block w-[30%] bg-gray-50 h-screen overflow-auto pt-14">
+            {isChatOpen && <div className="hidden md:block w-[30%] bg-gray-50 h-screen overflow-auto pt-14">
               <ChatPanel 
                 resumeData={resumeData}
                 onResumeDataChange={(data) => handleSetNewResumeData(data as ResumeData)}
                 initialMessages={chatMessages}
                 onMessagesChange={setChatMessages}
               />
-            </div>
+            </div>}
           </>
         )}
         
