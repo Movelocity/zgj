@@ -17,6 +17,7 @@ import { TimeBasedProgressUpdater, RESUME_PROCESSING_STEPS } from '@/utils/progr
 import { workflowAPI } from '@/api/workflow';
 import { parseResumeSummary, smartJsonParser } from '@/utils/helpers';
 import { exportResumeToPDF } from '@/utils/pdfExport';
+import { isV1Format, isV2Format, convertV2ToV1 } from '@/utils/resumeConverter';
 
 // 处理步骤类型
 type ProcessingStage = 'parsing' | 'structuring' | 'analyzing' | 'completed';
@@ -303,11 +304,22 @@ export default function ResumeDetails() {
       
       // 有结构化数据
       if (structured_data && Object.keys(structured_data).length) {
+        // Check format and convert if needed
+        let rawData = structured_data;
+        
+        // If V2 format, convert to V1
+        if (isV2Format(structured_data)) {
+          console.log('检测到V2格式简历，转换为V1格式');
+          rawData = convertV2ToV1(structured_data);
+        } else if (!isV1Format(structured_data)) {
+          console.warn('未知简历格式，尝试使用原始数据');
+        }
+        
         const processedData = {
-          ...structured_data,
-          workExperience: ensureItemsHaveIds(structured_data.workExperience || []),
-          education: ensureItemsHaveIds(structured_data.education || []),
-          projects: ensureItemsHaveIds(structured_data.projects || [])
+          ...rawData,
+          workExperience: ensureItemsHaveIds(rawData.workExperience || []),
+          education: ensureItemsHaveIds(rawData.education || []),
+          projects: ensureItemsHaveIds(rawData.projects || [])
         };
         console.log("processedData", processedData);
         

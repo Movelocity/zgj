@@ -10,6 +10,7 @@ import type { ResumeV2Data } from '@/types/resumeV2';
 import { defaultResumeV2Data } from '@/types/resumeV2';
 import { resumeAPI } from '@/api/resume';
 import { showError, showSuccess } from '@/utils/toast';
+import { isV1Format, isV2Format, convertV1ToV2 } from '@/utils/resumeConverter';
 // import { workflowAPI } from '@/api/workflow';
 
 export default function ResumeDetailsV2() {
@@ -64,11 +65,25 @@ export default function ResumeDetailsV2() {
       const { name, structured_data, text_content } = response.data;
       setResumeName(name);
       
-      // Check if structured_data is V2 format
-      if (structured_data && structured_data.version === 2) {
-        setResumeData(structured_data as ResumeV2Data);
+      // Check format and convert if needed
+      if (structured_data && Object.keys(structured_data).length) {
+        // If V2 format, use directly
+        if (isV2Format(structured_data)) {
+          setResumeData(structured_data as ResumeV2Data);
+        } 
+        // If V1 format, convert to V2
+        else if (isV1Format(structured_data)) {
+          console.log('检测到V1格式简历，转换为V2格式');
+          const convertedData = convertV1ToV2(structured_data);
+          setResumeData(convertedData);
+        } 
+        // Unknown format
+        else {
+          console.warn('未知简历格式，使用默认模板');
+          setResumeData(defaultResumeV2Data);
+        }
       } else if (text_content) {
-        // Need to convert from V1 or text to V2
+        // Need to convert from text to V2
         const hash = window.location.hash;
         if (hash === '#jd') {
           window.history.replaceState(null, '', window.location.pathname + window.location.search);
