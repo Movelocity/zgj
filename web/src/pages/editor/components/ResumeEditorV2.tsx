@@ -175,11 +175,11 @@ export default function ResumeEditorV2({
   };
 
   // Remove block
-  // const removeBlock = (blockIndex: number) => {
-  //   const newData = { ...resumeData };
-  //   newData.blocks.splice(blockIndex, 1);
-  //   onResumeDataChange(newData);
-  // };
+  const removeBlock = (blockIndex: number) => {
+    const newData = { ...resumeData };
+    newData.blocks.splice(blockIndex, 1);
+    onResumeDataChange(newData);
+  };
 
   // Move block
   const moveBlock = (blockIndex: number, direction: 'up' | 'down') => {
@@ -211,22 +211,20 @@ export default function ResumeEditorV2({
     multiline: boolean = false
   ) => {
     const isEditing = editingField === fieldId;
-    const inputRef = useRef<HTMLInputElement>(null);
-    const textareaRef = useRef<HTMLTextAreaElement>(null);
 
     if (isEditing) {
       return (
         <div className="flex items-start relative">
           {multiline ? (
             <textarea
-              ref={textareaRef}
+              id={`edit-${fieldId}`}
               defaultValue={editingValueRef.current}
               className="flex-1 min-h-20 p-2 resize-none outline-none bg-gray-100 rounded"
               autoFocus
             />
           ) : (
             <input
-              ref={inputRef}
+              id={`edit-${fieldId}`}
               defaultValue={editingValueRef.current}
               className="flex-1 h-8 px-2 focus:outline-none outline-none bg-gray-100 rounded"
               autoFocus
@@ -238,7 +236,7 @@ export default function ResumeEditorV2({
               variant="none"
               className="bg-green-100 hover:bg-green-200 rounded text-green-700"
               onClick={() => {
-                const element = multiline ? textareaRef.current : inputRef.current;
+                const element = document.getElementById(`edit-${fieldId}`) as HTMLInputElement | HTMLTextAreaElement;
                 if (element) saveEdit(fieldId, element);
               }}
             >
@@ -496,68 +494,73 @@ export default function ResumeEditorV2({
               {renderPersonalInfoBlock(personalInfoBlock, personalInfoBlockIndex)}
             </div>
           )}
-          {resumeData.blocks.filter(block => block.type !== 'object').map((block, blockIndex) => (
-            <div key={blockIndex} className="p-4 -m-4 rounded-lg relative">
-              {/* Block Header with left border */}
-              <div className="relative mb-2">
-                <h3 className="text-lg text-gray-800 border-l-4 border-blue-600 pl-3 inline-block">
-                  {renderEditableField(
-                    `block${blockIndex}--title`,
-                    block.title,
-                    '板块标题',
-                    false
-                  )}
-                </h3>
-                
-                {/* Block Actions - Left side on hover */}
-                <div className="absolute -left-8 top-0 flex flex-col space-y-1 opacity-0 hover:opacity-100 transition-opacity">
-                  <Button
-                    size="zero"
-                    variant="outline"
-                    onClick={() => moveBlock(blockIndex, 'up')}
-                    disabled={blockIndex === 0}
-                    className="w-6 h-6 p-0 bg-white shadow-sm hover:bg-gray-50"
-                    title="上移板块"
-                  >
-                    <ChevronUp size={14} />
-                  </Button>
-                  <Button
-                    size="zero"
-                    variant="outline"
-                    onClick={() => moveBlock(blockIndex, 'down')}
-                    disabled={blockIndex === resumeData.blocks.length - 1}
-                    className="w-6 h-6 p-0 bg-white shadow-sm hover:bg-gray-50"
-                    title="下移板块"
-                  >
-                    <ChevronDown size={14} />
-                  </Button>
-                  {/* <Button
-                    size="zero"
-                    variant="outline"
-                    onClick={() => removeBlock(blockIndex)}
-                    className="w-6 h-6 p-0 bg-white shadow-sm hover:bg-red-50 hover:text-red-600"
-                    title="删除板块"
-                  >
-                    <Trash2 size={14} />
-                  </Button>
-                  <button
-                    onClick={() => toggleBlockType(blockIndex)}
-                    className="w-6 h-6 p-0 text-xs bg-white border border-gray-300 rounded hover:bg-blue-50 hover:border-blue-300 transition-colors shadow-sm flex items-center justify-center"
-                    title={`切换为${block.type === 'list' ? '文本' : '列表'}类型`}
-                  >
-                    {block.type === 'list' ? 'L' : 'T'}
-                  </button> */}
+          {resumeData.blocks.map((block, originalIndex) => {
+            // Skip object type blocks (personal info is rendered separately)
+            if (block.type === 'object') return null;
+            
+            return (
+              <div key={originalIndex} className="p-4 -m-4 rounded-lg relative">
+                {/* Block Header with left border */}
+                <div className="relative mb-2">
+                  <h3 className="text-lg text-gray-800 border-l-4 border-blue-600 pl-3 inline-block">
+                    {renderEditableField(
+                      `block${originalIndex}--title`,
+                      block.title,
+                      '板块标题',
+                      false
+                    )}
+                  </h3>
+                  
+                  {/* Block Actions - Left side on hover */}
+                  <div className="absolute -left-8 top-0 flex flex-col space-y-1 opacity-0 hover:opacity-100 transition-opacity">
+                    <Button
+                      size="zero"
+                      variant="outline"
+                      onClick={() => moveBlock(originalIndex, 'up')}
+                      disabled={originalIndex === 0}
+                      className="w-6 h-6 p-0 bg-white shadow-sm hover:bg-gray-50"
+                      title="上移板块"
+                    >
+                      <ChevronUp size={14} />
+                    </Button>
+                    <Button
+                      size="zero"
+                      variant="outline"
+                      onClick={() => moveBlock(originalIndex, 'down')}
+                      disabled={originalIndex === resumeData.blocks.length - 1}
+                      className="w-6 h-6 p-0 bg-white shadow-sm hover:bg-gray-50"
+                      title="下移板块"
+                    >
+                      <ChevronDown size={14} />
+                    </Button>
+                    <Button
+                      size="zero"
+                      variant="outline"
+                      onClick={() => removeBlock(originalIndex)}
+                      className="w-6 h-6 p-0 bg-white shadow-sm hover:bg-red-50 hover:text-red-600"
+                      title="删除板块"
+                    >
+                      <Trash2 size={14} />
+                    </Button>
+                    {/*<button
+                      onClick={() => toggleBlockType(originalIndex)}
+                      className="w-6 h-6 p-0 text-xs bg-white border border-gray-300 rounded hover:bg-blue-50 hover:border-blue-300 transition-colors shadow-sm flex items-center justify-center"
+                      title={`切换为${block.type === 'list' ? '文本' : '列表'}类型`}
+                    >
+                      {block.type === 'list' ? 'L' : 'T'}
+                    </button> */}
+                  </div>
                 </div>
-              </div>
 
-              {/* Block Content */}
-              {isListBlock(block) && renderListBlock(block, blockIndex)}
-              {isTextBlock(block) && renderTextBlock(block, blockIndex)}
-            </div>
-          ))}
+                {/* Block Content */}
+                {isListBlock(block) && renderListBlock(block, originalIndex)}
+                {isTextBlock(block) && renderTextBlock(block, originalIndex)}
+              </div>
+            );
+          })}
 
           {/* Add Block Button */}
-          <div className="relative group mb-3 p-4 opacity-0 hover:opacity-100 transition-opacity">
+          <div className="relative group mb-3 p-4 -m-4 opacity-0 hover:opacity-100 transition-opacity">
             <h3 
               onClick={addBlock}
               className="text-lg text-gray-400 border-l-4 border-gray-300 pl-3 italic cursor-pointer"
