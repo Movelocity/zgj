@@ -186,11 +186,6 @@ const ResumeList: React.FC = () => {
     }
   };
 
-  // 查看简历详情
-  const handleViewResume = (resumeId: string) => {
-    navigate(`/editor/${resumeId}`);
-  };
-
   // 下载简历
   const handleDownload = (resume: ResumeInfo) => {
     if (resume.file_id) {
@@ -339,12 +334,21 @@ const ResumeList: React.FC = () => {
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                             <div className="flex items-center space-x-2">
                               <button
-                                onClick={() => handleViewResume(resume.id)}
+                                onClick={() => {navigate(`/editor/${resume.id}`);}}
                                 className="text-green-600 hover:text-green-900 p-1 rounded cursor-pointer"
                                 title="编辑"
                               >
                                 <FiEdit className="w-4 h-4" />
                               </button>
+                              
+                              <button
+                                onClick={() => {navigate(`/editor/v2/${resume.id}`);}}
+                                className="text-blue-600 hover:text-blue-900 p-1 rounded cursor-pointer"
+                                title="编辑v2"
+                              >
+                                <FiEdit className="w-4 h-4" />
+                              </button>
+                              
                               {resume.file_id && (
                                 <button
                                   onClick={() => handleDownload(resume)}
@@ -390,9 +394,16 @@ const ResumeList: React.FC = () => {
                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                               <div className="flex items-center space-x-2">
                                 <button
-                                  onClick={() => handleViewResume(historyResume.id)}
+                                  onClick={() => {navigate(`/editor/${historyResume.id}`);}}
                                   className="text-green-600 hover:text-green-900 p-1 rounded cursor-pointer"
                                   title="编辑"
+                                >
+                                  <FiEdit className="w-4 h-4" />
+                                </button>
+                                <button
+                                  onClick={() => {navigate(`/editor/v2/${resume.id}`);}}
+                                  className="text-blue-600 hover:text-blue-900 p-1 rounded cursor-pointer"
+                                  title="编辑v2"
                                 >
                                   <FiEdit className="w-4 h-4" />
                                 </button>

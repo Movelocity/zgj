@@ -424,17 +424,17 @@ export default function ResumeDetails() {
             >
             </Button>
             <div className="flex items-center ml-4">
-              <Sparkles className="w-6 h-6 text-blue-600 mr-2" />
-              <h1 className="text-xl">{ loading ? '正在处理您的简历' : '简历编辑' }</h1>
+              <Sparkles className="w-5 h-5 text-blue-600 mr-2" />
+              <h1 className="text-lg font-medium">{ loading ? '正在处理您的简历' : '简历编辑' }</h1>
             </div>
           </div>
           <div className="flex items-center space-x-2">
             <Button
               onClick={() => setIsChatOpen(!isChatOpen)}
-              variant="outline"
+              variant="ghost"
               icon={<FiMessageSquare className="w-4 h-4 mr-2" />}
             >
-              {isChatOpen ? '关闭对话' : 'AI对话'}
+              AI对话
             </Button>
             <Button 
               disabled={loading} 

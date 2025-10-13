@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { FiUpload, FiFileText, FiStar, FiX, FiFolder, FiBriefcase } from 'react-icons/fi';
-import { Sparkles } from 'lucide-react';
 import Button from "@/components/ui/Button";
 import type { ResumeUploadData, ResumeInfo } from '@/types/resume';
 import { resumeAPI } from '@/api/resume';
@@ -86,12 +85,13 @@ const HistoryResumeSelector: React.FC<{
           )}
         </div>
         
-        <button 
+        <Button 
           onClick={() => onClose()}
-          className="w-full mt-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+          className="w-full mt-4"
+          variant="outline"
         >
           关闭
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -107,15 +107,6 @@ const ResumeSelector: React.FC<{
     <>
       {/* File upload area */}
       <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center relative h-full flex items-center justify-center">
-        {/* Select existing resume button */}
-        <button
-          onClick={() => setShowHistoryModal(true)}
-          className="absolute top-3 right-3 px-3 py-1 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors flex items-center text-sm"
-        >
-          <FiFolder className="w-4 h-4 mr-2" />
-          选择已有简历
-        </button>
-
         <input
           type="file"
           id="resume-upload-jd"
@@ -144,16 +135,24 @@ const ResumeSelector: React.FC<{
           </div>
         ) : (
           // Upload prompt
-          <label
-            htmlFor="resume-upload-jd"
-            className="cursor-pointer flex flex-col items-center"
-          >
-            <FiUpload className="w-12 h-12 text-gray-400 mb-4" />
-            <span className="text-lg mb-2">点击上传简历</span>
-            <span className="text-sm text-gray-500">
-              或拖拽文件到此处
-            </span>
-          </label>
+          <div className="flex flex-col items-center space-y-2">
+            <Button 
+              variant="outline"
+              title="支持拖拽上传, 支持PDF、Word等格式, 10MB以内"
+              icon={<FiUpload className="w-4 h-4 mr-2" />}
+              onClick={() => document.getElementById('resume-upload-jd')?.click()}
+            >
+              点击上传简历
+            </Button>
+
+            <Button
+              onClick={() => setShowHistoryModal(true)}
+              variant="ghost"
+              icon={<FiFolder className="w-4 h-4 mr-2" />}
+            >
+              历史上传
+            </Button>
+          </div>
         )}
       </div>
 
@@ -220,7 +219,6 @@ const JobResume: React.FC = () => {
       <div className="max-w-7xl mx-auto pt-20">
         <div className="text-center mb-8">
           <div className="flex items-center justify-center mb-4">
-            <FiBriefcase className="w-8 h-8 text-blue-600 mr-2" />
             <h1 className="text-3xl">职位简历优化</h1>
           </div>
           <p className="text-gray-600">
@@ -231,18 +229,15 @@ const JobResume: React.FC = () => {
         <div className="bg-white rounded-xl shadow-lg border border-gray-200">
           <div className="grid grid-cols-2 gap-6 p-6">
             {/* Left: Job Description */}
-            <div className="flex flex-col">
+            <div className="flex flex-col h-96">
               <div className="flex items-center mb-3">
                 <FiBriefcase className="w-5 h-5 mr-2" />
                 <h2 className="text-lg font-medium">职位描述</h2>
               </div>
-              <p className="text-gray-600 text-sm mb-4">
-                粘贴完整的职位描述，包括岗位职责和任职要求
-              </p>
               <textarea
                 value={jobDescription}
                 onChange={(e) => setJobDescription(e.target.value)}
-                placeholder="请输入职位描述...&#10;&#10;例如：&#10;岗位职责：&#10;1. 负责前端开发工作...&#10;2. 参与产品需求评审...&#10;&#10;任职要求：&#10;1. 3年以上前端开发经验...&#10;2. 熟悉React、Vue等框架..."
+                placeholder="粘贴完整的职位描述，包括岗位职责和任职要求...&#10;&#10;例如：&#10;岗位职责：&#10;1. 负责前端开发工作...&#10;2. 参与产品需求评审...&#10;&#10;任职要求：&#10;1. 3年以上前端开发经验...&#10;2. 熟悉React、Vue等框架..."
                 className="flex-1 w-full p-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
                 disabled={isProcessing}
               />
@@ -254,9 +249,6 @@ const JobResume: React.FC = () => {
                 <FiFileText className="w-5 h-5 mr-2" />
                 <h2 className="text-lg font-medium">上传简历</h2>
               </div>
-              <p className="text-gray-600 text-sm mb-4">
-                支持PDF、Word等格式，文件大小不超过10MB
-              </p>
               <div className="flex-1">
                 {!isProcessing && (
                   <ResumeSelector

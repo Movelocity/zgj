@@ -1,8 +1,12 @@
 import { useState, useRef } from 'react';
-import { Plus, ChevronUp, ChevronDown, Trash2, Upload } from 'lucide-react';
+import { Plus, ChevronUp, ChevronDown, Trash2, Upload, Mail, Phone, MapPin } from 'lucide-react';
 import Button from "@/components/ui/Button";
 import type { ResumeBlock, ResumeBlockListItem, ResumeV2Data } from '@/types/resumeV2';
-import { isListBlock, isTextBlock, createEmptyListItem } from '@/types/resumeV2';
+import { isListBlock, isTextBlock, isObjectBlock, 
+  // createEmptyListItem 
+} from '@/types/resumeV2';
+import { fileAPI } from '@/api/file';
+import { showSuccess, showError } from '@/utils/toast';
 // import { generateId } from '@/utils/id';
 import cn from 'classnames';
 
@@ -17,23 +21,56 @@ export default function ResumeEditorV2({
 }: ResumeEditorV2Props) {
   const [editingField, setEditingField] = useState<string | null>(null);
   const editingValueRef = useRef<string>('');
-  const [portraitPreview, setPortraitPreview] = useState<string | undefined>(resumeData.portrait_img);
 
-  // Handle portrait image upload
-  const handlePortraitUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Handle portrait image upload for personal info block
+  const handlePortraitUpload = async (e: React.ChangeEvent<HTMLInputElement>, blockIndex: number) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // TODO: Upload to server and get URL
-    // For now, create a local preview
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const url = event.target?.result as string;
-      setPortraitPreview(url);
-      const newData = { ...resumeData, portrait_img: url };
-      onResumeDataChange(newData);
-    };
-    reader.readAsDataURL(file);
+    const block = resumeData.blocks[blockIndex];
+    if (!isObjectBlock(block)) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      showError('请上传图片文件');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      showError('图片大小不能超过 5MB');
+      return;
+    }
+
+    try {
+      // Upload file to server
+      const response = await fileAPI.uploadFile(file);
+      
+      if (response.code === 0) {
+        const fileId = response.data.id;
+        const photoUrl = fileAPI.previewFile(fileId);
+        
+        // Update resume data with photo URL
+        const newData = { ...resumeData };
+        const updatedBlock: ResumeBlock = {
+          ...block,
+          data: {
+            ...(block.data as any),
+            photo: photoUrl
+          }
+        };
+        newData.blocks[blockIndex] = updatedBlock;
+        onResumeDataChange(newData);
+        
+        showSuccess('证件照上传成功');
+      } else {
+        showError(response.msg || '上传失败');
+      }
+    } catch (error) {
+      console.error('Upload error:', error);
+      showError(error instanceof Error ? error.message : '上传失败');
+    }
   };
 
   // Start editing field
@@ -62,6 +99,9 @@ export default function ResumeEditorV2({
         if (item && field) {
           (item as any)[field] = currentValue;
         }
+      } else if (isObjectBlock(block) && field) {
+        // Handle object block (personal info)
+        (block.data as any)[field] = currentValue;
       }
     }
     
@@ -82,17 +122,17 @@ export default function ResumeEditorV2({
   };
 
   // Add list item
-  const addListItem = (blockIndex: number) => {
-    const block = resumeData.blocks[blockIndex];
-    if (isListBlock(block)) {
-      const newItem = createEmptyListItem();
-      const updatedBlock = {
-        ...block,
-        data: [...block.data, newItem]
-      };
-      updateBlock(blockIndex, updatedBlock);
-    }
-  };
+  // const addListItem = (blockIndex: number) => {
+  //   const block = resumeData.blocks[blockIndex];
+  //   if (isListBlock(block)) {
+  //     const newItem = createEmptyListItem();
+  //     const updatedBlock = {
+  //       ...block,
+  //       data: [...block.data, newItem]
+  //     };
+  //     updateBlock(blockIndex, updatedBlock);
+  //   }
+  // };
 
   // Remove list item
   const removeListItem = (blockIndex: number, itemId: string) => {
@@ -135,33 +175,33 @@ export default function ResumeEditorV2({
   };
 
   // Remove block
-  const removeBlock = (blockIndex: number) => {
-    const newData = { ...resumeData };
-    newData.blocks.splice(blockIndex, 1);
-    onResumeDataChange(newData);
-  };
+  // const removeBlock = (blockIndex: number) => {
+  //   const newData = { ...resumeData };
+  //   newData.blocks.splice(blockIndex, 1);
+  //   onResumeDataChange(newData);
+  // };
 
   // Move block
-  const moveBlock = (blockIndex: number, direction: 'up' | 'down') => {
-    const newIndex = direction === 'up' ? blockIndex - 1 : blockIndex + 1;
-    if (newIndex < 0 || newIndex >= resumeData.blocks.length) return;
+  // const moveBlock = (blockIndex: number, direction: 'up' | 'down') => {
+  //   const newIndex = direction === 'up' ? blockIndex - 1 : blockIndex + 1;
+  //   if (newIndex < 0 || newIndex >= resumeData.blocks.length) return;
 
-    const newData = { ...resumeData };
-    [newData.blocks[blockIndex], newData.blocks[newIndex]] = 
-      [newData.blocks[newIndex], newData.blocks[blockIndex]];
-    onResumeDataChange(newData);
-  };
+  //   const newData = { ...resumeData };
+  //   [newData.blocks[blockIndex], newData.blocks[newIndex]] = 
+  //     [newData.blocks[newIndex], newData.blocks[blockIndex]];
+  //   onResumeDataChange(newData);
+  // };
 
   // Toggle block type
-  const toggleBlockType = (blockIndex: number) => {
-    const block = resumeData.blocks[blockIndex];
-    const newBlock: ResumeBlock = {
-      ...block,
-      type: block.type === 'list' ? 'text' : 'list',
-      data: block.type === 'list' ? '' : []
-    };
-    updateBlock(blockIndex, newBlock);
-  };
+  // const toggleBlockType = (blockIndex: number) => {
+  //   const block = resumeData.blocks[blockIndex];
+  //   const newBlock: ResumeBlock = {
+  //     ...block,
+  //     type: block.type === 'list' ? 'text' : 'list',
+  //     data: block.type === 'list' ? '' : []
+  //   };
+  //   updateBlock(blockIndex, newBlock);
+  // };
 
   // Render editable field
   const renderEditableField = (
@@ -237,31 +277,34 @@ export default function ResumeEditorV2({
   // Render list block
   const renderListBlock = (block: ResumeBlock & { data: ResumeBlockListItem[] }, blockIndex: number) => {
     return (
-      <div className="space-y-4">
+      <div className="space-y-2">
         {block.data.map((item, itemIndex) => (
           <div key={item.id} className="relative group border-l-2 border-gray-200 pl-4">
             {/* List Item Actions - Left side on hover */}
-            <div className="absolute -left-12 top-0 flex flex-col space-y-1 opacity-0 group-hover:opacity-100 transition-opacity">
-              <Button
-                size="zero"
-                variant="outline"
-                onClick={() => moveListItem(blockIndex, item.id, 'up')}
-                disabled={itemIndex === 0}
-                className="w-6 h-6 p-0 bg-white shadow-sm hover:bg-gray-50"
-                title="上移"
-              >
-                <ChevronUp size={14} />
-              </Button>
-              <Button
-                size="zero"
-                variant="outline"
-                onClick={() => moveListItem(blockIndex, item.id, 'down')}
-                disabled={itemIndex === block.data.length - 1}
-                className="w-6 h-6 p-0 bg-white shadow-sm hover:bg-gray-50"
-                title="下移"
-              >
-                <ChevronDown size={14} />
-              </Button>
+            <div className="absolute -left-8 top-0 flex flex-col space-y-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              {itemIndex > 0 && (
+                <Button
+                  size="zero"
+                  variant="outline"
+                  onClick={() => moveListItem(blockIndex, item.id, 'up')}
+                  className="w-6 h-6 p-0 bg-white shadow-sm hover:bg-gray-50"
+                  title="上移"
+                >
+                  <ChevronUp size={14} />
+                </Button>
+              )}
+              {itemIndex < block.data.length - 1 && (
+                <Button
+                  size="zero"
+                  variant="outline"
+                  onClick={() => moveListItem(blockIndex, item.id, 'down')}
+                  disabled={itemIndex === block.data.length - 1}
+                  className="w-6 h-6 p-0 bg-white shadow-sm hover:bg-gray-50"
+                  title="下移"
+                >
+                  <ChevronDown size={14} />
+                </Button>
+              )}
               <Button
                 size="zero"
                 variant="outline"
@@ -316,7 +359,7 @@ export default function ResumeEditorV2({
           <p className="text-gray-500 italic">暂无内容，点击下方按钮添加...</p>
         )}
         
-        <div className="relative group pt-2">
+        {/* <div className="relative group pt-2">
           <div className="text-gray-400 text-sm italic border-l-2 border-dashed border-gray-300 pl-4">
             添加列表项...
           </div>
@@ -329,7 +372,7 @@ export default function ResumeEditorV2({
           >
             <Plus size={14} />
           </Button>
-        </div>
+        </div> */}
       </div>
     );
   };
@@ -337,7 +380,7 @@ export default function ResumeEditorV2({
   // Render text block
   const renderTextBlock = (block: ResumeBlock & { data: string }, blockIndex: number) => {
     return (
-      <div className="text-gray-700 leading-relaxed">
+      <div className="text-gray-700 leading-relaxed ml-4">
         {renderEditableField(
           `block${blockIndex}--data`,
           block.data,
@@ -348,54 +391,115 @@ export default function ResumeEditorV2({
     );
   };
 
+  // Render personal info block (object type)
+  const renderPersonalInfoBlock = (block: ResumeBlock, blockIndex: number) => {
+    if (!isObjectBlock(block)) return null;
+    
+    const { name, email, phone, location, photo } = block.data;
+    
+    return (
+      <div className="border-b-2 border-blue-600 pb-6">
+        <div className="flex items-end justify-between gap-6">
+          {/* Left side - Personal Info */}
+          <div className="flex-1">
+            <h1 className="text-3xl text-gray-800 mb-2">
+              {renderEditableField(
+                `block${blockIndex}--name`,
+                name,
+                '点击输入姓名',
+                false
+              )}
+            </h1>
+            <h2 className="text-xl text-blue-600 mb-4">
+              {renderEditableField(
+                `block${blockIndex}--title`,
+                block.data.title || '',
+                '点击输入职位',
+                false
+              )}
+            </h2>
+            <div className="flex flex-wrap gap-4 text-gray-600">
+              <div className="flex items-center">
+                <Mail className="w-4 h-4 mr-2" />
+                {renderEditableField(
+                  `block${blockIndex}--email`,
+                  email,
+                  '点击输入邮箱',
+                  false
+                )}
+              </div>
+              <div className="flex items-center">
+                <Phone className="w-4 h-4 mr-2" />
+                {renderEditableField(
+                  `block${blockIndex}--phone`,
+                  phone,
+                  '点击输入电话',
+                  false
+                )}
+              </div>
+              <div className="flex items-center">
+                <MapPin className="w-4 h-4 mr-2" />
+                {renderEditableField(
+                  `block${blockIndex}--location`,
+                  location,
+                  '点击输入地址',
+                  false
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Right side - Portrait Photo */}
+          <div className="flex-shrink-0 relative">
+            {photo ? (
+              <img 
+                src={photo} 
+                alt="证件照" 
+                className="w-[120px] h-[160px] object-cover rounded border-2 border-gray-300"
+              />
+            ) : (
+              <div className="w-32 h-40 bg-gray-50 rounded border-2 border-dashed border-gray-300 flex flex-col items-center justify-center">
+                <Upload className="w-6 h-6 text-gray-400 mb-1" />
+                <span className="text-xs text-gray-400">上传证件照</span>
+              </div>
+            )}
+            <label
+              htmlFor={`portrait-upload-${blockIndex}`}
+              className="absolute top-0 left-0 w-full h-full bg-gray-500/50 opacity-0 hover:opacity-100 flex items-center justify-center text-white cursor-pointer transition-colors"
+              title="上传证件照"
+            >
+              <Upload className="w-6 h-6" />
+            </label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => handlePortraitUpload(e, blockIndex)}
+              className="hidden"
+              id={`portrait-upload-${blockIndex}`}
+            />
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const personalInfoBlockIndex = resumeData.blocks.findIndex(block => block.type === 'object' && block.title === '个人信息');
+  const personalInfoBlock = personalInfoBlockIndex >= 0 ? resumeData.blocks[personalInfoBlockIndex] : null;
+
   return (
     <div className="h-full bg-white">
       <div className="p-8 max-w-4xl mx-auto" data-resume-editor>
-        {/* Portrait Image Section */}
-        <div className="mb-6 pb-6 border-b-2 border-blue-600">
-          <div className="flex items-center space-x-4">
-            <div className="relative">
-              {portraitPreview ? (
-                <img 
-                  src={portraitPreview} 
-                  alt="证件照" 
-                  className="w-32 h-40 object-cover rounded border-2 border-gray-300"
-                />
-              ) : (
-                <div className="w-32 h-40 bg-gray-50 rounded border-2 border-dashed border-gray-300 flex flex-col items-center justify-center">
-                  <Upload className="w-6 h-6 text-gray-400 mb-1" />
-                  <span className="text-xs text-gray-400">上传证件照</span>
-                </div>
-              )}
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handlePortraitUpload}
-                className="hidden"
-                id="portrait-upload"
-              />
-              <label
-                htmlFor="portrait-upload"
-                className="absolute bottom-1 right-1 bg-blue-600 text-white p-1.5 rounded-full cursor-pointer hover:bg-blue-700 shadow-sm transition-colors"
-                title="上传证件照"
-              >
-                <Upload className="w-3.5 h-3.5" />
-              </label>
-            </div>
-            <div>
-              <h3 className="text-sm font-medium text-gray-700 mb-1">证件照</h3>
-              <p className="text-xs text-gray-500">建议尺寸：295x413像素（标准一寸照比例）</p>
-              <p className="text-xs text-gray-400 mt-1">点击右下角图标上传图片</p>
-            </div>
-          </div>
-        </div>
-
         {/* Blocks Section */}
         <div className="space-y-3">
-          {resumeData.blocks.map((block, blockIndex) => (
+          {personalInfoBlock && personalInfoBlockIndex >= 0 && (
+            <div key={personalInfoBlock.title} className="p-4 -m-4 rounded-lg relative group">
+              {renderPersonalInfoBlock(personalInfoBlock, personalInfoBlockIndex)}
+            </div>
+          )}
+          {resumeData.blocks.filter(block => block.type !== 'object').map((block, blockIndex) => (
             <div key={blockIndex} className="mb-3 p-4 -m-4 rounded-lg relative group">
               {/* Block Header with left border */}
-              <div className="relative mb-4">
+              <div className="relative mb-2">
                 <h3 className="text-lg text-gray-800 border-l-4 border-blue-600 pl-3 inline-block">
                   {renderEditableField(
                     `block${blockIndex}--title`,
@@ -406,7 +510,7 @@ export default function ResumeEditorV2({
                 </h3>
                 
                 {/* Block Actions - Left side on hover */}
-                <div className="absolute -left-8 top-0 flex flex-col space-y-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                {/* <div className="absolute -left-10 top-0 flex space-y-1 opacity-0 group-hover:opacity-100 transition-opacity">
                   <Button
                     size="zero"
                     variant="outline"
@@ -443,14 +547,12 @@ export default function ResumeEditorV2({
                   >
                     {block.type === 'list' ? 'L' : 'T'}
                   </button>
-                </div>
+                </div> */}
               </div>
 
               {/* Block Content */}
-              <div className="pl-4">
-                {isListBlock(block) && renderListBlock(block, blockIndex)}
-                {isTextBlock(block) && renderTextBlock(block, blockIndex)}
-              </div>
+              {isListBlock(block) && renderListBlock(block, blockIndex)}
+              {isTextBlock(block) && renderTextBlock(block, blockIndex)}
             </div>
           ))}
 

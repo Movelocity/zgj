@@ -354,14 +354,11 @@ export default function ChatPanel({
 
   return (
     <div className="bg-white h-full flex flex-col">
-      <div className="px-4 py-3 border-b border-gray-200 flex items-center gap-1">
+      <div className="px-4 py-2 border-b border-gray-200 flex items-center gap-1">
         <div className="flex gap-1 items-center text-lg font-medium">
           <Bot className="w-5 h-5 text-blue-600" />
           简历专家
         </div>
-        {/* <p className="text-sm text-gray-600 mt-1">
-          与AI专家对话，实时优化您的简历
-        </p> */}
       </div>
 
       <div className="flex-1 relative">
@@ -486,7 +483,7 @@ export default function ChatPanel({
       </div>
 
       <div className="px-4 py-2 border-t border-gray-200">
-        <div className="flex gap-1">
+        <div className="flex gap-1 items-end">
           <textarea
             // type="text"
             value={inputValue}
@@ -498,7 +495,7 @@ export default function ChatPanel({
           <button 
             onClick={() => handleSendMessage()}
             disabled={!inputValue.trim() || isTyping || isResponding}
-            className="m-0.5 px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            className="m-0.5 px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer max-h-10"
           >
             <Send className="w-4 h-4" />
           </button>

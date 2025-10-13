@@ -11,13 +11,22 @@ export interface ResumeBlockListItem {
   highlight: string;
 }
 
+export interface ResumePersonalInfo {
+  name: string;
+  email: string;
+  phone: string;
+  location: string;
+  title: string;
+  photo: string;
+}
+
 /**
  * Resume block - can be either list or text type
  */
 export interface ResumeBlock {
   title: string;
-  type: 'list' | 'text';
-  data: ResumeBlockListItem[] | string;
+  type: 'list' | 'text' | 'object';
+  data: ResumeBlockListItem[] | string | ResumePersonalInfo;
 }
 
 /**
@@ -60,6 +69,13 @@ export function isListBlock(block: ResumeBlock): block is ResumeBlock & { data: 
  */
 export function isTextBlock(block: ResumeBlock): block is ResumeBlock & { data: string } {
   return block.type === 'text' && typeof block.data === 'string';
+}
+
+/**
+ * Helper to check if a block is object type (personal info)
+ */
+export function isObjectBlock(block: ResumeBlock): block is ResumeBlock & { data: ResumePersonalInfo } {
+  return block.type === 'object' && typeof block.data === 'object' && !Array.isArray(block.data);
 }
 
 /**

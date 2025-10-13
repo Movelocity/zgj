@@ -37,7 +37,7 @@ export default function ResumeDetailsV2() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [isChatOpen, setIsChatOpen] = useState(true);
   const [isSaving, setSaving] = useState(false);
 
   // Add chat message
@@ -181,10 +181,10 @@ export default function ResumeDetailsV2() {
           <div className="flex items-center space-x-2">
             <Button
               onClick={() => setIsChatOpen(!isChatOpen)}
-              variant="outline"
+              variant="ghost"
               icon={<FiMessageSquare className="w-4 h-4 mr-2" />}
             >
-              {isChatOpen ? '关闭对话' : 'AI对话'}
+              AI对话
             </Button>
             
             <Button

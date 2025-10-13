@@ -2,8 +2,8 @@
  * Resume format converter between V1 and V2
  */
 
-import type { ResumeData, PersonalInfo, WorkExperience, Education, Project } from '@/types/resume';
-import type { ResumeV2Data, ResumeBlock, ResumeBlockListItem } from '@/types/resumeV2';
+import type { ResumeData, WorkExperience, Education, Project } from '@/types/resume';
+import type { ResumeV2Data, ResumeBlock, ResumeBlockListItem, ResumePersonalInfo } from '@/types/resumeV2';
 
 /**
  * Check if data is V1 format (no version field)
@@ -37,11 +37,17 @@ export function convertV1ToV2(v1Data: ResumeData): ResumeV2Data {
   const blocks: ResumeBlock[] = [];
 
   // 1. Personal Info - convert to text block
-  const personalInfoText = formatPersonalInfo(v1Data.personalInfo);
   blocks.push({
     title: '个人信息',
-    type: 'text',
-    data: personalInfoText
+    type: 'object',
+    data: {
+      name: v1Data.personalInfo.name,
+      email: v1Data.personalInfo.email,
+      phone: v1Data.personalInfo.phone,
+      location: v1Data.personalInfo.location,
+      title: v1Data.personalInfo.title,
+      photo: ""
+    }
   });
 
   // 2. Summary - convert to text block
@@ -136,8 +142,13 @@ export function convertV2ToV1(v2Data: ResumeV2Data): ResumeData {
 
     // Personal Info
     if (title.includes('个人信息') || title.includes('基本信息')) {
-      if (block.type === 'text' && typeof block.data === 'string') {
-        result.personalInfo = parsePersonalInfo(block.data);
+      const theBlock = block as ResumeBlock & { data: ResumePersonalInfo };
+      result.personalInfo = {
+        name: theBlock.data.name,
+        title: theBlock.data.title,
+        email: theBlock.data.email,
+        phone: theBlock.data.phone,
+        location: theBlock.data.location
       }
     }
     // Summary
@@ -184,57 +195,57 @@ export function convertV2ToV1(v2Data: ResumeV2Data): ResumeData {
 /**
  * Format PersonalInfo to text
  */
-function formatPersonalInfo(info: PersonalInfo): string {
-  const parts: string[] = [];
-  if (info.name) parts.push(`姓名：${info.name}`);
-  if (info.title) parts.push(`职位：${info.title}`);
-  if (info.email) parts.push(`邮箱：${info.email}`);
-  if (info.phone) parts.push(`电话：${info.phone}`);
-  if (info.location) parts.push(`地址：${info.location}`);
-  return parts.join('\n');
-}
+// function formatPersonalInfo(info: PersonalInfo): string {
+//   const parts: string[] = [];
+//   if (info.name) parts.push(`姓名：${info.name}`);
+//   if (info.title) parts.push(`职位：${info.title}`);
+//   if (info.email) parts.push(`邮箱：${info.email}`);
+//   if (info.phone) parts.push(`电话：${info.phone}`);
+//   if (info.location) parts.push(`地址：${info.location}`);
+//   return parts.join('\n');
+// }
 
 /**
  * Parse PersonalInfo from text
  */
-function parsePersonalInfo(text: string): PersonalInfo {
-  const info: PersonalInfo = {
-    name: '',
-    title: '',
-    email: '',
-    phone: '',
-    location: ''
-  };
+// function parsePersonalInfo(text: string): PersonalInfo {
+//   const info: PersonalInfo = {
+//     name: '',
+//     title: '',
+//     email: '',
+//     phone: '',
+//     location: ''
+//   };
 
-  const lines = text.split('\n');
-  lines.forEach(line => {
-    const trimmed = line.trim();
-    if (trimmed.includes('姓名')) {
-      info.name = extractValue(trimmed);
-    } else if (trimmed.includes('职位')) {
-      info.title = extractValue(trimmed);
-    } else if (trimmed.includes('邮箱') || trimmed.includes('email')) {
-      info.email = extractValue(trimmed);
-    } else if (trimmed.includes('电话') || trimmed.includes('手机')) {
-      info.phone = extractValue(trimmed);
-    } else if (trimmed.includes('地址') || trimmed.includes('位置')) {
-      info.location = extractValue(trimmed);
-    }
-  });
+//   const lines = text.split('\n');
+//   lines.forEach(line => {
+//     const trimmed = line.trim();
+//     if (trimmed.includes('姓名')) {
+//       info.name = extractValue(trimmed);
+//     } else if (trimmed.includes('职位')) {
+//       info.title = extractValue(trimmed);
+//     } else if (trimmed.includes('邮箱') || trimmed.includes('email')) {
+//       info.email = extractValue(trimmed);
+//     } else if (trimmed.includes('电话') || trimmed.includes('手机')) {
+//       info.phone = extractValue(trimmed);
+//     } else if (trimmed.includes('地址') || trimmed.includes('位置')) {
+//       info.location = extractValue(trimmed);
+//     }
+//   });
 
-  return info;
-}
+//   return info;
+// }
 
 /**
  * Extract value from "key: value" or "key：value" format
  */
-function extractValue(text: string): string {
-  const colonIndex = Math.max(text.indexOf(':'), text.indexOf('：'));
-  if (colonIndex !== -1) {
-    return text.substring(colonIndex + 1).trim();
-  }
-  return text;
-}
+// function extractValue(text: string): string {
+//   const colonIndex = Math.max(text.indexOf(':'), text.indexOf('：'));
+//   if (colonIndex !== -1) {
+//     return text.substring(colonIndex + 1).trim();
+//   }
+//   return text;
+// }
 
 /**
  * Convert ResumeBlockListItem to WorkExperience
