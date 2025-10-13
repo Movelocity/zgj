@@ -171,125 +171,165 @@ export default function ResumeEditorV2({
     multiline: boolean = false
   ) => {
     const isEditing = editingField === fieldId;
+    const inputRef = useRef<HTMLInputElement>(null);
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
 
     if (isEditing) {
-      const Component = multiline ? 'textarea' : 'input';
       return (
-        <Component
-          autoFocus
-          defaultValue={value}
-          placeholder={placeholder}
-          className={cn(
-            "w-full px-2 py-1 border border-blue-500 rounded focus:outline-none focus:ring-2 focus:ring-blue-500",
-            multiline && "min-h-[60px] resize-vertical"
+        <div className="flex items-start relative">
+          {multiline ? (
+            <textarea
+              ref={textareaRef}
+              defaultValue={editingValueRef.current}
+              className="flex-1 min-h-20 p-2 resize-none outline-none bg-gray-100 rounded"
+              autoFocus
+            />
+          ) : (
+            <input
+              ref={inputRef}
+              defaultValue={editingValueRef.current}
+              className="flex-1 h-8 px-2 focus:outline-none outline-none bg-gray-100 rounded"
+              autoFocus
+            />
           )}
-          onBlur={(e) => saveEdit(fieldId, e.currentTarget)}
-          onKeyDown={(e) => {
-            if (e.key === 'Escape') cancelEdit();
-            if (e.key === 'Enter' && !multiline && !e.shiftKey) {
-              e.preventDefault();
-              saveEdit(fieldId, e.currentTarget);
-            }
-          }}
-        />
+          <div className="absolute top-full right-0 bg-white border border-gray-200 rounded-md shadow-lg whitespace-nowrap z-20 flex items-center p-1 gap-1 mt-1">
+            <Button 
+              size="xs2" 
+              variant="none"
+              className="bg-green-100 hover:bg-green-200 rounded text-green-700"
+              onClick={() => {
+                const element = multiline ? textareaRef.current : inputRef.current;
+                if (element) saveEdit(fieldId, element);
+              }}
+            >
+              确定
+            </Button>
+            <Button 
+              size="xs2" 
+              variant="none" 
+              className="bg-red-100 hover:bg-red-200 rounded text-red-700" 
+              onClick={cancelEdit}
+            >
+              取消
+            </Button>
+          </div>
+        </div>
       );
     }
 
+    const content = value || placeholder;
+    const baseClasses = multiline ? 'min-h-[2rem] block' : 'min-h-[1.5rem] inline-block';
+
     return (
-      <div
-        className="cursor-pointer hover:bg-gray-50 px-2 py-1 rounded transition-colors min-h-[28px]"
+      <span 
+        className={cn(
+          'cursor-pointer hover:bg-gray-100 px-1 py-0.5 rounded transition-colors',
+          baseClasses,
+          !value ? 'text-gray-400 italic' : ''
+        )}
         onClick={() => startEditing(fieldId, value)}
       >
-        {value || <span className="text-gray-400">{placeholder}</span>}
-      </div>
+        {content}
+      </span>
     );
   };
 
   // Render list block
   const renderListBlock = (block: ResumeBlock & { data: ResumeBlockListItem[] }, blockIndex: number) => {
     return (
-      <div className="space-y-3">
+      <div className="space-y-4">
         {block.data.map((item, itemIndex) => (
-          <div key={item.id} className="border border-gray-200 rounded-lg p-4 hover:border-gray-300 transition-colors">
-            <div className="flex items-start justify-between mb-3">
-              <div className="flex-1 grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs text-gray-500 mb-1 block">名称</label>
+          <div key={item.id} className="relative group border-l-2 border-gray-200 pl-4">
+            {/* List Item Actions - Left side on hover */}
+            <div className="absolute -left-12 top-0 flex flex-col space-y-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <Button
+                size="zero"
+                variant="outline"
+                onClick={() => moveListItem(blockIndex, item.id, 'up')}
+                disabled={itemIndex === 0}
+                className="w-6 h-6 p-0 bg-white shadow-sm hover:bg-gray-50"
+                title="上移"
+              >
+                <ChevronUp size={14} />
+              </Button>
+              <Button
+                size="zero"
+                variant="outline"
+                onClick={() => moveListItem(blockIndex, item.id, 'down')}
+                disabled={itemIndex === block.data.length - 1}
+                className="w-6 h-6 p-0 bg-white shadow-sm hover:bg-gray-50"
+                title="下移"
+              >
+                <ChevronDown size={14} />
+              </Button>
+              <Button
+                size="zero"
+                variant="outline"
+                onClick={() => removeListItem(blockIndex, item.id)}
+                className="w-6 h-6 p-0 bg-white shadow-sm hover:bg-red-50 hover:text-red-600"
+                title="删除"
+              >
+                <Trash2 size={14} />
+              </Button>
+            </div>
+
+            <div className="flex justify-between items-start">
+              <div className="flex-1">
+                <h4 className="text-gray-800 font-medium">
                   {renderEditableField(
                     `block${blockIndex}-${item.id}-name`,
                     item.name,
                     '如：XX大学、XX公司',
                     false
                   )}
-                </div>
-                <div>
-                  <label className="text-xs text-gray-500 mb-1 block">时间</label>
+                </h4>
+                <p className="text-blue-600 text-sm">
                   {renderEditableField(
-                    `block${blockIndex}-${item.id}-time`,
-                    item.time,
-                    '如：2021.09 - 至今',
+                    `block${blockIndex}-${item.id}-highlight`,
+                    item.highlight,
+                    '亮点/专业/职位',
                     false
                   )}
-                </div>
+                </p>
               </div>
-              <div className="flex items-center space-x-1 ml-2">
-                <button
-                  onClick={() => moveListItem(blockIndex, item.id, 'up')}
-                  disabled={itemIndex === 0}
-                  className="p-1 hover:bg-gray-100 rounded disabled:opacity-30 disabled:cursor-not-allowed"
-                  title="上移"
-                >
-                  <ChevronUp className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => moveListItem(blockIndex, item.id, 'down')}
-                  disabled={itemIndex === block.data.length - 1}
-                  className="p-1 hover:bg-gray-100 rounded disabled:opacity-30 disabled:cursor-not-allowed"
-                  title="下移"
-                >
-                  <ChevronDown className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => removeListItem(blockIndex, item.id)}
-                  className="p-1 hover:bg-red-50 text-red-600 rounded"
-                  title="删除"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
+              <span className="text-gray-500 text-sm ml-4">
+                {renderEditableField(
+                  `block${blockIndex}-${item.id}-time`,
+                  item.time,
+                  '时间',
+                  false
+                )}
+              </span>
             </div>
-            
-            <div className="space-y-3">
-              <div>
-                <label className="text-xs text-gray-500 mb-1 block">描述</label>
-                {renderEditableField(
-                  `block${blockIndex}-${item.id}-description`,
-                  item.description,
-                  '详细描述...',
-                  true
-                )}
-              </div>
-              <div>
-                <label className="text-xs text-gray-500 mb-1 block">亮点</label>
-                {renderEditableField(
-                  `block${blockIndex}-${item.id}-highlight`,
-                  item.highlight,
-                  '核心亮点、技能或成就...',
-                  true
-                )}
-              </div>
+            <div className="text-gray-700 text-sm leading-relaxed whitespace-pre-line mt-1">
+              {renderEditableField(
+                `block${blockIndex}-${item.id}-description`,
+                item.description,
+                '点击添加详细描述...',
+                true
+              )}
             </div>
           </div>
         ))}
         
-        <Button
-          onClick={() => addListItem(blockIndex)}
-          variant="outline"
-          className="w-full"
-          icon={<Plus className="w-4 h-4 mr-2" />}
-        >
-          添加项目
-        </Button>
+        {block.data.length === 0 && (
+          <p className="text-gray-500 italic">暂无内容，点击下方按钮添加...</p>
+        )}
+        
+        <div className="relative group pt-2">
+          <div className="text-gray-400 text-sm italic border-l-2 border-dashed border-gray-300 pl-4">
+            添加列表项...
+          </div>
+          <Button
+            size="zero"
+            variant="outline"
+            onClick={() => addListItem(blockIndex)}
+            className="absolute -left-12 top-2 w-6 h-6 p-0 bg-white shadow-sm opacity-0 group-hover:opacity-100 transition-opacity hover:bg-green-50 hover:text-green-600"
+            title="添加列表项"
+          >
+            <Plus size={14} />
+          </Button>
+        </div>
       </div>
     );
   };
@@ -297,11 +337,11 @@ export default function ResumeEditorV2({
   // Render text block
   const renderTextBlock = (block: ResumeBlock & { data: string }, blockIndex: number) => {
     return (
-      <div>
+      <div className="text-gray-700 leading-relaxed">
         {renderEditableField(
           `block${blockIndex}--data`,
           block.data,
-          '输入文本内容...',
+          '点击添加文本内容...',
           true
         )}
       </div>
@@ -309,108 +349,125 @@ export default function ResumeEditorV2({
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6 bg-white rounded-lg shadow-sm">
-      {/* Portrait Image Section */}
-      <div className="mb-6 pb-6 border-b border-gray-200">
-        <div className="flex items-center space-x-4">
-          <div className="relative">
-            {portraitPreview ? (
-              <img 
-                src={portraitPreview} 
-                alt="证件照" 
-                className="w-32 h-32 object-cover rounded-lg border-2 border-gray-200"
+    <div className="h-full bg-white">
+      <div className="p-8 max-w-4xl mx-auto" data-resume-editor>
+        {/* Portrait Image Section */}
+        <div className="mb-6 pb-6 border-b-2 border-blue-600">
+          <div className="flex items-center space-x-4">
+            <div className="relative">
+              {portraitPreview ? (
+                <img 
+                  src={portraitPreview} 
+                  alt="证件照" 
+                  className="w-32 h-40 object-cover rounded border-2 border-gray-300"
+                />
+              ) : (
+                <div className="w-32 h-40 bg-gray-50 rounded border-2 border-dashed border-gray-300 flex flex-col items-center justify-center">
+                  <Upload className="w-6 h-6 text-gray-400 mb-1" />
+                  <span className="text-xs text-gray-400">上传证件照</span>
+                </div>
+              )}
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handlePortraitUpload}
+                className="hidden"
+                id="portrait-upload"
               />
-            ) : (
-              <div className="w-32 h-32 bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center">
-                <Upload className="w-8 h-8 text-gray-400" />
-              </div>
-            )}
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handlePortraitUpload}
-              className="hidden"
-              id="portrait-upload"
-            />
-            <label
-              htmlFor="portrait-upload"
-              className="absolute bottom-0 right-0 bg-blue-600 text-white p-1 rounded-full cursor-pointer hover:bg-blue-700"
-            >
-              <Upload className="w-4 h-4" />
-            </label>
-          </div>
-          <div>
-            <h3 className="text-sm font-medium text-gray-700 mb-1">证件照</h3>
-            <p className="text-xs text-gray-500">建议尺寸：295x413像素</p>
+              <label
+                htmlFor="portrait-upload"
+                className="absolute bottom-1 right-1 bg-blue-600 text-white p-1.5 rounded-full cursor-pointer hover:bg-blue-700 shadow-sm transition-colors"
+                title="上传证件照"
+              >
+                <Upload className="w-3.5 h-3.5" />
+              </label>
+            </div>
+            <div>
+              <h3 className="text-sm font-medium text-gray-700 mb-1">证件照</h3>
+              <p className="text-xs text-gray-500">建议尺寸：295x413像素（标准一寸照比例）</p>
+              <p className="text-xs text-gray-400 mt-1">点击右下角图标上传图片</p>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Blocks Section */}
-      <div className="space-y-6">
-        {resumeData.blocks.map((block, blockIndex) => (
-          <div key={blockIndex} className="border border-gray-200 rounded-lg p-5">
-            {/* Block Header */}
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center space-x-3 flex-1">
-                {renderEditableField(
-                  `block${blockIndex}--title`,
-                  block.title,
-                  '板块标题',
-                  false
-                )}
-                <button
-                  onClick={() => toggleBlockType(blockIndex)}
-                  className="text-xs px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded transition-colors"
-                  title={`切换为${block.type === 'list' ? '文本' : '列表'}类型`}
-                >
-                  {block.type === 'list' ? '列表' : '文本'}
-                </button>
+        {/* Blocks Section */}
+        <div className="space-y-3">
+          {resumeData.blocks.map((block, blockIndex) => (
+            <div key={blockIndex} className="mb-3 p-4 -m-4 rounded-lg relative group">
+              {/* Block Header with left border */}
+              <div className="relative mb-4">
+                <h3 className="text-lg text-gray-800 border-l-4 border-blue-600 pl-3 inline-block">
+                  {renderEditableField(
+                    `block${blockIndex}--title`,
+                    block.title,
+                    '板块标题',
+                    false
+                  )}
+                </h3>
+                
+                {/* Block Actions - Left side on hover */}
+                <div className="absolute -left-8 top-0 flex flex-col space-y-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Button
+                    size="zero"
+                    variant="outline"
+                    onClick={() => moveBlock(blockIndex, 'up')}
+                    disabled={blockIndex === 0}
+                    className="w-6 h-6 p-0 bg-white shadow-sm hover:bg-gray-50"
+                    title="上移板块"
+                  >
+                    <ChevronUp size={14} />
+                  </Button>
+                  <Button
+                    size="zero"
+                    variant="outline"
+                    onClick={() => moveBlock(blockIndex, 'down')}
+                    disabled={blockIndex === resumeData.blocks.length - 1}
+                    className="w-6 h-6 p-0 bg-white shadow-sm hover:bg-gray-50"
+                    title="下移板块"
+                  >
+                    <ChevronDown size={14} />
+                  </Button>
+                  <Button
+                    size="zero"
+                    variant="outline"
+                    onClick={() => removeBlock(blockIndex)}
+                    className="w-6 h-6 p-0 bg-white shadow-sm hover:bg-red-50 hover:text-red-600"
+                    title="删除板块"
+                  >
+                    <Trash2 size={14} />
+                  </Button>
+                  <button
+                    onClick={() => toggleBlockType(blockIndex)}
+                    className="w-6 h-6 p-0 text-xs bg-white border border-gray-300 rounded hover:bg-blue-50 hover:border-blue-300 transition-colors shadow-sm flex items-center justify-center"
+                    title={`切换为${block.type === 'list' ? '文本' : '列表'}类型`}
+                  >
+                    {block.type === 'list' ? 'L' : 'T'}
+                  </button>
+                </div>
               </div>
-              <div className="flex items-center space-x-1">
-                <button
-                  onClick={() => moveBlock(blockIndex, 'up')}
-                  disabled={blockIndex === 0}
-                  className="p-1 hover:bg-gray-100 rounded disabled:opacity-30 disabled:cursor-not-allowed"
-                  title="上移板块"
-                >
-                  <ChevronUp className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => moveBlock(blockIndex, 'down')}
-                  disabled={blockIndex === resumeData.blocks.length - 1}
-                  className="p-1 hover:bg-gray-100 rounded disabled:opacity-30 disabled:cursor-not-allowed"
-                  title="下移板块"
-                >
-                  <ChevronDown className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => removeBlock(blockIndex)}
-                  className="p-1 hover:bg-red-50 text-red-600 rounded"
-                  title="删除板块"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
+
+              {/* Block Content */}
+              <div className="pl-4">
+                {isListBlock(block) && renderListBlock(block, blockIndex)}
+                {isTextBlock(block) && renderTextBlock(block, blockIndex)}
               </div>
             </div>
+          ))}
 
-            {/* Block Content */}
-            <div className="mt-4">
-              {isListBlock(block) && renderListBlock(block, blockIndex)}
-              {isTextBlock(block) && renderTextBlock(block, blockIndex)}
-            </div>
+          {/* Add Block Button */}
+          <div className="relative group mb-3 p-4 -m-4">
+            <h3 className="text-lg text-gray-400 border-l-4 border-gray-300 pl-3 italic">添加新板块...</h3>
+            <Button
+              size="zero"
+              variant="outline"
+              onClick={addBlock}
+              className="absolute -left-8 top-4 w-6 h-6 p-0 bg-white shadow-sm opacity-0 group-hover:opacity-100 transition-opacity hover:bg-blue-50 hover:text-blue-600"
+              title="添加新板块"
+            >
+              <Plus size={14} />
+            </Button>
           </div>
-        ))}
-
-        {/* Add Block Button */}
-        <Button
-          onClick={addBlock}
-          variant="outline"
-          className="w-full"
-          icon={<Plus className="w-4 h-4 mr-2" />}
-        >
-          添加新板块
-        </Button>
+        </div>
       </div>
     </div>
   );
