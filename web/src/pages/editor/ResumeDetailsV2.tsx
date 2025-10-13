@@ -11,6 +11,7 @@ import { defaultResumeV2Data } from '@/types/resumeV2';
 import { resumeAPI } from '@/api/resume';
 import { showError, showSuccess } from '@/utils/toast';
 import { isV1Format, isV2Format, convertV1ToV2 } from '@/utils/resumeConverter';
+import { exportResumeToPDF } from '@/utils/pdfExport';
 // import { workflowAPI } from '@/api/workflow';
 
 export default function ResumeDetailsV2() {
@@ -124,11 +125,16 @@ export default function ResumeDetailsV2() {
     }
   };
 
-  // Export to PDF
-  const handleExportPDF = () => {
-    // TODO: Implement V2 PDF export
-    showError('PDF导出功能开发中');
-  };
+  // 导出PDF
+  const handleExportPDF = async () => {
+    try {
+      console.log('正在生成PDF，请稍候...');
+      await exportResumeToPDF(resumeName || '简历');
+      console.log('PDF导出成功');
+    } catch (error) {
+      showError(error instanceof Error ? error.message : '导出PDF失败');
+    }
+  }
 
   // Go back
   const handleGoBack = () => {

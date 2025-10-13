@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { Plus, ChevronUp, ChevronDown, Trash2, Upload, Mail, Phone, MapPin } from 'lucide-react';
+import { ChevronUp, ChevronDown, Trash2, Upload, Mail, Phone, MapPin } from 'lucide-react';
 import Button from "@/components/ui/Button";
 import type { ResumeBlock, ResumeBlockListItem, ResumeV2Data } from '@/types/resumeV2';
 import { isListBlock, isTextBlock, isObjectBlock, 
@@ -182,15 +182,15 @@ export default function ResumeEditorV2({
   // };
 
   // Move block
-  // const moveBlock = (blockIndex: number, direction: 'up' | 'down') => {
-  //   const newIndex = direction === 'up' ? blockIndex - 1 : blockIndex + 1;
-  //   if (newIndex < 0 || newIndex >= resumeData.blocks.length) return;
+  const moveBlock = (blockIndex: number, direction: 'up' | 'down') => {
+    const newIndex = direction === 'up' ? blockIndex - 1 : blockIndex + 1;
+    if (newIndex < 0 || newIndex >= resumeData.blocks.length) return;
 
-  //   const newData = { ...resumeData };
-  //   [newData.blocks[blockIndex], newData.blocks[newIndex]] = 
-  //     [newData.blocks[newIndex], newData.blocks[blockIndex]];
-  //   onResumeDataChange(newData);
-  // };
+    const newData = { ...resumeData };
+    [newData.blocks[blockIndex], newData.blocks[newIndex]] = 
+      [newData.blocks[newIndex], newData.blocks[blockIndex]];
+    onResumeDataChange(newData);
+  };
 
   // Toggle block type
   // const toggleBlockType = (blockIndex: number) => {
@@ -279,9 +279,9 @@ export default function ResumeEditorV2({
     return (
       <div className="space-y-2">
         {block.data.map((item, itemIndex) => (
-          <div key={item.id} className="relative group border-l-2 border-gray-200 pl-4">
+          <div key={item.id} className="relative group pl-4">
             {/* List Item Actions - Left side on hover */}
-            <div className="absolute -left-8 top-0 flex flex-col space-y-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            <div className="absolute -left-4 top-0 flex flex-col space-y-1 opacity-0 group-hover:opacity-100 transition-opacity">
               {itemIndex > 0 && (
                 <Button
                   size="zero"
@@ -398,7 +398,7 @@ export default function ResumeEditorV2({
     const { name, email, phone, location, photo } = block.data;
     
     return (
-      <div className="border-b-2 border-blue-600 pb-6">
+      <div className="border-b-2 border-blue-600 pb-3 px-3">
         <div className="flex items-end justify-between gap-6">
           {/* Left side - Personal Info */}
           <div className="flex-1">
@@ -497,7 +497,7 @@ export default function ResumeEditorV2({
             </div>
           )}
           {resumeData.blocks.filter(block => block.type !== 'object').map((block, blockIndex) => (
-            <div key={blockIndex} className="mb-3 p-4 -m-4 rounded-lg relative group">
+            <div key={blockIndex} className="p-4 -m-4 rounded-lg relative">
               {/* Block Header with left border */}
               <div className="relative mb-2">
                 <h3 className="text-lg text-gray-800 border-l-4 border-blue-600 pl-3 inline-block">
@@ -510,7 +510,7 @@ export default function ResumeEditorV2({
                 </h3>
                 
                 {/* Block Actions - Left side on hover */}
-                {/* <div className="absolute -left-10 top-0 flex space-y-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="absolute -left-8 top-0 flex flex-col space-y-1 opacity-0 hover:opacity-100 transition-opacity">
                   <Button
                     size="zero"
                     variant="outline"
@@ -531,7 +531,7 @@ export default function ResumeEditorV2({
                   >
                     <ChevronDown size={14} />
                   </Button>
-                  <Button
+                  {/* <Button
                     size="zero"
                     variant="outline"
                     onClick={() => removeBlock(blockIndex)}
@@ -546,8 +546,8 @@ export default function ResumeEditorV2({
                     title={`切换为${block.type === 'list' ? '文本' : '列表'}类型`}
                   >
                     {block.type === 'list' ? 'L' : 'T'}
-                  </button>
-                </div> */}
+                  </button> */}
+                </div>
               </div>
 
               {/* Block Content */}
@@ -557,17 +557,13 @@ export default function ResumeEditorV2({
           ))}
 
           {/* Add Block Button */}
-          <div className="relative group mb-3 p-4 -m-4">
-            <h3 className="text-lg text-gray-400 border-l-4 border-gray-300 pl-3 italic">添加新板块...</h3>
-            <Button
-              size="zero"
-              variant="outline"
+          <div className="relative group mb-3 p-4 opacity-0 hover:opacity-100 transition-opacity">
+            <h3 
               onClick={addBlock}
-              className="absolute -left-8 top-4 w-6 h-6 p-0 bg-white shadow-sm opacity-0 group-hover:opacity-100 transition-opacity hover:bg-blue-50 hover:text-blue-600"
-              title="添加新板块"
+              className="text-lg text-gray-400 border-l-4 border-gray-300 pl-3 italic cursor-pointer"
             >
-              <Plus size={14} />
-            </Button>
+              添加新板块...
+            </h3>
           </div>
         </div>
       </div>

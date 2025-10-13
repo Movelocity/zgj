@@ -6,6 +6,10 @@ import { resumeAPI } from '@/api/resume';
 import { fileAPI } from '@/api/file';
 import type { ResumeInfo, ResumeUploadData, CreateTextResumeData } from '@/types/resume';
 import { showSuccess, showError, showWarning } from '@/utils/toast';
+import { useAuthStore } from '@/store';
+import { ADMIN_ROLE } from '@/utils/constants';
+
+
 
 // 分组后的简历数据结构
 interface GroupedResume {
@@ -30,6 +34,7 @@ const ResumeList: React.FC = () => {
   });
   // 管理展开的简历组
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+  const isAdmin = useAuthStore((state) => state.user?.role === ADMIN_ROLE);
 
   // 使用 useMemo 对简历进行分组整合
   const groupedResumes = useMemo(() => {
@@ -333,18 +338,19 @@ const ResumeList: React.FC = () => {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                             <div className="flex items-center space-x-2">
-                              <button
-                                onClick={() => {navigate(`/editor/${resume.id}`);}}
-                                className="text-green-600 hover:text-green-900 p-1 rounded cursor-pointer"
-                                title="编辑"
-                              >
-                                <FiEdit className="w-4 h-4" />
-                              </button>
-                              
+                              {isAdmin && (  // 管理员可以看到历史版本
+                                <button
+                                  onClick={() => {navigate(`/editor/${resume.id}`);}}
+                                  className="text-green-600 hover:text-green-900 p-1 rounded cursor-pointer"
+                                  title="编辑"
+                                >
+                                  <FiEdit className="w-4 h-4" />
+                                </button>
+                              )}
                               <button
                                 onClick={() => {navigate(`/editor/v2/${resume.id}`);}}
                                 className="text-blue-600 hover:text-blue-900 p-1 rounded cursor-pointer"
-                                title="编辑v2"
+                                title="编辑"
                               >
                                 <FiEdit className="w-4 h-4" />
                               </button>
@@ -393,20 +399,24 @@ const ResumeList: React.FC = () => {
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                               <div className="flex items-center space-x-2">
+                                {isAdmin && ( // 管理员可以看到历史版本
+                                  <button
+                                    onClick={() => {navigate(`/editor/${historyResume.id}`);}}
+                                    className="text-green-600 hover:text-green-900 p-1 rounded cursor-pointer"
+                                    title="编辑"
+                                  >
+                                    <FiEdit className="w-4 h-4" />
+                                  </button>
+                                )}
+                              
                                 <button
-                                  onClick={() => {navigate(`/editor/${historyResume.id}`);}}
-                                  className="text-green-600 hover:text-green-900 p-1 rounded cursor-pointer"
+                                  onClick={() => {navigate(`/editor/v2/${resume.id}`);}}
+                                  className="text-blue-600 hover:text-blue-900 p-1 rounded cursor-pointer"
                                   title="编辑"
                                 >
                                   <FiEdit className="w-4 h-4" />
                                 </button>
-                                <button
-                                  onClick={() => {navigate(`/editor/v2/${resume.id}`);}}
-                                  className="text-blue-600 hover:text-blue-900 p-1 rounded cursor-pointer"
-                                  title="编辑v2"
-                                >
-                                  <FiEdit className="w-4 h-4" />
-                                </button>
+                                
                                 {historyResume.file_id && (
                                   <button
                                     onClick={() => handleDownload(historyResume)}
