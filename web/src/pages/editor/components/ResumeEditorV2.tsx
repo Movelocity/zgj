@@ -12,12 +12,16 @@ import cn from 'classnames';
 
 interface ResumeEditorV2Props {
   resumeData: ResumeV2Data;
+  newResumeData: ResumeV2Data;
   onResumeDataChange?: (data: ResumeV2Data) => void;
+  onNewResumeDataChange?: (data: ResumeV2Data) => void;
 }
 
 export default function ResumeEditorV2({ 
   resumeData, 
+  newResumeData,
   onResumeDataChange = () => {}, 
+  onNewResumeDataChange = () => {},
 }: ResumeEditorV2Props) {
   const [editingField, setEditingField] = useState<string | null>(null);
   const editingValueRef = useRef<string>('');

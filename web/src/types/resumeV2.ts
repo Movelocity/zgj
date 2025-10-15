@@ -147,3 +147,69 @@ export const defaultResumeV2Data: ResumeV2Data = {
   ]
 };
 
+export const specialV2Data: ResumeV2Data = {
+  version: 2,
+  blocks: [
+    {
+      title: "个人信息",
+      type: "object",
+      data: {
+        "name": "黄怀恩",
+        "phone": "13267222565",
+        "email": "huanghuaien2023@163.com",
+        "location": "",
+        "photo": "/api/files/20251013221370913642/preview"
+      } as ResumePersonalInfo
+    },
+    {
+      "title": "个人总结",
+      "type": "text",
+      "data": "国际商务专业背景，具备系统的商业分析与多模型应用能力（SWOT、PEST、波特五力）。在课程项目中主导策略分析与内容策划，展现出优秀的逻辑思维、创意输出和团队协作能力。学习能力强，能快速适应短视频内容创作与平台研究等新领域，致力于通过数据驱动优化内容策略。"
+    },
+    {
+      "title": "教育背景",
+      "type": "list",
+      "data": [
+        {
+          "id": "#EDU001",
+          "name": "中南财经政法大学",
+          "time": "2021.09 - 至今",
+          "description": "国际商务 全日制本科\n主修课程：国际经济学、宏观经济学、投资学、管理学\nGPA：3.7/4.0",
+          "highlight": ""
+        }
+      ]
+    },
+    {
+      "title": "项目经历",
+      "type": "list",
+      "data": [
+        {
+          "id": "#PROJ001",
+          "name": "美的集团国际化营销案例分析",
+          "time": "2023",
+          "description": "主导运用SWOT与波特五力模型，分析美的集团在国际市场的竞争环境，输出数据驱动的策略建议，提升方案可行性。\n协调团队分工，推动项目进度，确保高质量交付。",
+          "highlight": "SWOT分析, 波特五力模型"
+        },
+        {
+          "id": "#PROJ002",
+          "name": "万代集团在中国的国际商务策略分析",
+          "time": "2022",
+          "description": "担任项目组长，挖掘IP营销模式中的关键问题，提出创意改进方案，提升内容落地性与用户 engagement。\n通过团队协作与逻辑分析，优化策略输出流程。",
+          "highlight": "国际商务分析, 策略分析"
+        },
+        {
+          "id": "#PROJ003",
+          "name": "瑞幸咖啡账面事件案例分析",
+          "time": "2021",
+          "description": "基于PEST模型与财务分析，评估事件对市场环境的影响，识别风险与机会，为内容优化提供洞察。",
+          "highlight": "PEST模型, 财务分析"
+        }
+      ]
+    },
+    {
+      "title": "专业技能",
+      "type": "text",
+      "data": "商业分析工具：SWOT分析、波特五力模型、PEST分析\n软件技能：Excel、Word、PowerPoint\n剪辑软件：正在学习AE/Pr（通过Coursera课程）\n语言能力：中文（母语）、英文（流利）\n软技能：逻辑思维、创意策划、团队协作、快速学习"
+    }
+  ]
+}

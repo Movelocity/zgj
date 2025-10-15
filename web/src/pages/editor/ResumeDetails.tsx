@@ -7,9 +7,7 @@ import { useGlobalStore } from '@/store';
 import ChatPanel, { type Message } from './components/ChatPanel';
 import ResumeEditor from './components/ResumeEditor';
 import { ResumeExample, EmptyResumeData, type ResumeData } from '@/types/resume';
-import type { 
-  ResumeUpdateRequest
-} from '@/types/resume';
+import type { ResumeUpdateRequest } from '@/types/resume';
 import { ensureItemsHaveIds } from '@/utils/id';
 import { resumeAPI } from '@/api/resume';
 import { showError, showSuccess } from '@/utils/toast';
@@ -18,42 +16,8 @@ import { workflowAPI } from '@/api/workflow';
 import { parseResumeSummary, smartJsonParser } from '@/utils/helpers';
 import { exportResumeToPDF } from '@/utils/pdfExport';
 import { isV1Format, isV2Format, convertV2ToV1 } from '@/utils/resumeConverter';
+import type { ProcessingStage, StepResult } from './types';
 
-// 处理步骤类型
-type ProcessingStage = 'parsing' | 'structuring' | 'analyzing' | 'completed';
-
-// 步骤处理结果
-interface StepResult {
-  success: boolean;
-  needsReload?: boolean;
-  error?: string;
-}
-
-// 定义哪些内容是AI优化过的
-// const optimizedSectionsExample: OptimizedSections = {
-//   personalInfo: ['title'], // 职位标题被优化：更专业的表述
-//   summary: true, // 整个个人总结被优化：更具体和有吸引力
-//   workExperience: {
-//     '1': ['description'] // 第一个工作经历的描述被优化：添加了数据和成果
-//   },
-//   skills: true, // 技能部分被优化：重新排序突出核心技能
-//   projects: {
-//     '1': ['description'] // 第一个项目的描述被优化：更详细的技术实现和业务价值
-//   }
-// };
-
-// 版本2
-/**
-resume block: 
-{
-  "title": "教育背景",
-  "type": "list" | "text",
-  "data": [
-    {"id": "1", "name": "xx大学", "description": "主修课程xxx", "time": "2021.09 - 至今", "highlight": "熟悉xx等技术"},
-    {"id": "2", "name": "xx大学", "description": "主修课程xxx", "time": "2021.09 - 至今", "highlight": "熟悉xx等技术"}
-  ] | "xxx"
-}
-*/
 
 export default function ResumeDetails() {
   const { setShowBanner } = useGlobalStore();
