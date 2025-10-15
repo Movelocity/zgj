@@ -307,16 +307,21 @@ func (s *appService) ExecuteWorkflow(workflowID, userID string, inputs map[strin
 		// 根据API响应状态判断结果
 		if apiResponse.Data.Status == "succeeded" {
 			status = "success"
+			responseData := map[string]interface{}{
+				"workflow_run_id": apiResponse.WorkflowRunID,
+				"task_id":         apiResponse.TaskID,
+				"outputs":         apiResponse.Data.Outputs,
+				"elapsed_time":    apiResponse.Data.ElapsedTime,
+				"total_tokens":    apiResponse.Data.TotalTokens,
+				"total_steps":     apiResponse.Data.TotalSteps,
+			}
+			// 如果是ChatFlow，添加conversation_id到返回数据
+			if apiResponse.Data.WorkflowID != "" && strings.HasSuffix(strings.TrimRight(workflow.ApiURL, "/"), "chat-messages") {
+				responseData["conversation_id"] = apiResponse.Data.WorkflowID
+			}
 			response = &ExecuteWorkflowResponse{
 				Success: true,
-				Data: map[string]interface{}{
-					"workflow_run_id": apiResponse.WorkflowRunID,
-					"task_id":         apiResponse.TaskID,
-					"outputs":         apiResponse.Data.Outputs,
-					"elapsed_time":    apiResponse.Data.ElapsedTime,
-					"total_tokens":    apiResponse.Data.TotalTokens,
-					"total_steps":     apiResponse.Data.TotalSteps,
-				},
+				Data:    responseData,
 				Message: "工作流执行成功",
 			}
 		} else {
@@ -494,16 +499,21 @@ func (s *appService) ExecuteWorkflowAPI(workflowID, userID string, inputs map[st
 		// 根据API响应状态判断结果
 		if apiResponse.Data.Status == "succeeded" {
 			status = "success"
+			responseData := map[string]interface{}{
+				"workflow_run_id": apiResponse.WorkflowRunID,
+				"task_id":         apiResponse.TaskID,
+				"outputs":         apiResponse.Data.Outputs,
+				"elapsed_time":    apiResponse.Data.ElapsedTime,
+				"total_tokens":    apiResponse.Data.TotalTokens,
+				"total_steps":     apiResponse.Data.TotalSteps,
+			}
+			// 如果是ChatFlow，添加conversation_id到返回数据
+			if apiResponse.Data.WorkflowID != "" && strings.HasSuffix(strings.TrimRight(workflow.ApiURL, "/"), "chat-messages") {
+				responseData["conversation_id"] = apiResponse.Data.WorkflowID
+			}
 			response = &ExecuteWorkflowResponse{
 				Success: true,
-				Data: map[string]interface{}{
-					"workflow_run_id": apiResponse.WorkflowRunID,
-					"task_id":         apiResponse.TaskID,
-					"outputs":         apiResponse.Data.Outputs,
-					"elapsed_time":    apiResponse.Data.ElapsedTime,
-					"total_tokens":    apiResponse.Data.TotalTokens,
-					"total_steps":     apiResponse.Data.TotalSteps,
-				},
+				Data:    responseData,
 				Message: "工作流执行成功",
 			}
 		} else {
@@ -533,12 +543,33 @@ func (s *appService) ExecuteWorkflowAPI(workflowID, userID string, inputs map[st
 }
 
 // callWorkflowAPI 调用远程工作流API (私有方法)
+// 根据API URL类型自动判断返回格式（WorkflowAPIResponse 或 ChatFlowAPIResponse）
 func (s *appService) callWorkflowAPI(apiURL, apiKey, userID string, inputs map[string]interface{}) (*WorkflowAPIResponse, error) {
+	// 判断是否为ChatFlow API
+	isChatFlow := strings.HasSuffix(strings.TrimRight(apiURL, "/"), "chat-messages")
+
 	// 构建请求体
 	requestBody := WorkflowAPIRequest{
 		Inputs:       inputs,
 		ResponseMode: "blocking", // 只支持blocking模式
 		User:         userID,
+	}
+
+	// inputs 中的 __query pop 出来，赋给 requestBody.Query
+	// __conversation_id 用于 ChatFlow API 的会话上下文
+	// __xx 为特殊变量，单独处理
+	query, ok := inputs["__query"]
+	if ok {
+		requestBody.Query = query.(string)
+		delete(inputs, "__query")
+	}
+
+	// 如果是 ChatFlow API，处理 conversation_id
+	if isChatFlow {
+		if conversationID, ok := inputs["__conversation_id"]; ok {
+			requestBody.ConversationID = conversationID.(string)
+			delete(inputs, "__conversation_id")
+		}
 	}
 
 	// 序列化请求体
@@ -558,7 +589,7 @@ func (s *appService) callWorkflowAPI(apiURL, apiKey, userID string, inputs map[s
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", apiKey))
 
 	// 创建HTTP客户端并发送请求
-	client := &http.Client{Timeout: 90 * time.Second} // 设置60秒超时
+	client := &http.Client{Timeout: 300 * time.Second} // 设置300秒超时
 	fmt.Println("[request workflow]", req)
 
 	resp, err := client.Do(req)
@@ -579,13 +610,48 @@ func (s *appService) callWorkflowAPI(apiURL, apiKey, userID string, inputs map[s
 		return nil, fmt.Errorf("API请求失败，状态码: %d, 响应: %s", resp.StatusCode, string(body))
 	}
 
-	// 解析响应
-	var apiResponse WorkflowAPIResponse
-	if err := json.Unmarshal(body, &apiResponse); err != nil {
-		return nil, fmt.Errorf("解析响应数据失败: %w, 响应内容: %s", err, string(body))
-	}
+	// 根据API响应类型解析数据（isChatFlow 已在函数开头定义）
+	if isChatFlow {
+		// 解析ChatFlow响应
+		var chatResponse ChatFlowAPIResponse
+		if err := json.Unmarshal(body, &chatResponse); err != nil {
+			return nil, fmt.Errorf("解析ChatFlow响应数据失败: %w, 响应内容: %s", err, string(body))
+		}
 
-	return &apiResponse, nil
+		// 将ChatFlow响应转换为标准WorkflowAPIResponse格式
+		return s.convertChatFlowToWorkflowResponse(&chatResponse), nil
+	} else {
+		// 解析标准工作流响应
+		var apiResponse WorkflowAPIResponse
+		if err := json.Unmarshal(body, &apiResponse); err != nil {
+			return nil, fmt.Errorf("解析工作流响应数据失败: %w, 响应内容: %s", err, string(body))
+		}
+		return &apiResponse, nil
+	}
+}
+
+// convertChatFlowToWorkflowResponse 将ChatFlow响应转换为标准WorkflowAPIResponse格式
+func (s *appService) convertChatFlowToWorkflowResponse(chatResp *ChatFlowAPIResponse) *WorkflowAPIResponse {
+	return &WorkflowAPIResponse{
+		WorkflowRunID: chatResp.MessageID, // 使用message_id作为workflow_run_id
+		TaskID:        chatResp.TaskID,
+		Data: WorkflowAPIData{
+			ID:         chatResp.MessageID,
+			WorkflowID: chatResp.ConversationID,
+			Status:     "succeeded", // ChatFlow API成功返回即为succeeded
+			Outputs: map[string]interface{}{
+				"answer":          chatResp.Answer,
+				"message_id":      chatResp.MessageID,
+				"conversation_id": chatResp.ConversationID,
+			},
+			Error:       "",
+			ElapsedTime: 0, // ChatFlow API不返回执行时间
+			TotalTokens: 0, // ChatFlow API不返回token数
+			TotalSteps:  0, // ChatFlow API不返回步骤数
+			CreatedAt:   time.Now().Unix(),
+			FinishedAt:  time.Now().Unix(),
+		},
+	}
 }
 
 // 流式执行管理器
@@ -651,6 +717,9 @@ func (s *appService) handleWorkflowStreamDirect(ctx context.Context, c *gin.Cont
 
 // callWorkflowStreamAPIDirect 直接调用远程工作流流式API
 func (s *appService) callWorkflowStreamAPIDirect(ctx context.Context, c *gin.Context, streamCtx *StreamContext, apiURL, apiKey string) error {
+	// 判断是否为ChatFlow API
+	isChatFlow := strings.HasSuffix(strings.TrimRight(apiURL, "/"), "chat-messages")
+
 	// 构建请求体
 	requestBody := WorkflowAPIRequest{
 		Inputs:       streamCtx.Inputs,
@@ -659,11 +728,20 @@ func (s *appService) callWorkflowStreamAPIDirect(ctx context.Context, c *gin.Con
 	}
 
 	// inputs 中的 __query pop 出来，赋给 requestBody.Query
+	// __conversation_id 用于 ChatFlow API 的会话上下文
 	// __xx 为特殊变量，单独处理
 	query, ok := streamCtx.Inputs["__query"]
 	if ok {
 		requestBody.Query = query.(string)
 		delete(streamCtx.Inputs, "__query")
+	}
+
+	// 如果是 ChatFlow API，处理 conversation_id
+	if isChatFlow {
+		if conversationID, ok := streamCtx.Inputs["__conversation_id"]; ok {
+			requestBody.ConversationID = conversationID.(string)
+			delete(streamCtx.Inputs, "__conversation_id")
+		}
 	}
 
 	// 序列化请求体

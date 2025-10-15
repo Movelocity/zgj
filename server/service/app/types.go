@@ -91,17 +91,28 @@ type ExecuteWorkflowResponse struct {
 
 // WorkflowAPIRequest 工作流API请求结构体
 type WorkflowAPIRequest struct {
-	Inputs       map[string]interface{} `json:"inputs"`
-	ResponseMode string                 `json:"response_mode"`
-	User         string                 `json:"user"`
-	Query        string                 `json:"query"`
+	Inputs         map[string]interface{} `json:"inputs"`
+	ResponseMode   string                 `json:"response_mode"`
+	User           string                 `json:"user"`
+	Query          string                 `json:"query,omitempty"`           // ChatFlow API 的查询参数
+	ConversationID string                 `json:"conversation_id,omitempty"` // ChatFlow API 的会话ID（用于保持上下文）
 }
 
-// WorkflowAPIResponse 工作流API响应结构体
+// WorkflowAPIResponse 工作流API响应结构体（标准工作流模式）
 type WorkflowAPIResponse struct {
 	WorkflowRunID string          `json:"workflow_run_id"`
 	TaskID        string          `json:"task_id"`
 	Data          WorkflowAPIData `json:"data"`
+}
+
+// ChatFlowAPIResponse ChatFlow API响应结构体（chat-messages 端点）
+// 当 API URL 以 "chat-messages" 结尾时使用此结构体解析响应
+// 该响应会被自动转换为 WorkflowAPIResponse 格式以便统一存储
+type ChatFlowAPIResponse struct {
+	MessageID      string `json:"message_id"`
+	ConversationID string `json:"conversation_id"`
+	TaskID         string `json:"task_id"`
+	Answer         string `json:"answer"`
 }
 
 // WorkflowAPIData 工作流API响应数据部分
