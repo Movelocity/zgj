@@ -42,6 +42,7 @@ export default function ChatPanel({
       timestamp: new Date(),
     }
   ]);
+  const conversationIdRef = useRef('');
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -186,10 +187,12 @@ export default function ChatPanel({
       // 处理不同类型的事件
       switch (data.event) {
         case 'workflow_started':
+          
           console.log(`[${aiResponse.id}] 工作流启动`);
           break;
         
         case 'node_started':
+          
           console.log(`[${aiResponse.id}] 节点启动: ${data.data?.id || '未知节点'}`);
           break;
         
@@ -208,6 +211,9 @@ export default function ChatPanel({
           break;
         
         case 'message':  // chat-messages
+          if (data.conversation_id) {
+            conversationIdRef.current = data.conversation_id;
+          }
           aiResponse.content += data.answer || '';
           updateMessages(aiResponse);
           console.log(`[${aiResponse.id}] `+data.answer);
@@ -250,7 +256,8 @@ export default function ChatPanel({
           id: "",
           name: "basic-chat",
           inputs: {
-            __query: query
+            __query: query,
+            __conversation_id: conversationIdRef.current,
           },
           onMessage: onMessage,
           onError: onError,

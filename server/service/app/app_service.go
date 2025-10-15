@@ -567,7 +567,9 @@ func (s *appService) callWorkflowAPI(apiURL, apiKey, userID string, inputs map[s
 	// 如果是 ChatFlow API，处理 conversation_id
 	if isChatFlow {
 		if conversationID, ok := inputs["__conversation_id"]; ok {
-			requestBody.ConversationID = conversationID.(string)
+			if conversationID.(string) != "" {
+				requestBody.ConversationID = conversationID.(string)
+			}
 			delete(inputs, "__conversation_id")
 		}
 	}
