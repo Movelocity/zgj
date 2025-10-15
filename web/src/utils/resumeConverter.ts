@@ -27,7 +27,7 @@ export function isV1Format(data: any): data is ResumeData {
  * Check if data is V2 format (version: 2)
  */
 export function isV2Format(data: any): data is ResumeV2Data {
-  return data && typeof data === 'object' && data.version === 2 && 'blocks' in data;
+  return data && typeof data === 'object' && 'blocks' in data && data.version === 2;
 }
 
 /**

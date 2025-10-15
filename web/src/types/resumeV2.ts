@@ -120,29 +120,19 @@ export const defaultResumeV2Data: ResumeV2Data = {
   version: 2,
   blocks: [
     {
-      title: '个人信息',
+      title: '',
       type: 'text',
       data: ''
     },
     {
-      title: '教育背景',
+      title: '',
       type: 'list',
       data: []
     },
     {
-      title: '工作经历',
+      title: '',
       type: 'list',
       data: []
-    },
-    {
-      title: '项目经历',
-      type: 'list',
-      data: []
-    },
-    {
-      title: '专业技能',
-      type: 'text',
-      data: ''
     }
   ]
 };

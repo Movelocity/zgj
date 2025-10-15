@@ -16,8 +16,8 @@ import { exportResumeToPDF } from '@/utils/pdfExport';
 import { workflowAPI } from '@/api/workflow';
 import type { ProcessingStage, StepResult } from './types';
 import { TimeBasedProgressUpdater, RESUME_PROCESSING_STEPS } from '@/utils/progress';
-import { smartJsonParser } from '@/utils/helpers';
-import { specialV2Data } from '@/types/resumeV2';
+import { parseAndFixResumeJson, fixResumeBlockFormat } from '@/utils/helpers';
+// import { specialV2Data } from '@/types/resumeV2';
 
 export default function ResumeDetailsV2() {
   const { setShowBanner } = useGlobalStore();
@@ -33,7 +33,7 @@ export default function ResumeDetailsV2() {
 
   // Resume data state
   const [resumeData, setResumeData] = useState<ResumeV2Data>(defaultResumeV2Data);
-  const [newResumeData, setNewResumeData] = useState<ResumeV2Data>(specialV2Data);  // AI优化后的内容，需人工确认后合并
+  const [newResumeData, setNewResumeData] = useState<ResumeV2Data>(defaultResumeV2Data);  // AI优化后的内容，需人工确认后合并
   // const [text_content, setTextContent] = useState<string>('');
   const [resumeName, setResumeName] = useState<string>('');
   const [chatMessages, setChatMessages] = useState<Message[]>([
@@ -128,7 +128,7 @@ export default function ResumeDetailsV2() {
     }, [initProgressUpdater]);
   
     // 步骤2：结构化文本数据
-    const executeStep2_StructureData = useCallback(async (resumeId: string): Promise<StepResult> => {
+    const executeStep2_StructureData = useCallback(async (id: string, content: string): Promise<StepResult> => {
       try {
         setCurrentStage('structuring');
         setLoading(true);
@@ -136,13 +136,30 @@ export default function ResumeDetailsV2() {
         const updater = initProgressUpdater();
         updater.startStep(1);
   
-        const response = await resumeAPI.structureTextToJSON(resumeId);
-        if (response.code === 0) {
-          updater.completeCurrentStep();
-          return { success: true, needsReload: true };
-        } else {
+        // const response = await resumeAPI.structureTextToJSON(resumeId);
+        // 2. 调用阻塞式api，得到结构化的简历内容
+        const uploadData = {
+          current_resume: content,
+          resume_edit: "请先结构化原文"
+        }
+        const structuredResumeResult = await workflowAPI.executeWorkflow("smart-format-2", uploadData, true);
+        if (structuredResumeResult.code !== 0) {
+          console.error('Execution error:', structuredResumeResult.data.message);
           return { success: false, error: '数据结构化失败' };
         }
+        const structuredResumeData = structuredResumeResult.data.data.outputs?.output;
+        console.log('structuredResumeData', structuredResumeData);
+
+        if (structuredResumeData && typeof structuredResumeData === 'string') {
+          const finalResumeData = parseAndFixResumeJson(structuredResumeData as string);
+          setResumeData(finalResumeData);
+          resumeAPI.updateResume(id, {
+            structured_data: finalResumeData
+          });
+        }
+        
+        updater.completeCurrentStep();
+        return { success: true, needsReload: true };
       } catch (error) {
         return { success: false, error: error instanceof Error ? error.message : '数据结构化失败' };
       }
@@ -217,7 +234,7 @@ export default function ResumeDetailsV2() {
         console.log('格式化结果:', structuredResumeData);
         
         if (structuredResumeData && typeof structuredResumeData === 'string') {
-          const finalResumeData = smartJsonParser<ResumeV2Data>(structuredResumeData as string);
+          const finalResumeData = parseAndFixResumeJson(structuredResumeData as string);
           
           // 确保格式化后的数据所有列表项都有唯一ID
           const finalProcessedData = {
@@ -274,7 +291,7 @@ export default function ResumeDetailsV2() {
       
       // 步骤2：结构化数据
       if (text_content && text_content.length > 20 && (!structured_data || !Object.keys(structured_data).length)) {
-        const result = await executeStep2_StructureData(id);
+        const result = await executeStep2_StructureData(id, text_content);
         if (result.success && result.needsReload) {
           setTimeout(() => loadResumeDetail(), 1000);
           return;
@@ -296,14 +313,17 @@ export default function ResumeDetailsV2() {
         if (isV2Format(structured_data)) {
            // If V2 format, use directly
           setResumeData(structured_data as ResumeV2Data);
+          console.log('structured_data', structured_data);
         } else if (isV1Format(structured_data)) { // If V1 format, convert to V2
           console.log('检测到V1格式简历，转换为V2格式');
           const convertedData = convertV1ToV2(structured_data);
           setResumeData(convertedData);
         } else { // Unknown format
-          console.log('structured_data', structured_data);
-          console.warn('未知简历格式，使用默认模板');
-          setResumeData(defaultResumeV2Data);
+          if (structured_data.blocks) {
+            structured_data.blocks = fixResumeBlockFormat(structured_data.blocks) as any;
+          }
+          setResumeData(structured_data);
+          console.log('未知简历格式，使用默认模板', structured_data);
         }
 
         // 步骤3：检查是否需要AI分析优化

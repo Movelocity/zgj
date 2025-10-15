@@ -696,7 +696,7 @@ export default function ResumeEditorV2({
     );
   };
 
-  const personalInfoBlockIndex = resumeData.blocks.findIndex(block => block.type === 'object' && block.title === '个人信息');
+  const personalInfoBlockIndex = resumeData.blocks.findIndex(block => block.type === 'object');
   const personalInfoBlock = personalInfoBlockIndex >= 0 ? resumeData.blocks[personalInfoBlockIndex] : null;
 
   return (
