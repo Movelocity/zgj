@@ -308,11 +308,11 @@ export default function ResumeDetailsV2() {
 
         // 步骤3：检查是否需要AI分析优化
         const hash = window.location.hash;
-        if (hash === '#jd') {
+        if (hash === '#jd-new') {
           setIsJD(true);
           appTypeRef.current = "jd";
           document.title = `简历JD优化 - 职管加`;
-          window.history.replaceState(null, '', window.location.pathname + window.location.search);
+          window.history.replaceState(null, '', window.location.pathname + window.location.search + '#jd');
           
           const result = await executeStep3_AnalyzeResume(id, structured_data as ResumeV2Data, name, text_content);
           if (!result.success) {
@@ -329,6 +329,10 @@ export default function ResumeDetailsV2() {
             showError(result.error || '简历分析优化失败');
             console.warn(result.error);
           }
+        } else if (hash === '#jd') {
+          appTypeRef.current = "jd";
+          setIsJD(true);
+          document.title = `简历JD优化 - 职管加`;
         }
       }
       
@@ -536,6 +540,7 @@ export default function ResumeDetailsV2() {
                 onMessagesChange={setChatMessages}
                 resumeData={resumeData}
                 onResumeDataChange={(data) => handleResumeDataChange(data as ResumeV2Data)}
+                isJD={isJD}
               />
             </div>
           )}

@@ -205,7 +205,7 @@ const JobResume: React.FC = () => {
       if (resumeId) {
         // TODO: Call workflow with resume_text and job_description
         // For now, just navigate to V2 editor with JD hash
-        navigate(`/editor/v2/${resumeId}#jd`);
+        navigate(`/editor/v2/${resumeId}#jd-new`);
       } else {
         throw new Error('获取简历ID失败');
       }

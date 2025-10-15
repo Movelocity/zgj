@@ -21,6 +21,7 @@ interface ChatPanelProps {
   onResumeDataChange: (data: ResumeData | ResumeV2Data) => void;
   initialMessages?: Message[];
   onMessagesChange?: (messages: Message[]) => void;
+  isJD: boolean
 }
 
 // 导出Message接口供外部使用
@@ -32,7 +33,8 @@ export default function ChatPanel({
   resumeData, 
   onResumeDataChange,
   initialMessages,
-  onMessagesChange 
+  onMessagesChange,
+  isJD
 }: ChatPanelProps) {
   const [messages, setMessages] = useState<Message[]>(initialMessages || [
     {
@@ -59,6 +61,12 @@ export default function ChatPanel({
 
   const lastScrollTop = useRef(0);
   const lastAbortScrollMessageId = useRef('');
+  
+  // 监听 messages 变化并通知父组件
+  useEffect(() => {
+    onMessagesChange?.(messages);
+  }, [messages, onMessagesChange]);
+  
   useEffect(() => {
     if (scrollRef.current) {
       const currentScrollTop = scrollRef.current.scrollTop;
@@ -83,8 +91,6 @@ export default function ChatPanel({
         ? prev.map(m => m.id === msg.id ? msg : m)
         : [...prev, msg];
       
-      // 通知外部消息变化
-      onMessagesChange?.(newMessages);
       return newMessages;
     });
     if (msg.content) {
@@ -102,11 +108,7 @@ export default function ChatPanel({
       content: query,
       timestamp: new Date()
     };
-    setMessages(prev => {
-      const newMessages = [...prev, userMessage];
-      onMessagesChange?.(newMessages);
-      return newMessages;
-    });
+    setMessages(prev => [...prev, userMessage]);
     setInputValue('');
     setSuggestions([])
     if (isResponding || isFormatting) return;
@@ -128,7 +130,6 @@ export default function ChatPanel({
     
     if (query === "/clear") {
       setMessages([]);
-      onMessagesChange?.([]);
       setIsTyping(false);
       return;
     }
@@ -252,13 +253,18 @@ export default function ChatPanel({
         postProcess(aiResponse.content);
       } else {  // 通用对话应用
         setIsResponding(true);
+        const inputs: any = {
+          __query: query,
+          __conversation_id: conversationIdRef.current,
+          resume: JSON.stringify(resumeData),
+        }
+        if (isJD) {
+          inputs.job_detail = localStorage.getItem('job_description');
+        }
         await workflowAPI.executeWorkflowStream({
           id: "",
           name: "basic-chat",
-          inputs: {
-            __query: query,
-            __conversation_id: conversationIdRef.current,
-          },
+          inputs: inputs,
           onMessage: onMessage,
           onError: onError,
         });

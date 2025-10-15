@@ -491,6 +491,7 @@ export default function ResumeDetails() {
                 onResumeDataChange={(data) => handleSetNewResumeData(data as ResumeData)}
                 initialMessages={chatMessages}
                 onMessagesChange={setChatMessages}
+                isJD={false}
               />
             </div>}
           </>
