@@ -74,6 +74,50 @@ func (s *resumeService) GetUserResumes(userID string, page, pageSize string) ([]
 	return resumeInfos, total, nil
 }
 
+// get all resumes without specifying user
+func (s *resumeService) GetResumes(page, pageSize string) ([]ResumeInfo, int64, error) {
+	pageInt, _ := strconv.Atoi(page)
+	pageSizeInt, _ := strconv.Atoi(pageSize)
+
+	if pageInt <= 0 {
+		pageInt = 1
+	}
+	if pageSizeInt <= 0 || pageSizeInt > 100 {
+		pageSizeInt = 10
+	}
+
+	offset := (pageInt - 1) * pageSizeInt
+
+	var resumes []model.ResumeRecord
+	var total int64
+
+	if err := global.DB.Where("status = ?", "active").
+		Order("created_at DESC").
+		Limit(pageSizeInt).
+		Offset(offset).
+		Find(&resumes).Error; err != nil {
+		return nil, 0, errors.New("查询简历列表失败")
+	}
+
+	var resumeInfos []ResumeInfo
+	for _, resume := range resumes {
+		resumeInfo := ResumeInfo{
+			ID:               resume.ID,
+			ResumeNumber:     resume.ResumeNumber,
+			Version:          resume.Version,
+			Name:             resume.Name,
+			OriginalFilename: resume.OriginalFilename,
+			FileID:           resume.FileID,
+			Status:           resume.Status,
+			CreatedAt:        resume.CreatedAt,
+			UpdatedAt:        resume.UpdatedAt,
+		}
+		resumeInfos = append(resumeInfos, resumeInfo)
+	}
+
+	return resumeInfos, total, nil
+}
+
 // GetResumeByID 获取特定简历详情
 func (s *resumeService) GetResumeByID(userID, resumeID string) (*ResumeDetailInfo, error) {
 	var resume model.ResumeRecord
@@ -405,17 +449,21 @@ func (s *resumeService) generateResumeNumber(userID string) string {
 
 // GetAdminUserResumes 管理员查看用户简历
 func (s *resumeService) GetAdminUserResumes(userID string, page, pageSize string) ([]ResumeInfo, int64, error) {
-	// 检查用户是否存在
-	var user model.User
-	if err := global.DB.First(&user, "id = ?", userID).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, 0, errors.New("用户不存在")
+	if userID == "" {
+		// 检查用户是否存在
+		var user model.User
+		if err := global.DB.First(&user, "id = ?", userID).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return nil, 0, errors.New("用户不存在")
+			}
+			return nil, 0, errors.New("查询用户失败")
 		}
-		return nil, 0, errors.New("查询用户失败")
-	}
 
-	// 复用用户简历查询逻辑
-	return s.GetUserResumes(userID, page, pageSize)
+		// 复用用户简历查询逻辑
+		return s.GetUserResumes(userID, page, pageSize)
+	} else {
+		return s.GetResumes(page, pageSize)
+	}
 }
 
 // MigrateOldResumeData 迁移旧的简历数据

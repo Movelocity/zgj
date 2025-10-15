@@ -138,12 +138,12 @@ const ResumeDetail: React.FC = () => {
     return (
       <div className="space-y-4">
         {Object.entries(data).map(([key, value]) => (
-          <div key={key} className="border-l-4 border-blue-200 pl-4">
+          <div key={key} className="px-4">
             <h4 className="font-medium text-gray-900 capitalize mb-2">
               {key.replace(/_/g, ' ')}
             </h4>
             {typeof value === 'object' ? (
-              <pre className="text-sm text-gray-600 bg-gray-50 p-3 rounded-md overflow-auto">
+              <pre className="text-sm text-gray-600 bg-gray-100 p-3 rounded-md overflow-auto whitespace-pre-wrap">
                 {JSON.stringify(value, null, 2)}
               </pre>
             ) : (
@@ -303,31 +303,9 @@ const ResumeDetail: React.FC = () => {
 
           {/* 结构化数据 */}
           {resume.structured_data && (
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">结构化数据</h3>
-              {/* {editing ? (
-                <div>
-                  <textarea
-                    value={JSON.stringify(editForm.structured_data || {}, null, 2)}
-                    onChange={(e) => {
-                      try {
-                        const parsed = JSON.parse(e.target.value);
-                        setEditForm({ ...editForm, structured_data: parsed });
-                      } catch {
-                        // 忽略JSON解析错误，继续编辑
-                      }
-                    }}
-                    rows={10}
-                    className="w-full border border-gray-300 rounded-md p-3 focus:border-blue-600 focus:outline-none resize-vertical font-mono text-sm"
-                    placeholder="JSON格式的结构化数据..."
-                  />
-                  <p className="text-xs text-gray-500 mt-2">
-                    请输入有效的JSON格式数据
-                  </p>
-                </div>
-              ) : ( */}
-                {renderStructuredData(resume.structured_data)}
-              {/* )} */}
+            <div className="bg-white rounded-lg shadow-md py-6">
+              <h3 className="text-lg font-medium text-gray-900 mb-4 ml-4">结构化数据</h3>
+              {renderStructuredData(resume.structured_data)}
             </div>
           )}
 

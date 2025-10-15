@@ -25,7 +25,7 @@ func InitResumeRouter(privateGroup *gin.RouterGroup, publicGroup *gin.RouterGrou
 	AdminResumeRouter := adminGroup.Group("/api/admin")
 	{
 		// 管理员查看用户简历（在用户管理下）
-		AdminResumeRouter.GET("/user/:id/resumes", resume.GetAdminUserResumes) // 管理员查看用户简历
+		AdminResumeRouter.GET("/user/user-resumes", resume.GetAdminUserResumes) // 管理员查看用户简历
 	}
 
 	// 数据迁移

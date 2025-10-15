@@ -10,6 +10,7 @@ import (
 )
 
 // GetUserResumes 获取用户简历列表
+// GET /api/user/resumes
 func GetUserResumes(c *gin.Context) {
 	userID := c.GetString("userID")
 	page := c.DefaultQuery("page", "1")
@@ -35,6 +36,7 @@ func GetUserResumes(c *gin.Context) {
 }
 
 // GetResumeByID 获取特定简历详情
+// GET /api/user/resumes/:id
 func GetResumeByID(c *gin.Context) {
 	userID := c.GetString("userID")
 	resumeID := c.Param("id")
@@ -49,6 +51,7 @@ func GetResumeByID(c *gin.Context) {
 }
 
 // UpdateResume 更新简历信息
+// PUT /api/user/resumes/:id
 func UpdateResume(c *gin.Context) {
 	userID := c.GetString("userID")
 	resumeID := c.Param("id")
@@ -68,6 +71,7 @@ func UpdateResume(c *gin.Context) {
 }
 
 // DeleteResume 删除简历
+// DELETE /api/user/resumes/:id
 func DeleteResume(c *gin.Context) {
 	userID := c.GetString("userID")
 	resumeID := c.Param("id")
@@ -81,6 +85,7 @@ func DeleteResume(c *gin.Context) {
 }
 
 // UploadResume 上传简历（新版本，使用独立表）
+// POST /api/user/resumes/upload
 func UploadResume(c *gin.Context) {
 	userID := c.GetString("userID")
 
@@ -99,6 +104,7 @@ func UploadResume(c *gin.Context) {
 	utils.OkWithData(response, c)
 }
 
+// POST /api/user/resumes/file_to_text/:id
 func ResumeFileToText(c *gin.Context) {
 	userID := c.GetString("userID")
 	resumeID := c.Param("id")
@@ -111,6 +117,7 @@ func ResumeFileToText(c *gin.Context) {
 	utils.OkWithMessage("文本提取成功", c)
 }
 
+// POST /api/user/resumes/structure_data/:id
 func StructureTextToJSON(c *gin.Context) {
 	userID := c.GetString("userID")
 	resumeID := c.Param("id")
@@ -124,6 +131,7 @@ func StructureTextToJSON(c *gin.Context) {
 }
 
 // CreateTextResume 创建纯文本简历
+// POST /api/user/resumes/create_text
 func CreateTextResume(c *gin.Context) {
 	userID := c.GetString("userID")
 
@@ -147,8 +155,9 @@ func CreateTextResume(c *gin.Context) {
 }
 
 // GetAdminUserResumes 管理员查看用户简历
+// GET /api/admin/user-resumes?user_id=xx&page=1&page_size=10
 func GetAdminUserResumes(c *gin.Context) {
-	userID := c.Param("id")
+	userID := c.DefaultQuery("user_id", "")
 	page := c.DefaultQuery("page", "1")
 	pageSize := c.DefaultQuery("page_size", "10")
 
@@ -172,6 +181,7 @@ func GetAdminUserResumes(c *gin.Context) {
 }
 
 // MigrateResumeData 迁移简历数据（管理员功能）
+// POST /api/admin/migration/resume
 func MigrateResumeData(c *gin.Context) {
 	if err := resume.ResumeService.MigrateOldResumeData(); err != nil {
 		utils.FailWithMessage("数据迁移失败: "+err.Error(), c)
@@ -183,6 +193,7 @@ func MigrateResumeData(c *gin.Context) {
 
 // ReorganizeResumeVersions 重新整理简历版本（管理员功能）
 // 按文件哈希识别相同简历，按时间重新分配版本号
+// POST /api/admin/migration/reorganize-versions
 func ReorganizeResumeVersions(c *gin.Context) {
 	result, err := resume.ResumeService.ReorganizeResumeVersions()
 	if err != nil {

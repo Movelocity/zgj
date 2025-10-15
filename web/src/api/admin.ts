@@ -29,8 +29,8 @@ export const adminAPI = {
     return apiClient.post(`/api/admin/user/${userId}/deactivate`);
   },
 
-  getUserResumes: (userId: string, params?: PaginationParams): Promise<ApiResponse<PaginationResponse<any>>> => {
-    return apiClient.get(`/api/admin/user/${userId}/resumes`, { params });
+  getUserResumes: (params?: PaginationParams): Promise<ApiResponse<PaginationResponse<any>>> => {
+    return apiClient.get(`/api/admin/user-resumes`, { params });
   },
 
   // 角色权限管理

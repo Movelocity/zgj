@@ -71,7 +71,10 @@ export const resumeAPI = {
   },
 
   // 简历文本转JSON
-  structureTextToJSON: (id: string): Promise<ApiResponse> => {
-    return apiClient.post(`/api/user/resumes/structure_data/${id}`);
+  structureTextToJSON: (id: string, v1?: boolean): Promise<ApiResponse> => {
+    if (v1) {
+      return apiClient.post(`/api/user/resumes/structure_data/${id}`);
+    }
+    return apiClient.post(`/api/user/resumes/structure_data/v2/${id}`);
   },
 };

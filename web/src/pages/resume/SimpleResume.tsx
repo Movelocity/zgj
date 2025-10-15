@@ -47,7 +47,6 @@ const HistoryResumeSelector: React.FC<{
             <FiFolder className="w-5 h-5 mr-2 text-blue-600" />
             <h3 className="text-lg font-medium">选择已有简历</h3>
           </div>
-          <p className="text-gray-600">从历史上传的简历中选择一份进行优化</p>
         </div>
         
         <div className="space-y-3 max-h-60 overflow-y-auto">

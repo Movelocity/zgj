@@ -166,7 +166,7 @@ export default function ResumeDetails() {
       const updater = initProgressUpdater();
       updater.startStep(1);
 
-      const response = await resumeAPI.structureTextToJSON(resumeId);
+      const response = await resumeAPI.structureTextToJSON(resumeId, true); // 这是legacy页面，使用旧的结构化数据
       if (response.code === 0) {
         updater.completeCurrentStep();
         return { success: true, needsReload: true };

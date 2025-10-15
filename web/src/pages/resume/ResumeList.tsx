@@ -6,10 +6,8 @@ import { resumeAPI } from '@/api/resume';
 import { fileAPI } from '@/api/file';
 import type { ResumeInfo, ResumeUploadData, CreateTextResumeData } from '@/types/resume';
 import { showSuccess, showError, showWarning } from '@/utils/toast';
-import { useAuthStore } from '@/store';
-import { ADMIN_ROLE } from '@/utils/constants';
-
-
+// import { useAuthStore } from '@/store';
+// import { ADMIN_ROLE } from '@/utils/constants';
 
 // 分组后的简历数据结构
 interface GroupedResume {
@@ -34,7 +32,7 @@ const ResumeList: React.FC = () => {
   });
   // 管理展开的简历组
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
-  const isAdmin = useAuthStore((state) => state.user?.role === ADMIN_ROLE);
+  // const isAdmin = useAuthStore((state) => state.user?.role === ADMIN_ROLE);
 
   // 使用 useMemo 对简历进行分组整合
   const groupedResumes = useMemo(() => {
@@ -317,13 +315,11 @@ const ResumeList: React.FC = () => {
                           <td className="px-2 py-4 whitespace-nowrap">
                             <div className="flex items-center">
                               <FiFileText className="w-5 h-5 text-blue-600 mr-3 flex-shrink-0" />
-                              <div className="text-sm font-medium text-gray-900">
+                              <div 
+                                className="text-sm font-medium text-gray-900 hover:underline cursor-pointer" 
+                                onClick={() => {navigate(`/editor/v2/${resume.id}`)}}
+                              >
                                 {resume.name}
-                                {/* {group.hasHistory && (
-                                  <span className="ml-2 text-xs text-blue-500">
-                                    (共 {group.history.length + 1} 个版本)
-                                  </span>
-                                )} */}
                               </div>
                             </div>
                           </td>
@@ -338,7 +334,7 @@ const ResumeList: React.FC = () => {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                             <div className="flex items-center space-x-2">
-                              {isAdmin && (  // 管理员可以看到历史版本
+                              {/* {isAdmin && (  // 管理员可以看到历史版本
                                 <button
                                   onClick={() => {navigate(`/editor/${resume.id}`);}}
                                   className="text-green-600 hover:text-green-900 p-1 rounded cursor-pointer"
@@ -346,9 +342,9 @@ const ResumeList: React.FC = () => {
                                 >
                                   <FiEdit className="w-4 h-4" />
                                 </button>
-                              )}
+                              )} */}
                               <button
-                                onClick={() => {navigate(`/editor/v2/${resume.id}`);}}
+                                onClick={() => {navigate(`/editor/v2/${resume.id}`)}}
                                 className="text-blue-600 hover:text-blue-900 p-1 rounded cursor-pointer"
                                 title="编辑"
                               >
@@ -382,9 +378,11 @@ const ResumeList: React.FC = () => {
                             <td className="px-6 py-4 whitespace-nowrap">
                               <div className="flex items-center pl-4">
                                 {/* <FiFileText className="w-5 h-5 text-gray-400 mr-3 flex-shrink-0" /> */}
-                                <div className="text-sm font-medium text-gray-600">
+                                <div 
+                                  className="text-sm font-medium text-gray-600 hover:underline cursor-pointer" 
+                                  onClick={() => {navigate(`/editor/v2/${historyResume.id}`)}}
+                                >
                                   {historyResume.name}
-                                  {/* <span className="ml-2 text-xs text-gray-500">(历史版本)</span> */}
                                 </div>
                               </div>
                             </td>
@@ -399,7 +397,7 @@ const ResumeList: React.FC = () => {
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                               <div className="flex items-center space-x-2">
-                                {isAdmin && ( // 管理员可以看到历史版本
+                                {/* {isAdmin && ( // 管理员可以看到历史版本
                                   <button
                                     onClick={() => {navigate(`/editor/${historyResume.id}`);}}
                                     className="text-green-600 hover:text-green-900 p-1 rounded cursor-pointer"
@@ -407,7 +405,7 @@ const ResumeList: React.FC = () => {
                                   >
                                     <FiEdit className="w-4 h-4" />
                                   </button>
-                                )}
+                                )} */}
                               
                                 <button
                                   onClick={() => {navigate(`/editor/v2/${resume.id}`);}}
