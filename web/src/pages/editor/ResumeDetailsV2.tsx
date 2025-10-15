@@ -236,16 +236,9 @@ export default function ResumeDetailsV2() {
         if (structuredResumeData && typeof structuredResumeData === 'string') {
           const finalResumeData = parseAndFixResumeJson(structuredResumeData as string);
           
-          // 确保格式化后的数据所有列表项都有唯一ID
-          const finalProcessedData = {
-            ...finalResumeData,
-            blocks: {
-              ...finalResumeData.blocks,
-            }
-          };
-          
+          // parseAndFixResumeJson 已经确保了数据的有效性，直接使用
           // 更新到newResumeData而不是直接更新resumeData
-          setNewResumeData(finalProcessedData);
+          setNewResumeData(finalResumeData);
           
           // 原始数据保持不变
           setResumeData(processedData);

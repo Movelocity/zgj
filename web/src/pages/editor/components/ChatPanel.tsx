@@ -6,7 +6,7 @@ import { FiMessageSquare, FiFileText } from 'react-icons/fi';
 import type { ResumeData } from '@/types/resume';
 import type { ResumeV2Data } from '@/types/resumeV2';
 import { workflowAPI } from '@/api/workflow';
-import { smartJsonParser } from '@/utils/helpers';
+import { parseAndFixResumeJson } from '@/utils/helpers';
 
 interface Message {
   id: string;
@@ -320,7 +320,8 @@ export default function ChatPanel({
       console.log('structuredResumeData', structuredResumeData);
 
       if (structuredResumeData && typeof structuredResumeData === 'string') {
-        const finalResumeData = smartJsonParser<ResumeData>(structuredResumeData as string);
+        // 使用 parseAndFixResumeJson 确保数据安全性和格式正确性
+        const finalResumeData = parseAndFixResumeJson(structuredResumeData as string);
         onResumeDataChange(finalResumeData);
       }
     } catch (error) {

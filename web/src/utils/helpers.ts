@@ -98,6 +98,7 @@ export const smartJsonParser = <T>(json: string): T => {
  * - full_name -> name
  * - block.name -> block.title
  * - 其他常见的字段映射错误
+ * - 确保 list 类型的每个项都有唯一 ID
  */
 export const fixResumeBlockFormat = (blocks: any[]): any[] => {
   if (!Array.isArray(blocks)) return blocks;
@@ -111,8 +112,8 @@ export const fixResumeBlockFormat = (blocks: any[]): any[] => {
     };
 
     // 如果是 object 类型（个人信息），需要修正内部字段
-    if (fixedBlock.type === 'object' && typeof block === 'object') {
-      const personalInfo: any = {};
+    if (fixedBlock.type === 'object' && typeof block.data === 'object' && !Array.isArray(block.data)) {
+      const personalInfo: any = block.data || {};
       
       // 字段映射规则
       const fieldMapping: Record<string, string> = {
@@ -120,34 +121,56 @@ export const fixResumeBlockFormat = (blocks: any[]): any[] => {
         'birth_date': 'birth_date', // 保留但可能不在标准字段中
       };
 
-      // 处理所有字段
-      Object.keys(block).forEach(key => {
-        if (key === 'type' || key === 'name') return; // 跳过块级字段
-        
+      // 处理字段映射
+      const mappedInfo: any = {};
+      Object.keys(personalInfo).forEach(key => {
         const mappedKey = fieldMapping[key] || key;
         
         // 只保留个人信息相关字段
         if (['name', 'email', 'phone', 'location', 'title', 'photo', 'birth_date'].includes(mappedKey)) {
-          personalInfo[mappedKey] = block[key];
+          mappedInfo[mappedKey] = personalInfo[key];
         }
       });
 
       // 确保必要字段存在
       fixedBlock.data = {
-        name: personalInfo.name || personalInfo.full_name || '',
-        email: personalInfo.email || '',
-        phone: personalInfo.phone || '',
-        location: personalInfo.location || '',
-        title: personalInfo.title || '',
-        photo: personalInfo.photo || '',
-        ...personalInfo
+        name: mappedInfo.name || mappedInfo.full_name || '',
+        email: mappedInfo.email || '',
+        phone: mappedInfo.phone || '',
+        location: mappedInfo.location || '',
+        title: mappedInfo.title || '',
+        photo: mappedInfo.photo || '',
+        ...mappedInfo
       };
-    } else if (fixedBlock.type === 'list' && !Array.isArray(fixedBlock.data)) {
-      // 如果标记为 list 但 data 不是数组，尝试修正
-      fixedBlock.data = [];
+    } else if (fixedBlock.type === 'list') {
+      // 确保是数组
+      if (!Array.isArray(fixedBlock.data)) {
+        fixedBlock.data = [];
+      } else {
+        // 确保每个列表项都有必要的字段和唯一ID
+        fixedBlock.data = fixedBlock.data.map((item: any, index: number) => {
+          if (!item || typeof item !== 'object') {
+            return {
+              id: `item-${Date.now()}-${index}`,
+              name: '',
+              description: '',
+              time: '',
+              highlight: ''
+            };
+          }
+          
+          return {
+            id: item.id || `item-${Date.now()}-${index}`,
+            name: item.name || '',
+            description: item.description || '',
+            time: item.time || '',
+            highlight: item.highlight || ''
+          };
+        });
+      }
     } else if (fixedBlock.type === 'text' && typeof fixedBlock.data !== 'string') {
       // 如果标记为 text 但 data 不是字符串，尝试修正
-      fixedBlock.data = '';
+      fixedBlock.data = String(fixedBlock.data || '');
     }
 
     return fixedBlock;
@@ -157,6 +180,7 @@ export const fixResumeBlockFormat = (blocks: any[]): any[] => {
 /**
  * 智能解析并修正 JSON 格式
  * 结合 smartJsonParser 和 fixResumeBlockFormat，自动处理异常格式
+ * 确保返回的数据总是有效的 ResumeV2Data 格式
  */
 export const parseAndFixResumeJson = (json: string): any => {
   try {
@@ -164,20 +188,66 @@ export const parseAndFixResumeJson = (json: string): any => {
     
     // 如果包含 blocks 字段，进行格式修正
     if (parsed.blocks && Array.isArray(parsed.blocks)) {
+      const fixedBlocks = fixResumeBlockFormat(parsed.blocks);
+      
+      // 确保每个 block 都有必要的字段
+      const validatedBlocks = fixedBlocks.map((block: any) => {
+        if (!block || typeof block !== 'object') {
+          return { title: '', type: 'text', data: '' };
+        }
+        
+        // 确保有 type 字段
+        if (!block.type || !['list', 'text', 'object'].includes(block.type)) {
+          block.type = 'text';
+        }
+        
+        // 确保 data 字段与 type 匹配
+        if (block.type === 'list' && !Array.isArray(block.data)) {
+          block.data = [];
+        } else if (block.type === 'text' && typeof block.data !== 'string') {
+          block.data = String(block.data || '');
+        } else if (block.type === 'object' && (typeof block.data !== 'object' || Array.isArray(block.data))) {
+          block.data = {
+            name: '',
+            email: '',
+            phone: '',
+            location: '',
+            title: '',
+            photo: ''
+          };
+        }
+        
+        return block;
+      });
+      
       return {
-        ...parsed,
-        blocks: fixResumeBlockFormat(parsed.blocks)
+        version: parsed.version || 2,
+        portrait_img: parsed.portrait_img || '',
+        blocks: validatedBlocks
       };
     }
     
     // 如果本身就是 blocks 数组
     if (Array.isArray(parsed)) {
-      return fixResumeBlockFormat(parsed);
+      const fixedBlocks = fixResumeBlockFormat(parsed);
+      return {
+        version: 2,
+        blocks: fixedBlocks
+      };
     }
     
-    return parsed;
+    // 如果既没有 blocks 也不是数组，返回默认结构
+    console.warn('Unexpected JSON format, returning default structure');
+    return {
+      version: 2,
+      blocks: []
+    };
   } catch (error) {
     console.error('Failed to parse and fix JSON:', error);
-    throw error;
+    // 返回安全的默认值，而不是抛出错误
+    return {
+      version: 2,
+      blocks: []
+    };
   }
 }

@@ -126,6 +126,12 @@ export default function ResumeEditorV2({
     
     const block = newResumeData.blocks[blockIndex];
     
+    // 安全检查：确保 block 存在且是有效对象
+    if (!block || typeof block !== 'object') {
+      console.warn(`Block at index ${blockIndex} is invalid:`, block);
+      return '';
+    }
+    
     // 优先处理 object 类型的字段（包括 title）
     if (isObjectBlock(block) && field) {
       // 对于 object 类型，所有字段（包括 title）都是 data 内的字段
