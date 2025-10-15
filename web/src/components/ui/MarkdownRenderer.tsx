@@ -7,6 +7,77 @@ interface MarkdownRendererProps {
 }
 
 /**
+ * 处理包含 [[xxx]] 格式的文本，将其转换为按钮
+ */
+const processTextWithButtons = (text: string | React.ReactNode): React.ReactNode => {
+  if (typeof text !== 'string') {
+    return text;
+  }
+
+  const parts: React.ReactNode[] = [];
+  const regex = /\[\[([^\]]+)\]\]/g;
+  let lastIndex = 0;
+  let match;
+
+  while ((match = regex.exec(text)) !== null) {
+    // 添加匹配前的文本
+    if (match.index > lastIndex) {
+      parts.push(text.slice(lastIndex, match.index));
+    }
+
+    // 添加按钮
+    const buttonText = match[1];
+    parts.push(
+      <button
+        key={match.index}
+        className="inline-flex items-center px-2 py-0.5 mx-0.5 text-xs font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-md hover:bg-blue-100 hover:border-blue-300 transition-colors cursor-pointer"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          // 触发自定义事件
+          const event = new CustomEvent('markdown-button-click', {
+            detail: { text: buttonText },
+            bubbles: true,
+          });
+          window.dispatchEvent(event);
+        }}
+      >
+        {buttonText}
+      </button>
+    );
+
+    lastIndex = regex.lastIndex;
+  }
+
+  // 添加最后剩余的文本
+  if (lastIndex < text.length) {
+    parts.push(text.slice(lastIndex));
+  }
+
+  return parts.length > 0 ? parts : text;
+};
+
+/**
+ * 递归处理 children，查找字符串并转换 [[xxx]] 为按钮
+ */
+const processChildren = (children: React.ReactNode): React.ReactNode => {
+  if (typeof children === 'string') {
+    return processTextWithButtons(children);
+  }
+
+  if (Array.isArray(children)) {
+    return children.map((child, index) => {
+      if (typeof child === 'string') {
+        return <span key={index}>{processTextWithButtons(child)}</span>;
+      }
+      return child;
+    });
+  }
+
+  return children;
+};
+
+/**
  * Markdown渲染器组件
  * 用于渲染AI回复消息中的markdown内容，并确保内容不超出容器宽度
  */
@@ -17,7 +88,9 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
         components={{
           // 段落样式
           p: ({ children, ...props }) => (
-            <p className="mb-2 last:mb-0 leading-relaxed break-words" {...props}>{children}</p>
+            <p className="mb-2 last:mb-0 leading-relaxed break-words" {...props}>
+              {processChildren(children)}
+            </p>
           ),
           // 标题样式
           h1: ({ children, ...props }) => (
@@ -37,7 +110,9 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
             <ol className="list-decimal list-inside mb-2 space-y-1 break-words" {...props}>{children}</ol>
           ),
           li: ({ children, ...props }) => (
-            <li className="break-words" {...props}>{children}</li>
+            <li className="break-words" {...props}>
+              {processChildren(children)}
+            </li>
           ),
           // 代码块样式
           code: (props) => {

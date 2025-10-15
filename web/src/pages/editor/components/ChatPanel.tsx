@@ -6,7 +6,7 @@ import { FiMessageSquare, FiFileText } from 'react-icons/fi';
 import type { ResumeData } from '@/types/resume';
 import type { ResumeV2Data } from '@/types/resumeV2';
 import { workflowAPI } from '@/api/workflow';
-import { parseResumeSummary, smartJsonParser } from '@/utils/helpers';
+import { smartJsonParser } from '@/utils/helpers';
 
 interface Message {
   id: string;
@@ -66,6 +66,20 @@ export default function ChatPanel({
   useEffect(() => {
     onMessagesChange?.(messages);
   }, [messages, onMessagesChange]);
+
+  // 监听 markdown 按钮点击事件
+  useEffect(() => {
+    const handleMarkdownButtonClick = (event: CustomEvent<{ text: string }>) => {
+      const text = event.detail.text;
+      setInputValue(text);
+    };
+
+    window.addEventListener('markdown-button-click' as any, handleMarkdownButtonClick);
+
+    return () => {
+      window.removeEventListener('markdown-button-click' as any, handleMarkdownButtonClick);
+    };
+  }, []);
   
   useEffect(() => {
     if (scrollRef.current) {
@@ -268,6 +282,7 @@ export default function ChatPanel({
           onMessage: onMessage,
           onError: onError,
         });
+        postProcess(aiResponse.content);
       }
     } catch (error: any) {
       console.error('Execution error:', error);
@@ -282,18 +297,21 @@ export default function ChatPanel({
   const postProcess = async (content: string): Promise<void> => {
     try{
       setIsFormatting(true);
-      if (scrollRef.current) {
-        scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-      }
+      setTimeout(() => {
+        // 滚动到底部
+        if (scrollRef.current) {
+          scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+        }
+      }, 100);
       console.log("开始解析格式化简历...")
       // 1. 创建原有简历摘要，自由基本信息和id
-      const lightResume = parseResumeSummary(resumeData as ResumeData);
+      // const lightResume = parseResumeSummary(resumeData as ResumeData);
       // 2. 调用阻塞式api，得到结构化的简历内容
       const uploadData = {
-        current_resume: JSON.stringify(lightResume),
-        new_resume: content
+        current_resume: JSON.stringify(resumeData),
+        resume_edit: content
       }
-      const structuredResumeResult = await workflowAPI.executeWorkflow("smart-format", uploadData, true);
+      const structuredResumeResult = await workflowAPI.executeWorkflow("smart-format-2", uploadData, true);
       if (structuredResumeResult.code !== 0) {
         console.error('Execution error:', structuredResumeResult.data.message);
         return;
@@ -427,20 +445,6 @@ export default function ChatPanel({
                   </div>
                 </div>
                 
-                {/* 处理步骤指示器 */}
-                {/* <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <div className="flex space-x-1">
-                      <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-bounce"></div>
-                      <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
-                      <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
-                    </div>
-                    <span className="text-xs text-blue-600 ml-2">解析中</span>
-                  </div>
-                  <div className="text-xs text-blue-400">
-                    <Sparkles className="w-3 h-3 inline animate-spin" />
-                  </div>
-                </div> */}
               </div>
             </div>
           )}
@@ -496,21 +500,26 @@ export default function ChatPanel({
       </div>
 
       <div className="px-4 py-2 border-t border-gray-200">
-        <div className="flex gap-1 items-end">
+        <div className="flex gap-2 items-end">
           <textarea
-            // type="text"
+            rows={1}
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleSendMessage();
+              }
+            }}
             placeholder="输入您的问题或需求..."
-            // onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
-            className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="flex-1 px-3 py-2 bg-gray-50 rounded-lg focus:outline-none focus:bg-gray-100 transition-colors resize-none border border-gray-300 text-sm"
           />
           <button 
             onClick={() => handleSendMessage()}
             disabled={!inputValue.trim() || isTyping || isResponding}
-            className="m-0.5 px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer max-h-10"
+            className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
           >
-            <Send className="w-4 h-4" />
+            <Send className="w-4 h-6" />
           </button>
         </div>
         
