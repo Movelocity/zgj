@@ -118,6 +118,78 @@ export default function ResumeEditorV2({
     setEditingField(null);
   };
 
+  // Get new value from newResumeData
+  const getNewValue = (blockIndex: number, itemId?: string, field?: string): string => {
+    if (blockIndex < 0 || blockIndex >= newResumeData.blocks.length) return '';
+    
+    const block = newResumeData.blocks[blockIndex];
+    
+    if (field === 'title') {
+      return block.title || '';
+    } else if (isTextBlock(block)) {
+      return block.data || '';
+    } else if (isListBlock(block) && itemId && field) {
+      const item = block.data.find(item => item.id === itemId);
+      return item ? (item as any)[field] || '' : '';
+    } else if (isObjectBlock(block) && field) {
+      return (block.data as any)[field] || '';
+    }
+    
+    return '';
+  };
+
+  // Accept update - copy from newResumeData to resumeData
+  const acceptUpdate = (blockIndex: number, itemId?: string, field?: string) => {
+    const newData = { ...resumeData };
+    
+    if (blockIndex < 0 || blockIndex >= newData.blocks.length) return;
+    
+    const block = newData.blocks[blockIndex];
+    const newBlock = newResumeData.blocks[blockIndex];
+    
+    if (field === 'title') {
+      block.title = newBlock.title;
+    } else if (isTextBlock(block) && isTextBlock(newBlock)) {
+      block.data = newBlock.data;
+    } else if (isListBlock(block) && isListBlock(newBlock) && itemId && field) {
+      const item = block.data.find(item => item.id === itemId);
+      const newItem = newBlock.data.find(item => item.id === itemId);
+      if (item && newItem) {
+        (item as any)[field] = (newItem as any)[field];
+      }
+    } else if (isObjectBlock(block) && isObjectBlock(newBlock) && field) {
+      (block.data as any)[field] = (newBlock.data as any)[field];
+    }
+    
+    onResumeDataChange(newData);
+  };
+
+  // Clear new value - reset newResumeData to match resumeData
+  const clearNewValue = (blockIndex: number, itemId?: string, field?: string) => {
+    const newData = { ...newResumeData };
+    
+    if (blockIndex < 0 || blockIndex >= newData.blocks.length) return;
+    
+    const block = newData.blocks[blockIndex];
+    const originalBlock = resumeData.blocks[blockIndex];
+    
+    if (field === 'title') {
+      block.title = originalBlock.title;
+    } else if (isTextBlock(block) && isTextBlock(originalBlock)) {
+      block.data = originalBlock.data;
+    } else if (isListBlock(block) && isListBlock(originalBlock) && itemId && field) {
+      const item = block.data.find(item => item.id === itemId);
+      const originalItem = originalBlock.data.find(item => item.id === itemId);
+      if (item && originalItem) {
+        (item as any)[field] = (originalItem as any)[field];
+      }
+    } else if (isObjectBlock(block) && isObjectBlock(originalBlock) && field) {
+      (block.data as any)[field] = (originalBlock.data as any)[field];
+    }
+    
+    onNewResumeDataChange(newData);
+  };
+
   // Update block
   const updateBlock = (blockIndex: number, updatedBlock: ResumeBlock) => {
     const newData = { ...resumeData };
@@ -207,28 +279,69 @@ export default function ResumeEditorV2({
   //   updateBlock(blockIndex, newBlock);
   // };
 
-  // Render editable field
-  const renderEditableField = (
-    fieldId: string,
-    value: string,
-    placeholder: string,
-    multiline: boolean = false
-  ) => {
-    const isEditing = editingField === fieldId;
-
-    if (isEditing) {
+  // EditableText component with AI optimization support
+  const EditableText = ({ 
+    fieldId, 
+    value, 
+    multiline = false,
+    placeholder = '点击编辑',
+    className = '',
+    blockIndex,
+    itemId,
+    field
+  }: { 
+    fieldId: string; 
+    value: string; 
+    multiline?: boolean;
+    placeholder?: string;
+    className?: string;
+    blockIndex?: number;
+    itemId?: string;
+    field?: string;
+  }) => {
+    const isCurrentlyEditing = editingField === fieldId;
+    const inputRef = useRef<HTMLInputElement>(null);
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
+    
+    // Get new content from newResumeData
+    const newValue = blockIndex !== undefined ? getNewValue(blockIndex, itemId, field) : '';
+    const hasNewContent = newValue && newValue !== value;
+    
+    // State: showing original or new content
+    const [showingOriginal, setShowingOriginal] = useState(false);
+    
+    // Current display value
+    const currentDisplayValue = hasNewContent ? (showingOriginal ? value : newValue) : value;
+    
+    // Accept update
+    const handleAcceptUpdate = () => {
+      if (blockIndex !== undefined) {
+        acceptUpdate(blockIndex, itemId, field);
+        clearNewValue(blockIndex, itemId, field);
+      }
+    };
+    
+    // Reject update
+    const handleRejectUpdate = () => {
+      if (blockIndex !== undefined) {
+        clearNewValue(blockIndex, itemId, field);
+      }
+    };
+    
+    // Editing mode
+    if (isCurrentlyEditing) {
       return (
         <div className="flex items-start relative">
           {multiline ? (
             <textarea
-              id={`edit-${fieldId}`}
+              ref={textareaRef}
               defaultValue={editingValueRef.current}
               className="flex-1 min-h-20 p-2 resize-none outline-none bg-gray-100 rounded"
               autoFocus
             />
           ) : (
             <input
-              id={`edit-${fieldId}`}
+              ref={inputRef}
               defaultValue={editingValueRef.current}
               className="flex-1 h-8 px-2 focus:outline-none outline-none bg-gray-100 rounded"
               autoFocus
@@ -240,7 +353,7 @@ export default function ResumeEditorV2({
               variant="none"
               className="bg-green-100 hover:bg-green-200 rounded text-green-700"
               onClick={() => {
-                const element = document.getElementById(`edit-${fieldId}`) as HTMLInputElement | HTMLTextAreaElement;
+                const element = multiline ? textareaRef.current : inputRef.current;
                 if (element) saveEdit(fieldId, element);
               }}
             >
@@ -259,14 +372,81 @@ export default function ResumeEditorV2({
       );
     }
 
-    const content = value || placeholder;
+    const content = currentDisplayValue || placeholder;
     const baseClasses = multiline ? 'min-h-[2rem] block' : 'min-h-[1.5rem] inline-block';
-
+    
+    // Display with new content (AI optimized)
+    if (hasNewContent) {
+      return (
+        <div className="relative group">
+          <span 
+            className={cn(
+              'cursor-pointer hover:bg-gray-100 px-1 py-0.5 rounded transition-colors relative',
+              baseClasses, 
+              className, 
+              !currentDisplayValue ? 'text-gray-400 italic' : '',
+              'bg-yellow-50 border border-yellow-200 hover:bg-yellow-100/80'
+            )}
+            onClick={() => startEditing(fieldId, currentDisplayValue)}
+          >
+            {content}
+          </span>
+          
+          {/* Action buttons */}
+          <div className="absolute top-full right-0 bg-white border border-gray-200 rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-20 flex items-center p-1 gap-1 mt-1">
+            {/* Toggle button */}
+            <Button
+              variant="none"
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowingOriginal(!showingOriginal);
+              }}
+              size="xs2"
+              className="bg-gray-100 hover:bg-gray-200 rounded text-gray-700"
+              title={showingOriginal ? "查看AI优化版本" : "查看原始版本"}
+            >
+              {showingOriginal ? "查看新版" : "查看原版"}
+            </Button>
+            
+            {/* Accept button */}
+            <Button
+              variant="none"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleAcceptUpdate();
+              }}
+              size="xs2"
+              className="bg-green-100 hover:bg-green-200 rounded text-green-700"
+              title="接收AI优化版本"
+            >
+              接收
+            </Button>
+            
+            {/* Reject button */}
+            <Button
+              variant="none"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleRejectUpdate();
+              }}
+              size="xs2"
+              className="bg-red-100 hover:bg-red-200 rounded text-red-700 transition-colors"
+              title="保留原版本"
+            >
+              拒绝
+            </Button>
+          </div>
+        </div>
+      );
+    }
+    
+    // Normal display without new content
     return (
       <span 
         className={cn(
           'cursor-pointer hover:bg-gray-100 px-1 py-0.5 rounded transition-colors',
-          baseClasses,
+          baseClasses, 
+          className, 
           !value ? 'text-gray-400 italic' : ''
         )}
         onClick={() => startEditing(fieldId, value)}
@@ -321,38 +501,47 @@ export default function ResumeEditorV2({
             <div className="flex justify-between items-start">
               <div className="flex-1">
                 <h4 className="text-gray-800 font-medium">
-                  {renderEditableField(
-                    `block${blockIndex}-${item.id}-name`,
-                    item.name,
-                    '如：XX大学、XX公司',
-                    false
-                  )}
+                  <EditableText
+                    fieldId={`block${blockIndex}-${item.id}-name`}
+                    value={item.name}
+                    placeholder="如：XX大学、XX公司"
+                    blockIndex={blockIndex}
+                    itemId={item.id}
+                    field="name"
+                  />
                 </h4>
                 <p className="text-blue-600 text-sm">
-                  {renderEditableField(
-                    `block${blockIndex}-${item.id}-highlight`,
-                    item.highlight,
-                    '亮点/专业/职位',
-                    false
-                  )}
+                  <EditableText
+                    fieldId={`block${blockIndex}-${item.id}-highlight`}
+                    value={item.highlight}
+                    placeholder="亮点/专业/职位"
+                    blockIndex={blockIndex}
+                    itemId={item.id}
+                    field="highlight"
+                  />
                 </p>
               </div>
               <span className="text-gray-500 text-sm ml-4">
-                {renderEditableField(
-                  `block${blockIndex}-${item.id}-time`,
-                  item.time,
-                  '时间',
-                  false
-                )}
+                <EditableText
+                  fieldId={`block${blockIndex}-${item.id}-time`}
+                  value={item.time}
+                  placeholder="时间"
+                  blockIndex={blockIndex}
+                  itemId={item.id}
+                  field="time"
+                />
               </span>
             </div>
             <div className="text-gray-700 text-sm leading-relaxed whitespace-pre-line mt-1">
-              {renderEditableField(
-                `block${blockIndex}-${item.id}-description`,
-                item.description,
-                '点击添加详细描述...',
-                true
-              )}
+              <EditableText
+                fieldId={`block${blockIndex}-${item.id}-description`}
+                value={item.description}
+                placeholder="点击添加详细描述..."
+                multiline={true}
+                blockIndex={blockIndex}
+                itemId={item.id}
+                field="description"
+              />
             </div>
           </div>
         ))}
@@ -383,12 +572,14 @@ export default function ResumeEditorV2({
   const renderTextBlock = (block: ResumeBlock & { data: string }, blockIndex: number) => {
     return (
       <div className="text-gray-700 leading-relaxed ml-4">
-        {renderEditableField(
-          `block${blockIndex}--data`,
-          block.data,
-          '点击添加文本内容...',
-          true
-        )}
+        <EditableText
+          fieldId={`block${blockIndex}--data`}
+          value={block.data}
+          placeholder="点击添加文本内容..."
+          multiline={true}
+          blockIndex={blockIndex}
+          field="data"
+        />
       </div>
     );
   };
@@ -405,48 +596,53 @@ export default function ResumeEditorV2({
           {/* Left side - Personal Info */}
           <div className="flex-1">
             <h1 className="text-3xl text-gray-800 mb-2">
-              {renderEditableField(
-                `block${blockIndex}--name`,
-                name,
-                '点击输入姓名',
-                false
-              )}
+              <EditableText
+                fieldId={`block${blockIndex}--name`}
+                value={name}
+                placeholder="点击输入姓名"
+                blockIndex={blockIndex}
+                field="name"
+              />
             </h1>
             <h2 className="text-xl text-blue-600 mb-4">
-              {renderEditableField(
-                `block${blockIndex}--title`,
-                block.data.title || '',
-                '点击输入职位',
-                false
-              )}
+              <EditableText
+                fieldId={`block${blockIndex}--title`}
+                value={block.data.title || ''}
+                placeholder="点击输入职位"
+                blockIndex={blockIndex}
+                field="title"
+              />
             </h2>
             <div className="flex flex-wrap gap-4 text-gray-600">
               <div className="flex items-center">
                 <Mail className="w-4 h-4 mr-2" />
-                {renderEditableField(
-                  `block${blockIndex}--email`,
-                  email,
-                  '点击输入邮箱',
-                  false
-                )}
+                <EditableText
+                  fieldId={`block${blockIndex}--email`}
+                  value={email}
+                  placeholder="点击输入邮箱"
+                  blockIndex={blockIndex}
+                  field="email"
+                />
               </div>
               <div className="flex items-center">
                 <Phone className="w-4 h-4 mr-2" />
-                {renderEditableField(
-                  `block${blockIndex}--phone`,
-                  phone,
-                  '点击输入电话',
-                  false
-                )}
+                <EditableText
+                  fieldId={`block${blockIndex}--phone`}
+                  value={phone}
+                  placeholder="点击输入电话"
+                  blockIndex={blockIndex}
+                  field="phone"
+                />
               </div>
               <div className="flex items-center">
                 <MapPin className="w-4 h-4 mr-2" />
-                {renderEditableField(
-                  `block${blockIndex}--location`,
-                  location,
-                  '点击输入地址',
-                  false
-                )}
+                <EditableText
+                  fieldId={`block${blockIndex}--location`}
+                  value={location}
+                  placeholder="点击输入地址"
+                  blockIndex={blockIndex}
+                  field="location"
+                />
               </div>
             </div>
           </div>
@@ -507,12 +703,13 @@ export default function ResumeEditorV2({
                 {/* Block Header with left border */}
                 <div className="relative mb-2">
                   <h3 className="text-lg text-gray-800 border-l-4 border-blue-600 pl-3 inline-block">
-                    {renderEditableField(
-                      `block${originalIndex}--title`,
-                      block.title,
-                      '板块标题',
-                      false
-                    )}
+                    <EditableText
+                      fieldId={`block${originalIndex}--title`}
+                      value={block.title}
+                      placeholder="板块标题"
+                      blockIndex={originalIndex}
+                      field="title"
+                    />
                   </h3>
                   
                   {/* Block Actions - Left side on hover */}
