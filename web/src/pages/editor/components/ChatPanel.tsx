@@ -489,7 +489,7 @@ export default function ChatPanel({
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             placeholder="输入您的问题或需求..."
-            onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+            // onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
             className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           <button 

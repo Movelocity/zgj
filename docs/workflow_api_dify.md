@@ -1,4 +1,4 @@
-curl -X POST 'http://112.74.74.13:30090/v1/chat-messages' \
+curl -X POST '{domain of dify service}/v1/chat-messages' \
 --header 'Authorization: Bearer {api_key}' \
 --header 'Content-Type: application/json' \
 --data-raw '{

@@ -16,7 +16,7 @@ export function isV1Format(data: any): data is ResumeData {
     !('version' in data) &&
     'personalInfo' in data &&
     'summary' in data &&
-    'workExperience' in data &&
+    // 'workExperience' in data &&
     'education' in data &&
     'skills' in data &&
     'projects' in data

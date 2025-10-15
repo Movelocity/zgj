@@ -9,6 +9,7 @@ import (
 )
 
 // GetConversations 获取对话列表
+// GET /api/conversation
 func GetConversations(c *gin.Context) {
 	userID := c.GetString("userID")
 
@@ -23,6 +24,7 @@ func GetConversations(c *gin.Context) {
 }
 
 // GetConversation 获取特定对话
+// GET /api/conversation/:id
 func GetConversation(c *gin.Context) {
 	conversationID := c.Param("id")
 	userID := c.GetString("userID")
@@ -38,6 +40,7 @@ func GetConversation(c *gin.Context) {
 }
 
 // CreateConversation 创建对话
+// POST /api/conversation
 func CreateConversation(c *gin.Context) {
 	userID := c.GetString("userID")
 	var req appService.CreateConversationRequest
@@ -57,6 +60,7 @@ func CreateConversation(c *gin.Context) {
 }
 
 // UpdateConversation 更新对话
+// PUT /api/conversation/:id
 func UpdateConversation(c *gin.Context) {
 	conversationID := c.Param("id")
 	userID := c.GetString("userID")
@@ -76,6 +80,7 @@ func UpdateConversation(c *gin.Context) {
 }
 
 // DeleteConversation 删除对话
+// DELETE /api/conversation/:id
 func DeleteConversation(c *gin.Context) {
 	conversationID := c.Param("id")
 	userID := c.GetString("userID")
@@ -90,6 +95,7 @@ func DeleteConversation(c *gin.Context) {
 }
 
 // GetWorkflows 获取工作流列表
+// GET /api/workflow
 func GetWorkflows(c *gin.Context) {
 	userID := c.GetString("userID")
 
@@ -104,6 +110,7 @@ func GetWorkflows(c *gin.Context) {
 }
 
 // GetWorkflow 获取特定工作流
+// GET /api/workflow/:id
 func GetWorkflow(c *gin.Context) {
 	workflowID := c.Param("id")
 	userID := c.GetString("userID")
@@ -119,6 +126,7 @@ func GetWorkflow(c *gin.Context) {
 }
 
 // CreateWorkflow 创建工作流
+// POST /api/workflow
 func CreateWorkflow(c *gin.Context) {
 	userID := c.GetString("userID")
 	var req appService.CreateWorkflowRequest
@@ -138,6 +146,7 @@ func CreateWorkflow(c *gin.Context) {
 }
 
 // DeleteWorkflow 删除工作流
+// DELETE /api/workflow/:id
 func DeleteWorkflow(c *gin.Context) {
 	workflowID := c.Param("id")
 	userID := c.GetString("userID")
@@ -151,6 +160,8 @@ func DeleteWorkflow(c *gin.Context) {
 	utils.OkWithMessage("删除成功", c)
 }
 
+// 可以指定 block 或 streaming 响应方式
+// POST /api/workflow/v2/:name/execute
 func ExecuteWorkflowByName(c *gin.Context) {
 	workflowName := c.Param("name")
 	userID := c.GetString("userID")
@@ -177,6 +188,7 @@ func ExecuteWorkflowByName(c *gin.Context) {
 }
 
 // ExecuteWorkflow 执行工作流
+// POST /api/workflow/v1/:id/execute
 func ExecuteWorkflow(c *gin.Context) {
 	workflowID := c.Param("id")
 	userID := c.GetString("userID") // 从中间件设置的上下文参数中获取用户ID
@@ -209,6 +221,7 @@ func ExecuteWorkflow(c *gin.Context) {
 }
 
 // GetAllWorkflows 获取所有工作流（管理员）
+// GET /api/workflow/all
 func GetAllWorkflows(c *gin.Context) {
 	// 调用服务层
 	workflows, err := service.AppService.GetAllWorkflows()
@@ -221,7 +234,8 @@ func GetAllWorkflows(c *gin.Context) {
 }
 
 // AdminUpdateWorkflow 管理员更新工作流
-func AdminUpdateWorkflow(c *gin.Context) {
+// PUT /api/workflow/:id
+func UpdateWorkflow(c *gin.Context) {
 	workflowID := c.Param("id")
 	var req appService.UpdateWorkflowRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -230,7 +244,7 @@ func AdminUpdateWorkflow(c *gin.Context) {
 	}
 
 	// 调用服务层
-	if err := service.AppService.AdminUpdateWorkflow(workflowID, req); err != nil {
+	if err := service.AppService.UpdateWorkflow(workflowID, req); err != nil {
 		utils.FailWithMessage(err.Error(), c)
 		return
 	}

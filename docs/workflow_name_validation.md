@@ -114,7 +114,7 @@ func (s *appService) UpdateWorkflow(workflowID, userID string, req UpdateWorkflo
 }
 ```
 
-#### AdminUpdateWorkflow 服务修改
+#### UpdateWorkflow 服务修改
 
 管理员更新工作流的逻辑与普通用户更新相同，同样需要遵循名称唯一性规则。
 

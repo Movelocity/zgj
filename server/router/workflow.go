@@ -22,7 +22,7 @@ func InitWorkflowRouter(privateGroup *gin.RouterGroup, publicGroup *gin.RouterGr
 	// 管理员路由 - 工作流管理
 	AdminWorkflowRouter := adminGroup.Group("/api/workflow")
 	{
-		AdminWorkflowRouter.GET("/all", app.GetAllWorkflows)     // 获取所有工作流
-		AdminWorkflowRouter.PUT("/:id", app.AdminUpdateWorkflow) // 管理员更新工作流
+		AdminWorkflowRouter.GET("/all", app.GetAllWorkflows) // 获取所有工作流
+		AdminWorkflowRouter.PUT("/:id", app.UpdateWorkflow)  // 管理员更新工作流
 	}
 }

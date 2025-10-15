@@ -386,7 +386,7 @@ func (s *appService) GetAllWorkflows() ([]AdminWorkflowResponse, error) {
 }
 
 // AdminUpdateWorkflow 管理员更新工作流
-func (s *appService) AdminUpdateWorkflow(workflowID string, req UpdateWorkflowRequest) error {
+func (s *appService) UpdateWorkflow(workflowID string, req UpdateWorkflowRequest) error {
 	// 检查工作流是否存在
 	var workflow model.Workflow
 	if err := global.DB.Where("id = ?", workflowID).First(&workflow).Error; err != nil {

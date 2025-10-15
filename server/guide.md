@@ -389,7 +389,7 @@ func AdminRouter(Router *gin.RouterGroup) {
     AdminWorkflowRouter := Router.Group("/api/admin/workflow")
     {
         AdminWorkflowRouter.GET("/all", api.GetAllWorkflows) // 获取所有工作流
-        AdminWorkflowRouter.PUT("/:id", api.AdminUpdateWorkflow) // 管理员更新工作流
+        AdminWorkflowRouter.PUT("/:id", api.UpdateWorkflow) // 管理员更新工作流
     }
 }
 ```

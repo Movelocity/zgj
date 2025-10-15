@@ -80,6 +80,7 @@ export default function ResumeDetailsV2() {
         } 
         // Unknown format
         else {
+          console.log('structured_data', structured_data);
           console.warn('未知简历格式，使用默认模板');
           setResumeData(defaultResumeV2Data);
         }
@@ -171,7 +172,7 @@ export default function ResumeDetailsV2() {
               icon={<ArrowLeftIcon className="w-5 h-5" />}
             >
             </Button>
-            <div className="flex items-center space-x-2">
+            <div className="hidden sm:flex items-center space-x-2">
               <Sparkles className="w-5 h-5 text-blue-600" />
               <h1 className="text-lg font-semibold">简历编辑</h1>
             </div>
@@ -179,7 +180,7 @@ export default function ResumeDetailsV2() {
               type="text"
               value={resumeName}
               onChange={(e) => setResumeName(e.target.value)}
-              className="px-3 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="hidden sm:block px-3 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="简历名称"
             />
           </div>
