@@ -94,7 +94,12 @@ export default function ResumeEditorV2({
     if (blockIndex >= 0 && blockIndex < newData.blocks.length) {
       const block = newData.blocks[blockIndex];
       
-      if (field === 'title') {
+      // 优先处理 object 类型的字段（包括 title）
+      if (isObjectBlock(block) && field) {
+        // 对于 object 类型，所有字段（包括 title）都是 data 内的字段
+        (block.data as any)[field] = currentValue;
+      } else if (field === 'title') {
+        // 对于非 object 类型，title 是 block 的 title
         block.title = currentValue;
       } else if (isTextBlock(block)) {
         block.data = currentValue;
@@ -103,9 +108,6 @@ export default function ResumeEditorV2({
         if (item && field) {
           (item as any)[field] = currentValue;
         }
-      } else if (isObjectBlock(block) && field) {
-        // Handle object block (personal info)
-        (block.data as any)[field] = currentValue;
       }
     }
     
@@ -124,15 +126,18 @@ export default function ResumeEditorV2({
     
     const block = newResumeData.blocks[blockIndex];
     
-    if (field === 'title') {
+    // 优先处理 object 类型的字段（包括 title）
+    if (isObjectBlock(block) && field) {
+      // 对于 object 类型，所有字段（包括 title）都是 data 内的字段
+      return (block.data as any)[field] || '';
+    } else if (field === 'title') {
+      // 对于非 object 类型，title 是 block 的 title
       return block.title || '';
     } else if (isTextBlock(block)) {
       return block.data || '';
     } else if (isListBlock(block) && itemId && field) {
       const item = block.data.find(item => item.id === itemId);
       return item ? (item as any)[field] || '' : '';
-    } else if (isObjectBlock(block) && field) {
-      return (block.data as any)[field] || '';
     }
     
     return '';
@@ -147,7 +152,14 @@ export default function ResumeEditorV2({
     const block = newData.blocks[blockIndex];
     const newBlock = newResumeData.blocks[blockIndex];
     
-    if (field === 'title') {
+    // 优先处理 object 类型的字段更新（包括 title 字段）
+    if (isObjectBlock(block) && isObjectBlock(newBlock) && field && field !== 'title') {
+      (block.data as any)[field] = (newBlock.data as any)[field];
+    } else if (isObjectBlock(block) && isObjectBlock(newBlock) && field === 'title') {
+      // 对于 object 类型，title 是 data 内的字段，不是 block 的 title
+      (block.data as any)[field] = (newBlock.data as any)[field];
+    } else if (field === 'title') {
+      // 对于非 object 类型，title 是 block 的 title
       block.title = newBlock.title;
     } else if (isTextBlock(block) && isTextBlock(newBlock)) {
       block.data = newBlock.data;
@@ -157,8 +169,6 @@ export default function ResumeEditorV2({
       if (item && newItem) {
         (item as any)[field] = (newItem as any)[field];
       }
-    } else if (isObjectBlock(block) && isObjectBlock(newBlock) && field) {
-      (block.data as any)[field] = (newBlock.data as any)[field];
     }
     
     onResumeDataChange(newData);
@@ -173,7 +183,14 @@ export default function ResumeEditorV2({
     const block = newData.blocks[blockIndex];
     const originalBlock = resumeData.blocks[blockIndex];
     
-    if (field === 'title') {
+    // 优先处理 object 类型的字段更新（包括 title 字段）
+    if (isObjectBlock(block) && isObjectBlock(originalBlock) && field && field !== 'title') {
+      (block.data as any)[field] = (originalBlock.data as any)[field];
+    } else if (isObjectBlock(block) && isObjectBlock(originalBlock) && field === 'title') {
+      // 对于 object 类型，title 是 data 内的字段，不是 block 的 title
+      (block.data as any)[field] = (originalBlock.data as any)[field];
+    } else if (field === 'title') {
+      // 对于非 object 类型，title 是 block 的 title
       block.title = originalBlock.title;
     } else if (isTextBlock(block) && isTextBlock(originalBlock)) {
       block.data = originalBlock.data;
@@ -183,8 +200,6 @@ export default function ResumeEditorV2({
       if (item && originalItem) {
         (item as any)[field] = (originalItem as any)[field];
       }
-    } else if (isObjectBlock(block) && isObjectBlock(originalBlock) && field) {
-      (block.data as any)[field] = (originalBlock.data as any)[field];
     }
     
     onNewResumeDataChange(newData);

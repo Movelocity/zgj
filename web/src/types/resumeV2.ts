@@ -155,6 +155,7 @@ export const specialV2Data: ResumeV2Data = {
       type: "object",
       data: {
         "name": "黄怀恩",
+        "title": "高级运营专家",
         "phone": "13267222565",
         "email": "huanghuaien2023@163.com",
         "location": "",
