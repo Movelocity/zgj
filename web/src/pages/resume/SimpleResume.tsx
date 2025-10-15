@@ -107,7 +107,10 @@ const ResumeSelector: React.FC<{
   return (
     <>
       {/* 文件上传区域 */}
-      <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center relative">
+      <div 
+        title="支持PDF、Word等格式，文件大小不超过10MB"
+        className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center relative"
+      >
         {/* 选择已有简历按钮 */}
         <button
           onClick={() => setShowHistoryModal(true)}
@@ -205,7 +208,7 @@ const SimpleResume: React.FC = () => {
 
       if (resumeId) {
         // 直接跳转到编辑页面
-        navigate(`/editor/${resumeId}#new_resume`);
+        navigate(`/editor/v2/${resumeId}#new_resume`);
       } else {
         throw new Error('获取简历ID失败');
       }
@@ -235,9 +238,6 @@ const SimpleResume: React.FC = () => {
               <FiFileText className="w-5 h-5 mr-2" />
               <h2 className="text-lg font-medium">简历优化</h2>
             </div>
-            <p className="text-gray-600 text-sm">
-              支持PDF、Word等格式，文件大小不超过10MB
-            </p>
           </div>
           <div className="p-6 space-y-6">
             {!isOptimizing && (

@@ -29,6 +29,7 @@ export default function ResumeDetailsV2() {
   }, []);
 
   const [isJD, setIsJD] = useState(false);
+  const appTypeRef = useRef<'jd' | 'new-resume' | 'normal'>('normal');
 
   // Resume data state
   const [resumeData, setResumeData] = useState<ResumeV2Data>(defaultResumeV2Data);
@@ -160,26 +161,37 @@ export default function ResumeDetailsV2() {
         
         const updater = initProgressUpdater();
         updater.startStep(2);
-        
-        // 1. 调用阻塞式 API common-analysis
-        const job_description = localStorage.getItem('job_description');
-        if (!job_description) {
-          throw new Error('职位描述不存在，终止分析优化');
+
+        let analysisResult;
+
+        if (appTypeRef.current === "jd") {
+          // 1. 调用阻塞式 API common-analysis
+          const job_description = localStorage.getItem('job_description');
+          if (!job_description) {
+            throw new Error('职位描述不存在，终止分析优化');
+          }
+          console.log('开始jd分析优化...', {
+            job_description,
+            resume_text: processedData
+          });
+          analysisResult = await workflowAPI.executeWorkflow("job-description-fitter", {
+            job_description: job_description,
+            resume_text: JSON.stringify(processedData)
+          }, true);
+        } else if (appTypeRef.current === "new-resume") {
+          console.log('开始新简历分析优化...');
+          analysisResult = await workflowAPI.executeWorkflow("common-analysis", {
+            origin_resume: JSON.stringify(processedData)
+          }, true);
+        } else {
+          return { success: false, error: '没有匹配的分析优化方式' };
         }
-        console.log('开始jd分析优化...', {
-          job_description,
-          resume_text: processedData
-        });
-        const analysisResult = await workflowAPI.executeWorkflow("job-description-fitter", {
-          job_description: job_description,
-          resume_text: JSON.stringify(processedData)
-        }, true);
         
         if (analysisResult.code !== 0) {
           throw new Error('简历分析失败');
         }
         
-        const analysisContent = analysisResult.data.data.outputs?.output;
+        const analysisContent = analysisResult.data.data.outputs?.reply;
         console.log('分析结果:', analysisContent);
 
         // 添加AI优化消息到聊天面板
@@ -298,14 +310,24 @@ export default function ResumeDetailsV2() {
         const hash = window.location.hash;
         if (hash === '#jd') {
           setIsJD(true);
+          appTypeRef.current = "jd";
           document.title = `简历JD优化 - 职管加`;
           window.history.replaceState(null, '', window.location.pathname + window.location.search);
           
           const result = await executeStep3_AnalyzeResume(id, structured_data as ResumeV2Data, name, text_content);
           if (!result.success) {
+            showError(result.error || 'jd简历分析优化失败');
+            console.warn(result.error);
+          }
+        } else if (hash === '#new_resume') {
+          appTypeRef.current = "new-resume";
+          document.title = `简历分析优化 - 职管加`;
+          window.history.replaceState(null, '', window.location.pathname + window.location.search);
+          
+          const result = await executeStep3_AnalyzeResume(id, structured_data as ResumeV2Data, name, text_content);
+          if (!result.success) {
             showError(result.error || '简历分析优化失败');
-            // 失败也显示原始数据
-            // setEditForm({ name, text_content, structured_data: structured_data });
+            console.warn(result.error);
           }
         }
       }
