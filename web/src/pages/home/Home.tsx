@@ -41,47 +41,45 @@ const Home: React.FC = () => {
   ];
 
   return (
-    <div className="bg-white pt-16">
+    <div className="bg-white">
       {/* Hero Section */}
-      <div className="relative overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-24">
-          <div className="text-center">
-            <h1 className="text-4xl lg:text-6xl font-bold text-gray-900 mb-6">
-              让你的简历
-              <span className="text-blue-600">脱颖而出</span>
-            </h1>
-            <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
-              职管加是专业的 AI 驱动简历优化工具，帮助求职者打造完美简历，提升求职成功率
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              {isAuthenticated ? (
-                <>
-                  <Link to={ROUTES.SIMPLE_RESUME}>
-                    <Button size="lg" className="w-full sm:w-auto">
-                      开始优化简历
-                    </Button>
-                  </Link>
-                  <Link to="/resumes">
-                    <Button variant="outline" size="lg" className="w-full sm:w-auto">
-                      查看我的简历
-                    </Button>
-                  </Link>
-                </>
-              ) : (
-                <>
-                  <Link to={ROUTES.AUTH}>
-                    <Button size="lg" className="w-full sm:w-auto">
-                      免费开始使用
-                    </Button>
-                  </Link>
-                  <Button variant="outline" size="lg" className="w-full sm:w-auto">
-                    了解更多
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 h-screen flex flex-col justify-center">
+        <div className="text-center animate-fade-in">
+          <h1 className="text-4xl lg:text-6xl font-bold text-gray-900 mb-6 animate-fade-in-up animation-delay-100">
+            让你的简历
+            <span className="text-blue-600">脱颖而出</span>
+          </h1>
+          <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto animate-fade-in-up animation-delay-200">
+            职管加是专业的 AI 驱动简历优化工具，帮助求职者打造完美简历，提升求职成功率
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-in-up animation-delay-300">
+            {isAuthenticated ? (
+              <>
+                <Link to={ROUTES.SIMPLE_RESUME}>
+                  <Button size="lg" className="w-full sm:w-auto">
+                    开始优化简历
                   </Button>
-                </>
-              )}
-            </div>
-            
+                </Link>
+                <Link to="/resumes">
+                  <Button variant="outline" size="lg" className="w-full sm:w-auto">
+                    查看我的简历
+                  </Button>
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link to={ROUTES.AUTH}>
+                  <Button size="lg" className="w-full sm:w-auto">
+                    免费开始使用
+                  </Button>
+                </Link>
+                <Button variant="outline" size="lg" className="w-full sm:w-auto">
+                  了解更多
+                </Button>
+              </>
+            )}
           </div>
+          
         </div>
       </div>
 

@@ -153,7 +153,7 @@ const ResumeSelector: React.FC<{
             className="cursor-pointer flex flex-col items-center"
           >
             <FiUpload className="w-12 h-12 text-gray-400 mb-4" />
-            <span className="text-lg mb-2">点击上传简历</span>
+            <span className="text-lg mb-2">上传您的简历，让AI为您智能优化内容和格式</span>
             <span className="text-sm text-gray-500">
               或拖拽文件到此处
             </span>
@@ -227,9 +227,6 @@ const SimpleResume: React.FC = () => {
             <Sparkles className="w-8 h-8 text-blue-600 mr-2" />
             <h1 className="text-3xl">AI简历优化</h1>
           </div>
-          <p className="text-gray-600">
-            上传您的简历，让AI为您智能优化内容和格式
-          </p>
         </div>
 
         <div className="bg-white rounded-xl shadow-lg border border-gray-200">

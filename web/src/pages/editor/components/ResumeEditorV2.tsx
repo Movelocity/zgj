@@ -247,8 +247,8 @@ export default function ResumeEditorV2({
   const moveListItem = (blockIndex: number, itemId: string, direction: 'up' | 'down') => {
     const block = resumeData.blocks[blockIndex];
     if (isListBlock(block)) {
-      const currentIndex = block.data.findIndex(item => item.id === itemId);
-      if (currentIndex === -1) return;
+      const currentIndex = block.data?.findIndex(item => item.id === itemId);
+      if (currentIndex === -1 || !block.data) return;
 
       const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
       if (newIndex < 0 || newIndex >= block.data.length) return;
@@ -702,8 +702,8 @@ export default function ResumeEditorV2({
     );
   };
 
-  const personalInfoBlockIndex = resumeData.blocks.findIndex(block => block.type === 'object');
-  const personalInfoBlock = personalInfoBlockIndex >= 0 ? resumeData.blocks[personalInfoBlockIndex] : null;
+  const personalInfoBlockIndex = resumeData.blocks?.findIndex(block => block.type === 'object');
+  const personalInfoBlock = personalInfoBlockIndex !== undefined && personalInfoBlockIndex >= 0 ? resumeData.blocks[personalInfoBlockIndex] : null;
 
   return (
     <div className="h-full bg-white">
