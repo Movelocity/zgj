@@ -56,10 +56,14 @@ function injectPrintStyles(): HTMLStyleElement {
         margin: 0;
       }
       
-      /* 避免不必要的分页 */
+      /* 避免不必要的分页 
       .pdf-print-content * {
         page-break-inside: avoid;
         break-inside: avoid;
+      }*/
+
+      .pdf-print-content .hide-when-print {
+        display: none !important;
       }
       
       /* 确保打印时颜色正常显示 */
@@ -145,6 +149,7 @@ export async function exportElementToPDF(
       const handleChange = () => {
         if (!printMediaQuery.matches) {
           cleanupAfterPrint();
+          console.log('打印完成, 清理元素');
           printMediaQuery.removeEventListener('change', handleChange);
         }
       };

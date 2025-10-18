@@ -1,15 +1,11 @@
-import { useState, useRef, useEffect } from 'react';
-import { ChevronUp, ChevronDown, Trash2, Upload, Mail, Phone, MapPin, UserRound } from 'lucide-react';
+import { ChevronUp, ChevronDown, Trash2, Upload, Mail, Phone, MapPin, UserRound, Plus } from 'lucide-react';
 import Button from "@/components/ui/Button";
 import type { ResumeBlock, ResumeBlockListItem, ResumeV2Data } from '@/types/resumeV2';
-import { isListBlock, isTextBlock, isObjectBlock, 
-  // createEmptyListItem 
-} from '@/types/resumeV2';
-import { useHover } from '@/utils/hover';
+import { isListBlock, isTextBlock, isObjectBlock, createEmptyListItem } from '@/types/resumeV2';
 import { fileAPI } from '@/api/file';
 import { showSuccess, showError } from '@/utils/toast';
-// import { generateId } from '@/utils/id';
-import cn from 'classnames';
+import { EditableText } from './EditableText';
+import { useEditing } from './useEditing';
 
 interface ResumeEditorV2Props {
   resumeData: ResumeV2Data;
@@ -24,8 +20,13 @@ export default function ResumeEditorV2({
   onResumeDataChange = () => {}, 
   onNewResumeDataChange = () => {},
 }: ResumeEditorV2Props) {
-  const [editingField, setEditingField] = useState<string | null>(null);
-  const editingValueRef = useRef<string>('');
+  
+  const editorState = useEditing(
+    resumeData,
+    newResumeData,
+    onResumeDataChange,
+    onNewResumeDataChange,
+  );
 
   // Handle portrait image upload for personal info block
   const handlePortraitUpload = async (e: React.ChangeEvent<HTMLInputElement>, blockIndex: number) => {
@@ -78,139 +79,7 @@ export default function ResumeEditorV2({
     }
   };
 
-  // Start editing field
-  const startEditing = (fieldId: string, currentValue: string) => {
-    setEditingField(fieldId);
-    editingValueRef.current = currentValue;
-  };
-
-  // Save edit
-  const saveEdit = (fieldId: string, inputElement: HTMLInputElement | HTMLTextAreaElement) => {
-    const currentValue = inputElement.value;
-    const newData = { ...resumeData };
-    
-    const [blockIdx, itemId, field] = fieldId.split('-');
-    const blockIndex = parseInt(blockIdx.replace('block', ''));
-    
-    if (blockIndex >= 0 && blockIndex < newData.blocks.length) {
-      const block = newData.blocks[blockIndex];
-      
-      // 优先处理 object 类型的字段（包括 title）
-      if (isObjectBlock(block) && field) {
-        // 对于 object 类型，所有字段（包括 title）都是 data 内的字段
-        (block.data as any)[field] = currentValue;
-      } else if (field === 'title') {
-        // 对于非 object 类型，title 是 block 的 title
-        block.title = currentValue;
-      } else if (isTextBlock(block)) {
-        block.data = currentValue;
-      } else if (isListBlock(block) && itemId) {
-        const item = block.data.find(item => item.id === itemId);
-        if (item && field) {
-          (item as any)[field] = currentValue;
-        }
-      }
-    }
-    
-    onResumeDataChange(newData);
-    setEditingField(null);
-  };
-
-  // Cancel edit
-  const cancelEdit = () => {
-    setEditingField(null);
-  };
-
-  // Get new value from newResumeData
-  const getNewValue = (blockIndex: number, itemId?: string, field?: string): string => {
-    if (blockIndex < 0 || blockIndex >= newResumeData.blocks.length) return '';
-    
-    const block = newResumeData.blocks[blockIndex];
-    
-    // 安全检查：确保 block 存在且是有效对象
-    if (!block || typeof block !== 'object') {
-      console.warn(`Block at index ${blockIndex} is invalid:`, block);
-      return '';
-    }
-    
-    // 优先处理 object 类型的字段（包括 title）
-    if (isObjectBlock(block) && field) {
-      // 对于 object 类型，所有字段（包括 title）都是 data 内的字段
-      return (block.data as any)[field] || '';
-    } else if (field === 'title') {
-      // 对于非 object 类型，title 是 block 的 title
-      return block.title || '';
-    } else if (isTextBlock(block)) {
-      return block.data || '';
-    } else if (isListBlock(block) && itemId && field) {
-      const item = block.data.find(item => item.id === itemId);
-      return item ? (item as any)[field] || '' : '';
-    }
-    
-    return '';
-  };
-
-  // Accept update - copy from newResumeData to resumeData
-  const acceptUpdate = (blockIndex: number, itemId?: string, field?: string) => {
-    const newData = { ...resumeData };
-    
-    if (blockIndex < 0 || blockIndex >= newData.blocks.length) return;
-    
-    const block = newData.blocks[blockIndex];
-    const newBlock = newResumeData.blocks[blockIndex];
-    
-    // 优先处理 object 类型的字段更新（包括 title 字段）
-    if (isObjectBlock(block) && isObjectBlock(newBlock) && field && field !== 'title') {
-      (block.data as any)[field] = (newBlock.data as any)[field];
-    } else if (isObjectBlock(block) && isObjectBlock(newBlock) && field === 'title') {
-      // 对于 object 类型，title 是 data 内的字段，不是 block 的 title
-      (block.data as any)[field] = (newBlock.data as any)[field];
-    } else if (field === 'title') {
-      // 对于非 object 类型，title 是 block 的 title
-      block.title = newBlock.title;
-    } else if (isTextBlock(block) && isTextBlock(newBlock)) {
-      block.data = newBlock.data;
-    } else if (isListBlock(block) && isListBlock(newBlock) && itemId && field) {
-      const item = block.data.find(item => item.id === itemId);
-      const newItem = newBlock.data.find(item => item.id === itemId);
-      if (item && newItem) {
-        (item as any)[field] = (newItem as any)[field];
-      }
-    }
-    
-    onResumeDataChange(newData);
-  };
-
-  // Clear new value - reset newResumeData to match resumeData
-  const clearNewValue = (blockIndex: number, itemId?: string, field?: string) => {
-    const newData = { ...newResumeData };
-    
-    if (blockIndex < 0 || blockIndex >= newData.blocks.length) return;
-    
-    const block = newData.blocks[blockIndex];
-    const originalBlock = resumeData.blocks[blockIndex];
-    
-    // 优先处理 object 类型的字段更新（包括 title 字段）
-    if (isObjectBlock(block) && isObjectBlock(originalBlock) && field && field !== 'title') {
-      (block.data as any)[field] = (originalBlock.data as any)[field];
-    } else if (isObjectBlock(block) && isObjectBlock(originalBlock) && field === 'title') {
-      // 对于 object 类型，title 是 data 内的字段，不是 block 的 title
-      (block.data as any)[field] = (originalBlock.data as any)[field];
-    } else if (field === 'title') {
-      // 对于非 object 类型，title 是 block 的 title
-      block.title = originalBlock.title;
-    } else if (isTextBlock(block) && isTextBlock(originalBlock)) {
-      block.data = originalBlock.data;
-    } else if (isListBlock(block) && isListBlock(originalBlock) && itemId && field) {
-      const item = block.data.find(item => item.id === itemId);
-      const originalItem = originalBlock.data.find(item => item.id === itemId);
-      if (item && originalItem) {
-        (item as any)[field] = (originalItem as any)[field];
-      }
-    }
-    
-    onNewResumeDataChange(newData);
-  };
+ 
 
   // Update block
   const updateBlock = (blockIndex: number, updatedBlock: ResumeBlock) => {
@@ -220,17 +89,17 @@ export default function ResumeEditorV2({
   };
 
   // Add list item
-  // const addListItem = (blockIndex: number) => {
-  //   const block = resumeData.blocks[blockIndex];
-  //   if (isListBlock(block)) {
-  //     const newItem = createEmptyListItem();
-  //     const updatedBlock = {
-  //       ...block,
-  //       data: [...block.data, newItem]
-  //     };
-  //     updateBlock(blockIndex, updatedBlock);
-  //   }
-  // };
+  const addListItem = (blockIndex: number) => {
+    const block = resumeData.blocks[blockIndex];
+    if (isListBlock(block)) {
+      const newItem = createEmptyListItem();
+      const updatedBlock = {
+        ...block,
+        data: [...block.data, newItem]
+      };
+      updateBlock(blockIndex, updatedBlock);
+    }
+  };
 
   // Remove list item
   const removeListItem = (blockIndex: number, itemId: string) => {
@@ -261,7 +130,7 @@ export default function ResumeEditorV2({
     }
   };
 
-  // Add new block
+  // 添加新的大板块
   const addBlock = () => {
     const newData = { ...resumeData };
     newData.blocks.push({
@@ -272,14 +141,14 @@ export default function ResumeEditorV2({
     onResumeDataChange(newData);
   };
 
-  // Remove block
+  // 删除大板块
   const removeBlock = (blockIndex: number) => {
     const newData = { ...resumeData };
     newData.blocks.splice(blockIndex, 1);
     onResumeDataChange(newData);
   };
 
-  // Move block
+  // 移动大板块
   const moveBlock = (blockIndex: number, direction: 'up' | 'down') => {
     const newIndex = direction === 'up' ? blockIndex - 1 : blockIndex + 1;
     if (newIndex < 0 || newIndex >= resumeData.blocks.length) return;
@@ -301,246 +170,36 @@ export default function ResumeEditorV2({
   //   updateBlock(blockIndex, newBlock);
   // };
 
-  // EditableText component with AI optimization support
-  const EditableText = ({ 
-    fieldId, 
-    value, 
-    multiline = false,
-    placeholder = '点击编辑',
-    className = '',
-    blockIndex,
-    itemId,
-    field
-  }: { 
-    fieldId: string; 
-    value: string; 
-    multiline?: boolean;
-    placeholder?: string;
-    className?: string;
-    blockIndex?: number;
-    itemId?: string;
-    field?: string;
-  }) => {
-    const isCurrentlyEditing = editingField === fieldId;
-    const inputRef = useRef<HTMLInputElement>(null);
-    const textareaRef = useRef<HTMLTextAreaElement>(null);
-    
-    // Get new content from newResumeData
-    const newValue = blockIndex !== undefined ? getNewValue(blockIndex, itemId, field) : '';
-    const hasNewContent = newValue && newValue !== value;
-    
-    // State: showing original or new content
-    const [showingOriginal, setShowingOriginal] = useState(false);
-    
-    // Current display value
-    const currentDisplayValue = hasNewContent ? (showingOriginal ? value : newValue) : value;
-
-    const { isHoverOpen, handleMouseEnter, handleMouseLeave } = useHover()
-    
-    // Auto-resize textarea to fit content
-    const adjustTextareaHeight = (textarea: HTMLTextAreaElement) => {
-      // Reset height to auto to get the correct scrollHeight
-      textarea.style.height = 'auto';
-      // Set height to scrollHeight to fit content
-      textarea.style.height = `${textarea.scrollHeight}px`;
-    };
-    
-    // Adjust height when textarea is mounted or content changes
-    useEffect(() => {
-      if (isCurrentlyEditing && multiline && textareaRef.current) {
-        adjustTextareaHeight(textareaRef.current);
-      }
-    }, [isCurrentlyEditing, multiline]);
-    
-    // Accept update
-    const handleAcceptUpdate = () => {
-      if (blockIndex !== undefined) {
-        acceptUpdate(blockIndex, itemId, field);
-        clearNewValue(blockIndex, itemId, field);
-      }
-    };
-    
-    // Reject update
-    const handleRejectUpdate = () => {
-      if (blockIndex !== undefined) {
-        clearNewValue(blockIndex, itemId, field);
-      }
-    };
-    
-    // Editing mode
-    if (isCurrentlyEditing) {
-      return (
-        <div className="flex items-start relative">
-          {multiline ? (
-            <textarea
-              ref={textareaRef}
-              defaultValue={editingValueRef.current}
-              className="flex-1 min-h-20 p-2 resize-none outline-none bg-gray-100 rounded overflow-hidden"
-              autoFocus
-              onInput={(e) => {
-                adjustTextareaHeight(e.currentTarget);
-              }}
-            />
-          ) : (
-            <input
-              ref={inputRef}
-              defaultValue={editingValueRef.current}
-              className="flex-1 h-8 px-2 focus:outline-none outline-none bg-gray-100 rounded"
-              autoFocus
-            />
-          )}
-          <div className="absolute top-full right-0 bg-white border border-gray-200 rounded-md shadow-lg whitespace-nowrap z-20 flex items-center p-1 gap-1 mt-1">
-            <Button 
-              size="xs2" 
-              variant="none"
-              className="bg-green-100 hover:bg-green-200 rounded text-green-700"
-              onClick={() => {
-                const element = multiline ? textareaRef.current : inputRef.current;
-                if (element) saveEdit(fieldId, element);
-              }}
-            >
-              确定
-            </Button>
-            <Button 
-              size="xs2" 
-              variant="none" 
-              className="bg-red-100 hover:bg-red-200 rounded text-red-700" 
-              onClick={cancelEdit}
-            >
-              取消
-            </Button>
-          </div>
-        </div>
-      );
-    }
-
-    const content = currentDisplayValue || placeholder;
-    const baseClasses = multiline ? 'min-h-[2rem] block' : 'min-h-[1.5rem] inline-block';
-
-    
-    
-    // Display with new content (AI optimized)
-    if (hasNewContent) {
-      return (
-        <div 
-          className={cn(
-            'cursor-pointer hover:bg-gray-100 px-1 py-0.5 rounded transition-colors relative',
-            baseClasses, 
-            className, 
-            !currentDisplayValue ? 'text-gray-400 italic' : '',
-            'bg-yellow-50 border border-yellow-200 hover:bg-yellow-100/80'
-          )}
-          onClick={() => startEditing(fieldId, currentDisplayValue)}
-          onMouseEnter={handleMouseEnter}
-          onMouseLeave={handleMouseLeave}
-        >
-          {content}
-
-          {/* Action buttons */}
-          <div 
-            className={cn(
-              "transition-opacity whitespace-nowrap z-20 flex items-center p-1 gap-1",
-              "absolute bg-white border border-gray-200 rounded-md shadow-lg",
-              // opacity-0 group-hover:opacity-100
-              isHoverOpen ? "opacity-100" : "opacity-0",
-              multiline? "top-full right-0" : "top-0 left-full"
-            )}
-            // onMouseEnter={handleMouseEnter}
-            // onMouseLeave={handleMouseLeave}
-          >
-            {/* Toggle button */}
-            <Button
-              variant="none"
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowingOriginal(!showingOriginal);
-              }}
-              size="xs2"
-              className="bg-gray-100 hover:bg-gray-200 rounded text-gray-700"
-              title={showingOriginal ? "查看AI优化版本" : "查看原始版本"}
-            >
-              {showingOriginal ? "查看新版" : "查看原版"}
-            </Button>
-            
-            {/* Accept button */}
-            <Button
-              variant="none"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleAcceptUpdate();
-              }}
-              size="xs2"
-              className="bg-green-100 hover:bg-green-200 rounded text-green-700"
-              title="接收AI优化版本"
-            >
-              接收
-            </Button>
-            
-            {/* Reject button */}
-            <Button
-              variant="none"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleRejectUpdate();
-              }}
-              size="xs2"
-              className="bg-red-100 hover:bg-red-200 rounded text-red-700 transition-colors"
-              title="保留原版本"
-            >
-              拒绝
-            </Button>
-          </div>
-        </div>
-      );
-    }
-    
-    // Normal display without new content
-    return (
-      <span 
-        className={cn(
-          'cursor-pointer hover:bg-gray-100 px-1 py-0.5 rounded transition-colors',
-          baseClasses, 
-          className, 
-          !value ? 'text-gray-400 italic' : ''
-        )}
-        onClick={() => startEditing(fieldId, value)}
-      >
-        {content}
-      </span>
-    );
-  };
-
   // Render list block
   const renderListBlock = (block: ResumeBlock & { data: ResumeBlockListItem[] }, blockIndex: number) => {
     return (
       <div className="space-y-2">
         {block.data.map((item, itemIndex) => (
-          <div key={item.id} className="relative pl-4">
-            {/* List Item Actions - Left side on hover */}
-            <div className="absolute -left-4 top-0 flex flex-col space-y-1 opacity-0 group-hover:opacity-100 transition-opacity">
-              {itemIndex > 0 && (
-                <Button
-                  size="zero"
-                  variant="outline"
-                  onClick={() => moveListItem(blockIndex, item.id, 'up')}
-                  className="w-6 h-6 p-0 bg-white shadow-sm hover:bg-gray-50"
-                  title="上移"
-                >
-                  <ChevronUp size={14} />
-                </Button>
-              )}
-              {itemIndex < block.data.length - 1 && (
-                <Button
-                  size="zero"
-                  variant="outline"
-                  onClick={() => moveListItem(blockIndex, item.id, 'down')}
-                  disabled={itemIndex === block.data.length - 1}
-                  className="w-6 h-6 p-0 bg-white shadow-sm hover:bg-gray-50"
-                  title="下移"
-                >
-                  <ChevronDown size={14} />
-                </Button>
-              )}
+          <div key={item.id} className="relative group pl-4">
+            {/* 小板块操作 - 左侧面板 */}
+            <div className="absolute -left-2 top-0 flex flex-col space-y-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <Button
+                size="zero"
+                variant="outline"
+                disabled={itemIndex === 0}
+                onClick={() => moveListItem(blockIndex, item.id, 'up')}
+                className="w-6 h-6 p-0 bg-white shadow-sm hover:bg-gray-50"
+                title="上移"
+              >
+                <ChevronUp size={14} />
+              </Button>
+
+              <Button
+                size="zero"
+                variant="outline"
+                onClick={() => moveListItem(blockIndex, item.id, 'down')}
+                disabled={itemIndex === block.data.length - 1}
+                className="w-6 h-6 p-0 bg-white shadow-sm hover:bg-gray-50"
+                title="下移"
+              >
+                <ChevronDown size={14} />
+              </Button>
+
               <Button
                 size="zero"
                 variant="outline"
@@ -556,6 +215,7 @@ export default function ResumeEditorV2({
               <div className="flex-1">
                 <h4 className="text-gray-800 font-medium">
                   <EditableText
+                    editorState={editorState}
                     fieldId={`block${blockIndex}-${item.id}-name`}
                     value={item.name}
                     placeholder="如：XX大学、XX公司"
@@ -566,6 +226,8 @@ export default function ResumeEditorV2({
                 </h4>
                 <p className="text-blue-600 text-sm">
                   <EditableText
+                    className={item.highlight ? '' : 'hide-when-print'}
+                    editorState={editorState}
                     fieldId={`block${blockIndex}-${item.id}-highlight`}
                     value={item.highlight}
                     placeholder="亮点/专业/职位"
@@ -577,6 +239,7 @@ export default function ResumeEditorV2({
               </div>
               <span className="text-gray-500 text-sm ml-4">
                 <EditableText
+                  editorState={editorState}
                   fieldId={`block${blockIndex}-${item.id}-time`}
                   value={item.time}
                   placeholder="时间"
@@ -588,6 +251,7 @@ export default function ResumeEditorV2({
             </div>
             <div className="text-gray-700 text-sm leading-relaxed whitespace-pre-line mt-1">
               <EditableText
+                editorState={editorState}
                 fieldId={`block${blockIndex}-${item.id}-description`}
                 value={item.description}
                 placeholder="点击添加详细描述..."
@@ -601,7 +265,7 @@ export default function ResumeEditorV2({
         ))}
         
         {block.data.length === 0 && (
-          <p className="text-gray-500 italic">暂无内容，点击下方按钮添加...</p>
+          <p className="text-gray-500 italic">暂无内容，请从左侧菜单添加...</p>
         )}
         
         {/* <div className="relative group pt-2">
@@ -627,6 +291,7 @@ export default function ResumeEditorV2({
     return (
       <div className="text-gray-700 leading-relaxed ml-4">
         <EditableText
+          editorState={editorState}
           fieldId={`block${blockIndex}--data`}
           value={block.data}
           placeholder="点击添加文本内容..."
@@ -651,6 +316,7 @@ export default function ResumeEditorV2({
           <div className="flex-1">
             <h1 className="text-3xl text-gray-800 mb-2">
               <EditableText
+                editorState={editorState}
                 fieldId={`block${blockIndex}--name`}
                 value={name}
                 placeholder="点击输入姓名"
@@ -660,6 +326,7 @@ export default function ResumeEditorV2({
             </h1>
             <h2 className="text-xl text-blue-600 mb-4">
               <EditableText
+                editorState={editorState}
                 fieldId={`block${blockIndex}--title`}
                 value={block.data.title || ''}
                 placeholder="点击输入职位"
@@ -671,6 +338,7 @@ export default function ResumeEditorV2({
               <div className="flex items-center">
                 <Mail className="w-4 h-4 mr-2" />
                 <EditableText
+                  editorState={editorState}
                   fieldId={`block${blockIndex}--email`}
                   value={email}
                   placeholder="点击输入邮箱"
@@ -681,6 +349,7 @@ export default function ResumeEditorV2({
               <div className="flex items-center">
                 <Phone className="w-4 h-4 mr-2" />
                 <EditableText
+                  editorState={editorState}
                   fieldId={`block${blockIndex}--phone`}
                   value={phone}
                   placeholder="点击输入电话"
@@ -691,6 +360,7 @@ export default function ResumeEditorV2({
               <div className="flex items-center">
                 <MapPin className="w-4 h-4 mr-2" />
                 <EditableText
+                  editorState={editorState}
                   fieldId={`block${blockIndex}--location`}
                   value={location}
                   placeholder="点击输入地址"
@@ -758,6 +428,7 @@ export default function ResumeEditorV2({
                 <div className="relative mb-2">
                   <h3 className="text-lg text-gray-800 border-l-4 border-blue-600 pl-3 inline-block">
                     <EditableText
+                      editorState={editorState}
                       fieldId={`block${originalIndex}--title`}
                       value={block.title}
                       placeholder="板块标题"
@@ -766,8 +437,8 @@ export default function ResumeEditorV2({
                     />
                   </h3>
                   
-                  {/* Block Actions - Left side on hover */}
-                  <div className="absolute -left-8 top-0 flex flex-col space-y-1 opacity-0 hover:opacity-100 transition-opacity">
+                  {/* 大板块操作 - 左侧面板 */}
+                  <div className="absolute -left-7 top-0 flex flex-col space-y-1 opacity-0 hover:opacity-100 transition-opacity">
                     <Button
                       size="zero"
                       variant="outline"
@@ -788,6 +459,17 @@ export default function ResumeEditorV2({
                     >
                       <ChevronDown size={14} />
                     </Button>
+                    {isListBlock(block) && (
+                      <Button
+                        size="zero"
+                        variant="outline"
+                        onClick={() => addListItem(originalIndex)}
+                        className="w-6 h-6 p-0 bg-white shadow-sm hover:bg-green-50 hover:text-green-600"
+                        title="添加列表项"
+                      >
+                        <Plus size={14} />
+                      </Button>
+                    )}
                     <Button
                       size="zero"
                       variant="outline"
