@@ -45,7 +45,6 @@ function injectPrintStyles(): HTMLStyleElement {
         width: 100% !important;
         max-width: 210mm !important;
         margin: 0 auto !important;
-        padding: 10mm !important;
         background: white !important;
         box-shadow: none !important;
       }
@@ -53,14 +52,14 @@ function injectPrintStyles(): HTMLStyleElement {
       /* A4纸张设置 */
       @page {
         size: A4 portrait;
-        margin: 0;
+        margin: 2rem;
       }
       
-      /* 避免不必要的分页 
+      /* 分页控制 */
       .pdf-print-content * {
-        page-break-inside: avoid;
-        break-inside: avoid;
-      }*/
+        page-break-inside: always;
+        break-inside: always;
+      }
 
       .pdf-print-content .hide-when-print {
         display: none !important;

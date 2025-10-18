@@ -7,7 +7,6 @@ import { useGlobalStore } from '@/store';
 import ChatPanel, { type Message } from './components/ChatPanel';
 import ResumeEditorV2 from './components/ResumeEditor';
 import type { ResumeV2Data } from '@/types/resumeV2';
-// import type { ResumeUpdateRequest } from '@/types/resume';
 import { defaultResumeV2Data } from '@/types/resumeV2';
 import { resumeAPI } from '@/api/resume';
 import { showError, showSuccess } from '@/utils/toast';
@@ -17,7 +16,6 @@ import { workflowAPI } from '@/api/workflow';
 import type { ProcessingStage, StepResult } from './types';
 import { TimeBasedProgressUpdater, RESUME_PROCESSING_STEPS } from '@/utils/progress';
 import { parseAndFixResumeJson, fixResumeBlockFormat } from '@/utils/helpers';
-// import { specialV2Data } from '@/types/resumeV2';
 
 export default function ResumeDetails() {
   const { setShowBanner } = useGlobalStore();
@@ -426,7 +424,7 @@ export default function ResumeDetails() {
       {/* Header */}
       <header className="fixed top-0 left-0 right-0 bg-white border-b border-gray-200 z-40">
         <div className="px-4 h-12 flex items-center justify-between">
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center">
             <Button
               onClick={handleGoBack}
               variant="ghost"
@@ -435,15 +433,16 @@ export default function ResumeDetails() {
               icon={<ArrowLeftIcon className="w-5 h-5" />}
             >
             </Button>
-            <div className="hidden sm:flex items-center space-x-2">
+            <div className="hidden sm:flex items-center space-x-2 mr-4">
               <Sparkles className="w-5 h-5 text-blue-600" />
               <h1 className="text-lg font-semibold">简历编辑</h1>
             </div>
             <input
+              id="resumeName"
               type="text"
               value={resumeName}
               onChange={(e) => setResumeName(e.target.value)}
-              className="hidden sm:block px-3 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="hidden md:block px-3 py-1 border border-gray-300 rounded-md focus:outline-none"
               placeholder="简历名称"
             />
           </div>
