@@ -16,7 +16,7 @@ const ResumeList = lazy(() => import('@/pages/resume/ResumeList'));
 const ResumeCardView = lazy(() => import('@/pages/resume/ResumeCardView'));
 const ResumeDetail = lazy(() => import('@/pages/resume/ResumeDetail'));
 const ResumeEditor = lazy(() => import('@/pages/editor/ResumeDetails'));
-const ResumeEditorV2 = lazy(() => import('@/pages/editor/ResumeDetailsV2'));
+// const ResumeEditorV2 = lazy(() => import('@/pages/editor/ResumeDetails'));
 const Profile = lazy(() => import('@/pages/profile/Profile'));
 const Administrator = lazy(() => import('@/pages/admin/Administrator'));
 const NotFound = lazy(() => import('@/pages/error/NotFound'));
@@ -63,7 +63,7 @@ export const routes = [
   },
   {
     path: '/editor/v2/:id',
-    element: <ResumeEditorV2 />,
+    element: <ResumeEditor />,
   },
   {
     path: '/profile',
