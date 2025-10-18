@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { ChevronUp, ChevronDown, Trash2, Upload, Mail, Phone, MapPin, UserRound } from 'lucide-react';
 import Button from "@/components/ui/Button";
 import type { ResumeBlock, ResumeBlockListItem, ResumeV2Data } from '@/types/resumeV2';
@@ -337,6 +337,21 @@ export default function ResumeEditorV2({
 
     const { isHoverOpen, handleMouseEnter, handleMouseLeave } = useHover()
     
+    // Auto-resize textarea to fit content
+    const adjustTextareaHeight = (textarea: HTMLTextAreaElement) => {
+      // Reset height to auto to get the correct scrollHeight
+      textarea.style.height = 'auto';
+      // Set height to scrollHeight to fit content
+      textarea.style.height = `${textarea.scrollHeight}px`;
+    };
+    
+    // Adjust height when textarea is mounted or content changes
+    useEffect(() => {
+      if (isCurrentlyEditing && multiline && textareaRef.current) {
+        adjustTextareaHeight(textareaRef.current);
+      }
+    }, [isCurrentlyEditing, multiline]);
+    
     // Accept update
     const handleAcceptUpdate = () => {
       if (blockIndex !== undefined) {
@@ -360,8 +375,11 @@ export default function ResumeEditorV2({
             <textarea
               ref={textareaRef}
               defaultValue={editingValueRef.current}
-              className="flex-1 min-h-20 p-2 resize-none outline-none bg-gray-100 rounded"
+              className="flex-1 min-h-20 p-2 resize-none outline-none bg-gray-100 rounded overflow-hidden"
               autoFocus
+              onInput={(e) => {
+                adjustTextareaHeight(e.currentTarget);
+              }}
             />
           ) : (
             <input
