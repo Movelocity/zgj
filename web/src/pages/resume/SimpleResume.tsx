@@ -109,7 +109,7 @@ const ResumeSelector: React.FC<{
       {/* 文件上传区域 */}
       <div 
         title="支持PDF、Word等格式，文件大小不超过10MB"
-        className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center relative"
+        className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center relative py-24"
       >
         {/* 选择已有简历按钮 */}
         <button
@@ -153,7 +153,7 @@ const ResumeSelector: React.FC<{
             className="cursor-pointer flex flex-col items-center"
           >
             <FiUpload className="w-12 h-12 text-gray-400 mb-4" />
-            <span className="text-lg mb-2">上传您的简历，让AI为您智能优化内容和格式</span>
+            <span className="text-lg mb-2">点击上传</span>
             <span className="text-sm text-gray-500">
               或拖拽文件到此处
             </span>
@@ -227,16 +227,19 @@ const SimpleResume: React.FC = () => {
             <Sparkles className="w-8 h-8 text-blue-600 mr-2" />
             <h1 className="text-3xl">AI简历优化</h1>
           </div>
+          <p className="text-gray-600">
+            上传您的简历，让AI为您智能优化内容和格式
+          </p>
         </div>
 
         <div className="bg-white rounded-xl shadow-lg border border-gray-200">
           <div className="p-6 pb-0">
-            <div className="flex items-center mb-2">
+            <div className="flex items-center">
               <FiFileText className="w-5 h-5 mr-2" />
-              <h2 className="text-lg font-medium">简历优化</h2>
+              <h2 className="text-lg font-medium">上传简历</h2>
             </div>
           </div>
-          <div className="p-6 space-y-6">
+          <div className="p-6 pt-4 space-y-6">
             {!isOptimizing && (
               <>
                 <ResumeSelector

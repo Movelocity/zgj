@@ -1,10 +1,11 @@
 import { useState, useRef } from 'react';
-import { ChevronUp, ChevronDown, Trash2, Upload, Mail, Phone, MapPin } from 'lucide-react';
+import { ChevronUp, ChevronDown, Trash2, Upload, Mail, Phone, MapPin, UserRound } from 'lucide-react';
 import Button from "@/components/ui/Button";
 import type { ResumeBlock, ResumeBlockListItem, ResumeV2Data } from '@/types/resumeV2';
 import { isListBlock, isTextBlock, isObjectBlock, 
   // createEmptyListItem 
 } from '@/types/resumeV2';
+import { useHover } from '@/utils/hover';
 import { fileAPI } from '@/api/file';
 import { showSuccess, showError } from '@/utils/toast';
 // import { generateId } from '@/utils/id';
@@ -333,6 +334,8 @@ export default function ResumeEditorV2({
     
     // Current display value
     const currentDisplayValue = hasNewContent ? (showingOriginal ? value : newValue) : value;
+
+    const { isHoverOpen, handleMouseEnter, handleMouseLeave } = useHover()
     
     // Accept update
     const handleAcceptUpdate = () => {
@@ -395,26 +398,38 @@ export default function ResumeEditorV2({
 
     const content = currentDisplayValue || placeholder;
     const baseClasses = multiline ? 'min-h-[2rem] block' : 'min-h-[1.5rem] inline-block';
+
+    
     
     // Display with new content (AI optimized)
     if (hasNewContent) {
       return (
-        <div className="relative group">
-          <span 
-            className={cn(
-              'cursor-pointer hover:bg-gray-100 px-1 py-0.5 rounded transition-colors relative',
-              baseClasses, 
-              className, 
-              !currentDisplayValue ? 'text-gray-400 italic' : '',
-              'bg-yellow-50 border border-yellow-200 hover:bg-yellow-100/80'
-            )}
-            onClick={() => startEditing(fieldId, currentDisplayValue)}
-          >
-            {content}
-          </span>
-          
+        <div 
+          className={cn(
+            'cursor-pointer hover:bg-gray-100 px-1 py-0.5 rounded transition-colors relative',
+            baseClasses, 
+            className, 
+            !currentDisplayValue ? 'text-gray-400 italic' : '',
+            'bg-yellow-50 border border-yellow-200 hover:bg-yellow-100/80'
+          )}
+          onClick={() => startEditing(fieldId, currentDisplayValue)}
+          onMouseEnter={handleMouseEnter}
+          onMouseLeave={handleMouseLeave}
+        >
+          {content}
+
           {/* Action buttons */}
-          <div className="absolute top-full right-0 bg-white border border-gray-200 rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-20 flex items-center p-1 gap-1 mt-1">
+          <div 
+            className={cn(
+              "transition-opacity whitespace-nowrap z-20 flex items-center p-1 gap-1",
+              "absolute bg-white border border-gray-200 rounded-md shadow-lg",
+              // opacity-0 group-hover:opacity-100
+              isHoverOpen ? "opacity-100" : "opacity-0",
+              multiline? "top-full right-0" : "top-0 left-full"
+            )}
+            // onMouseEnter={handleMouseEnter}
+            // onMouseLeave={handleMouseLeave}
+          >
             {/* Toggle button */}
             <Button
               variant="none"
@@ -482,7 +497,7 @@ export default function ResumeEditorV2({
     return (
       <div className="space-y-2">
         {block.data.map((item, itemIndex) => (
-          <div key={item.id} className="relative group pl-4">
+          <div key={item.id} className="relative pl-4">
             {/* List Item Actions - Left side on hover */}
             <div className="absolute -left-4 top-0 flex flex-col space-y-1 opacity-0 group-hover:opacity-100 transition-opacity">
               {itemIndex > 0 && (
@@ -678,16 +693,16 @@ export default function ResumeEditorV2({
               />
             ) : (
               <div className="w-32 h-40 bg-gray-50 rounded border-2 border-dashed border-gray-300 flex flex-col items-center justify-center">
-                <Upload className="w-6 h-6 text-gray-400 mb-1" />
-                <span className="text-xs text-gray-400">上传证件照</span>
+                <UserRound className="w-10 h-10 text-gray-300" />
               </div>
             )}
             <label
               htmlFor={`portrait-upload-${blockIndex}`}
-              className="absolute top-0 left-0 w-full h-full bg-gray-500/50 opacity-0 hover:opacity-100 flex items-center justify-center text-white cursor-pointer transition-colors"
+              className="absolute top-0 left-0 w-full h-full bg-gray-500/50 opacity-0 hover:opacity-100 flex flex-col items-center justify-center gap-1 text-white cursor-pointer transition-colors"
               title="上传证件照"
             >
-              <Upload className="w-6 h-6" />
+              <Upload className="w-8 h-8" />
+              <span className="text-sm ">上传证件照</span>
             </label>
             <input
               type="file"

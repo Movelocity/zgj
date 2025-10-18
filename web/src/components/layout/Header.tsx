@@ -12,7 +12,7 @@ const Header: React.FC = () => {
   const { isAuthenticated, user } = useAuthStore();
 
   return (
-    <header className="fixed top-0 w-full bg-white shadow-sm z-[1000]">
+    <header className="fixed top-0 w-full bg-white z-[1000]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-14">
           {/* Logo */}
