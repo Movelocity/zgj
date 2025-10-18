@@ -6,12 +6,14 @@ import { fileAPI } from '@/api/file';
 import { showSuccess, showError } from '@/utils/toast';
 import { EditableText } from './EditableText';
 import { useEditing } from './useEditing';
+import { type FontSettings, getFontSizeClasses } from './FontSettingsPanel';
 
 interface ResumeEditorV2Props {
   resumeData: ResumeV2Data;
   newResumeData: ResumeV2Data;
   onResumeDataChange?: (data: ResumeV2Data) => void;
   onNewResumeDataChange?: (data: ResumeV2Data) => void;
+  fontSettings?: FontSettings;
 }
 
 export default function ResumeEditorV2({ 
@@ -19,6 +21,7 @@ export default function ResumeEditorV2({
   newResumeData,
   onResumeDataChange = () => {}, 
   onNewResumeDataChange = () => {},
+  fontSettings = { titleSize: 'medium', labelSize: 'medium', contentSize: 'medium' },
 }: ResumeEditorV2Props) {
   
   const editorState = useEditing(
@@ -27,6 +30,9 @@ export default function ResumeEditorV2({
     onResumeDataChange,
     onNewResumeDataChange,
   );
+
+  // 获取字体大小样式
+  const fontSizeClasses = getFontSizeClasses(fontSettings);
 
   // Handle portrait image upload for personal info block
   const handlePortraitUpload = async (e: React.ChangeEvent<HTMLInputElement>, blockIndex: number) => {
@@ -213,7 +219,7 @@ export default function ResumeEditorV2({
 
             <div className="flex justify-between items-start">
               <div className="flex-1">
-                <h4 className="text-gray-800 font-medium">
+                <h4 className={`text-gray-800 font-medium ${fontSizeClasses.label}`}>
                   <EditableText
                     editorState={editorState}
                     fieldId={`block${blockIndex}-${item.id}-name`}
@@ -224,7 +230,7 @@ export default function ResumeEditorV2({
                     field="name"
                   />
                 </h4>
-                <p className="text-blue-600 text-sm">
+                <p className={`text-blue-600 ${fontSizeClasses.content}`}>
                   <EditableText
                     className={item.highlight ? '' : 'hide-when-print'}
                     editorState={editorState}
@@ -237,7 +243,7 @@ export default function ResumeEditorV2({
                   />
                 </p>
               </div>
-              <span className="text-gray-500 text-sm ml-4">
+              <span className={`text-gray-500 ml-4 ${fontSizeClasses.content}`}>
                 <EditableText
                   editorState={editorState}
                   fieldId={`block${blockIndex}-${item.id}-time`}
@@ -249,7 +255,7 @@ export default function ResumeEditorV2({
                 />
               </span>
             </div>
-            <div className="text-gray-700 text-sm leading-relaxed whitespace-pre-line mt-1">
+            <div className={`text-gray-700 leading-relaxed whitespace-pre-line mt-1 ${fontSizeClasses.content}`}>
               <EditableText
                 editorState={editorState}
                 fieldId={`block${blockIndex}-${item.id}-description`}
@@ -289,7 +295,7 @@ export default function ResumeEditorV2({
   // Render text block
   const renderTextBlock = (block: ResumeBlock & { data: string }, blockIndex: number) => {
     return (
-      <div className="text-gray-700 leading-relaxed ml-4">
+      <div className={`text-gray-700 leading-relaxed ml-4 ${fontSizeClasses.content}`}>
         <EditableText
           editorState={editorState}
           fieldId={`block${blockIndex}--data`}
@@ -334,7 +340,7 @@ export default function ResumeEditorV2({
                 field="title"
               />
             </h2>
-            <div className="flex flex-wrap gap-4 text-gray-600">
+            <div className={`flex flex-wrap gap-4 text-gray-600 ${fontSizeClasses.content}`}>
               <div className="flex items-center">
                 <Mail className="w-4 h-4 mr-2" />
                 <EditableText
@@ -426,7 +432,7 @@ export default function ResumeEditorV2({
               <div key={originalIndex} className="p-4 -m-4 rounded-lg relative">
                 {/* Block Header with left border */}
                 <div className="relative mb-2">
-                  <h3 className="text-lg text-gray-800 border-l-4 border-blue-600 pl-3 inline-block">
+                  <h3 className={`text-gray-800 border-l-4 border-blue-600 pl-3 inline-block font-semibold ${fontSizeClasses.title}`}>
                     <EditableText
                       editorState={editorState}
                       fieldId={`block${originalIndex}--title`}
