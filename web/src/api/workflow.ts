@@ -4,7 +4,7 @@ import type { ApiResponse, PaginationParams, PaginationResponse } from '@/types/
 import { TOKEN_KEY } from '@/utils/constants';
 
 type ExecuteWorkflowStreamParams = {
-  id: string, 
+  id?: string, 
   name?: string,
   inputs: any, 
   onMessage?: (data: any) => void, 
@@ -50,7 +50,10 @@ export const workflowAPI = {
     inputs, 
     onMessage, 
     onError, 
-}: ExecuteWorkflowStreamParams): Promise<void> => {
+  }: ExecuteWorkflowStreamParams): Promise<void> => {
+    if (!id && !name) {
+      throw new Error('id 或 name 必须提供一个');
+    }
     const token = localStorage.getItem(TOKEN_KEY);
     const body = { inputs, response_mode: 'streaming' };
     try {

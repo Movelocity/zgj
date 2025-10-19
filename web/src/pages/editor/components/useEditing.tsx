@@ -1,6 +1,7 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import { isListBlock, isTextBlock, isObjectBlock } from '@/types/resumeV2';
 import type { ResumeV2Data } from '@/types/resumeV2';
+import { buildBlockMatchMap } from './utils';
 
 export interface EditorState {
   editingField: string | null;
@@ -22,6 +23,12 @@ export const useEditing = (
 ): EditorState => {
   const [editingField, setEditingField] = useState<string | null>(null);
   const editingValueRef = useRef<string>('');
+
+  // Build block match mapping: resumeData index -> newResumeData index
+  // This ensures blocks are matched by title+type, not by position
+  const blockMatchMap = useMemo(() => {
+    return buildBlockMatchMap(resumeData, newResumeData);
+  }, [resumeData, newResumeData]);
 
    // Start editing field
    const startEditing = (fieldId: string, currentValue: string) => {
@@ -68,13 +75,23 @@ export const useEditing = (
 
   // Get new value from newResumeData
   const getNewValue = (blockIndex: number, itemId?: string, field?: string): string => {
-    if (blockIndex < 0 || blockIndex >= newResumeData.blocks.length) return '';
+    // Use block match map to find corresponding block in newResumeData
+    const newBlockIndex = blockMatchMap[blockIndex];
     
-    const block = newResumeData.blocks[blockIndex];
+    // No matching block found in newResumeData
+    if (newBlockIndex === undefined || newBlockIndex === -1) {
+      return '';
+    }
+    
+    if (newBlockIndex < 0 || newBlockIndex >= newResumeData.blocks.length) {
+      return '';
+    }
+    
+    const block = newResumeData.blocks[newBlockIndex];
     
     // 安全检查：确保 block 存在且是有效对象
     if (!block || typeof block !== 'object') {
-      console.warn(`Block at index ${blockIndex} is invalid:`, block);
+      console.warn(`Block at index ${newBlockIndex} is invalid:`, block);
       return '';
     }
     
@@ -97,12 +114,22 @@ export const useEditing = (
 
   // Accept update - copy from newResumeData to resumeData
   const acceptUpdate = (blockIndex: number, itemId?: string, field?: string) => {
+    // Use block match map to find corresponding block in newResumeData
+    const newBlockIndex = blockMatchMap[blockIndex];
+    
+    // No matching block found in newResumeData
+    if (newBlockIndex === undefined || newBlockIndex === -1) {
+      console.warn(`No matching block found for blockIndex ${blockIndex}`);
+      return;
+    }
+    
     const newData = { ...resumeData };
     
     if (blockIndex < 0 || blockIndex >= newData.blocks.length) return;
+    if (newBlockIndex < 0 || newBlockIndex >= newResumeData.blocks.length) return;
     
     const block = newData.blocks[blockIndex];
-    const newBlock = newResumeData.blocks[blockIndex];
+    const newBlock = newResumeData.blocks[newBlockIndex];
     
     // 优先处理 object 类型的字段更新（包括 title 字段）
     if (isObjectBlock(block) && isObjectBlock(newBlock) && field && field !== 'title') {
@@ -128,11 +155,21 @@ export const useEditing = (
 
   // Clear new value - reset newResumeData to match resumeData
   const clearNewValue = (blockIndex: number, itemId?: string, field?: string) => {
+    // Use block match map to find corresponding block in newResumeData
+    const newBlockIndex = blockMatchMap[blockIndex];
+    
+    // No matching block found in newResumeData
+    if (newBlockIndex === undefined || newBlockIndex === -1) {
+      console.warn(`No matching block found for blockIndex ${blockIndex}`);
+      return;
+    }
+    
     const newData = { ...newResumeData };
     
-    if (blockIndex < 0 || blockIndex >= newData.blocks.length) return;
+    if (blockIndex < 0 || blockIndex >= resumeData.blocks.length) return;
+    if (newBlockIndex < 0 || newBlockIndex >= newData.blocks.length) return;
     
-    const block = newData.blocks[blockIndex];
+    const block = newData.blocks[newBlockIndex];
     const originalBlock = resumeData.blocks[blockIndex];
     
     // 优先处理 object 类型的字段更新（包括 title 字段）

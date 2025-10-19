@@ -3,10 +3,12 @@ import Button from '@/components/ui/Button';
 import MarkdownRenderer from '@/components/ui/MarkdownRenderer';
 import { Send, Bot, Lightbulb, Sparkles } from 'lucide-react';
 import { FiMessageSquare, FiFileText } from 'react-icons/fi';
-import type { ResumeData } from '@/types/resume';
+// import type { ResumeData } from '@/types/resume';
 import type { ResumeV2Data } from '@/types/resumeV2';
 import { workflowAPI } from '@/api/workflow';
 import { parseAndFixResumeJson } from '@/utils/helpers';
+import { generateAIResponse, generateSuggestions, truncate } from './utils';
+import Modal from '@/components/ui/Modal';
 
 interface Message {
   id: string;
@@ -17,8 +19,8 @@ interface Message {
 }
 
 interface ChatPanelProps {
-  resumeData: ResumeData | ResumeV2Data;
-  onResumeDataChange: (data: ResumeData | ResumeV2Data) => void;
+  resumeData:  ResumeV2Data;
+  onResumeDataChange: (data: ResumeV2Data, require_commit: boolean) => void;
   initialMessages?: Message[];
   onMessagesChange?: (messages: Message[]) => void;
   isJD: boolean
@@ -50,17 +52,16 @@ export default function ChatPanel({
   const scrollRef = useRef<HTMLDivElement>(null);
   const scrollGradientTopRef = useRef<HTMLDivElement>(null);
   const scrollGradientBottomRef = useRef<HTMLDivElement>(null);
-  const [suggestions, setSuggestions] = useState<string[]>([
-    // "[highlight]整体优化简历",
-    // "突出优势",
-    // "岗位匹配",
-    // "整体检查"
-  ]);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
   const [isResponding, setIsResponding] = useState(false);
   const [isFormatting, setIsFormatting] = useState(false);
 
   const lastScrollTop = useRef(0);
   const lastAbortScrollMessageId = useRef('');
+
+  const [debugModalOpen, setDebugModalOpen] = useState(false);
+  const [debugType, setDebugType] = useState<'current_data'>('current_data');
+  const [debugData, setDebugData] = useState('');
   
   // 监听 messages 变化并通知父组件
   useEffect(() => {
@@ -75,7 +76,6 @@ export default function ChatPanel({
     };
 
     window.addEventListener('markdown-button-click' as any, handleMarkdownButtonClick);
-
     return () => {
       window.removeEventListener('markdown-button-click' as any, handleMarkdownButtonClick);
     };
@@ -112,6 +112,51 @@ export default function ChatPanel({
     }
   };
 
+  const handleSlashCommand = (command: string) => {
+    command = command.replace("/", "");
+    if (command === "print") {
+      console.log("resumeData", JSON.stringify(resumeData, null, 2));
+      const aiResponse: Message = {
+        id: (Date.now() + 1).toString(),
+        type: 'assistant',
+        content: "简历内容已答应到控制台，请查看",
+        timestamp: new Date(),
+      };
+      updateMessages(aiResponse);
+      setSuggestions(["什么是控制台？"]);
+      return;
+    }
+    
+    if (command === "clear") {
+      setMessages([]);
+      setIsTyping(false);
+      return;
+    }
+    
+    if (command === "test"){
+      // 模拟AI回复
+      setTimeout(() => {
+        const aiResponse: Message = {
+          id: (Date.now() + 1).toString(),
+          type: 'assistant',
+          content: generateAIResponse(command),
+          timestamp: new Date(),
+          suggestions: generateSuggestions(command)
+        };
+        updateMessages(aiResponse);
+        setIsTyping(false);
+      }, 500);
+      return;
+    }
+
+    if (command === "peek") {
+      setDebugType('current_data');
+      setDebugData(JSON.stringify(resumeData, null, 2));
+      setDebugModalOpen(true);
+      return;
+    }
+  }
+
   const handleSendMessage = async (forceInput?: string) => {
     const query = forceInput ? forceInput : inputValue.trim();
     if (!query) return;
@@ -127,65 +172,8 @@ export default function ChatPanel({
     setSuggestions([])
     if (isResponding || isFormatting) return;
 
-    setIsTyping(true);
-
-    if (query === "/print") {
-      console.log("resumeData", JSON.stringify(resumeData, null, 2));
-      const aiResponse: Message = {
-        id: (Date.now() + 1).toString(),
-        type: 'assistant',
-        content: "简历内容已答应到控制台，请查看",
-        timestamp: new Date(),
-      };
-      updateMessages(aiResponse);
-      setSuggestions(["什么是控制台？"]);
-      return;
-    }
-    
-    if (query === "/clear") {
-      setMessages([]);
-      setIsTyping(false);
-      return;
-    }
-    
-    if (query === "/test"){
-      // 模拟AI回复
-      setTimeout(() => {
-        const aiResponse: Message = {
-          id: (Date.now() + 1).toString(),
-          type: 'assistant',
-          content: generateAIResponse(query),
-          timestamp: new Date(),
-          suggestions: generateSuggestions(query)
-        };
-        updateMessages(aiResponse);
-        setIsTyping(false);
-      }, 500);
-      return;
-    }
-
-    if (query === "/simulate") {
-      onResumeDataChange({
-        ...resumeData,
-        summary: "测试总结",
-        workExperience: [
-          ...(resumeData as any).workExperience,
-          {
-            id: (Date.now() + 1).toString(),
-            company: "测试公司",
-            position: "测试职位",
-            duration: "2020-2021",
-            description: "测试描述"
-          }
-        ]
-      });
-      const aiResponse: Message = {
-        id: (Date.now() + 1).toString(),
-        type: 'assistant',
-        content: "简历内容更新已触发",
-        timestamp: new Date(),
-      };
-      updateMessages(aiResponse);
+    if (query.startsWith("/")) { // 处理斜杠命令
+      handleSlashCommand(query);
       return;
     }
 
@@ -250,6 +238,8 @@ export default function ChatPanel({
       console.error('Stream error:', error);
     }
 
+    setIsTyping(true);
+
     try {
       if (query === "整体优化简历") {  // 整体优化简历应用
         setIsResponding(true);
@@ -296,6 +286,9 @@ export default function ChatPanel({
   /** 已得到输出，重新调用阻塞式api，得到结构化的简历内容 */
   const postProcess = async (content: string): Promise<void> => {
     try{
+      if (!content.includes("优化后的简历片段")) {
+        return; // 不需要更新简历
+      }
       setIsFormatting(true);
       setTimeout(() => {
         // 滚动到底部
@@ -322,7 +315,7 @@ export default function ChatPanel({
       if (structuredResumeData && typeof structuredResumeData === 'string') {
         // 使用 parseAndFixResumeJson 确保数据安全性和格式正确性
         const finalResumeData = parseAndFixResumeJson(structuredResumeData as string);
-        onResumeDataChange(finalResumeData);
+        onResumeDataChange(finalResumeData, true);
       }
     } catch (error) {
       console.error('Execution error:', error);
@@ -331,41 +324,6 @@ export default function ChatPanel({
     }
   };
 
-  const generateAIResponse = (userInput: string): string => {
-    const input = userInput.toLowerCase();
-    
-    if (input.includes('个人总结') || input.includes('总结')) {
-      return '我建议您的个人总结更加突出核心竞争力。我已经为您重新组织了语言，强调了您的技术专长和项目经验。您觉得这样的表达是否更有吸引力？';
-    } else if (input.includes('工作经历') || input.includes('工作')) {
-      return '我注意到您的工作经历可以更好地展示成果。我建议用具体的数据和成就来替换部分描述，这样会更有说服力。左侧已经更新了相关内容。';
-    } else if (input.includes('技能') || input.includes('关键词')) {
-      return '我为您优化了技能关键词的排列，将最相关的技能放在前面，并添加了一些行业热门关键词。这样更容易被ATS系统识别。';
-    } else if (input.includes('项目') || input.includes('项目经验')) {
-      return '项目经验是简历的亮点！我建议突出您在项目中的具体贡献和使用的技术栈。我已经调整了项目描述的结构，您可以查看左侧的修改。';
-    } else {
-      return '我理解您的需求。基于您的简历内容，我建议从以下几个方面进行优化。请查看左侧的修改建议，有任何问题随时告诉我。';
-    }
-  };
-
-  const generateSuggestions = (userInput: string): string[] => {
-    const input = userInput.toLowerCase();
-    
-    if (input.includes('个人总结')) {
-      return ['增加量化成果', '突出核心技能', '调整语言风格'];
-    } else if (input.includes('工作经历')) {
-      return ['添加具体数据', '优化行动词汇', '突出核心成就'];
-    } else if (input.includes('技能')) {
-      return ['调整技能顺序', '添加热门关键词', '分类技能展示'];
-    } else {
-      return ['整体润色xxxx', '格式调整yyyyy', '内容扩充', '重点突出'];
-    }
-  };
-
-  const truncate = (text: string, maxLength: number) => {
-    if (!text) return '';
-    if (text.length <= maxLength) return text;
-    return text.slice(0, maxLength) + '...';
-  };
 
   // 滚动特效
   const handleScroll = useCallback(() => {
@@ -545,6 +503,27 @@ export default function ChatPanel({
           </button>
         </div>
       </div>
+
+      <Modal 
+        open={debugModalOpen} 
+        onClose={() => setDebugModalOpen(false)}
+        title="调试"
+        footer={
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setDebugModalOpen(false)}>关闭</Button>
+            <Button variant="outline" onClick={() => onResumeDataChange(JSON.parse(debugData), true)}>更新到编辑区</Button>
+            <Button variant="outline" onClick={() => onResumeDataChange(JSON.parse(debugData), false)}>覆盖到编辑区</Button>
+          </div>
+        }
+      >
+        { debugType === 'current_data' ? (
+          <div className="p-2">
+            <textarea rows={20} value={debugData} onChange={(e) => setDebugData(e.target.value)} className="w-full p-2 text-sm border border-gray-300 rounded-md outline-none"></textarea>
+          </div>
+        ) : (
+          <pre className="text-sm text-gray-600 p-2">{JSON.stringify(resumeData, null, 2)}</pre>
+        )}
+      </Modal>
     </div>
   );
 }

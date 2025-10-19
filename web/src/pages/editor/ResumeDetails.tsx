@@ -174,7 +174,6 @@ export default function ResumeDetails() {
     const executeStep3_AnalyzeResume = useCallback(async (
       _resumeId: string, // 保留用于未来扩展
       processedData: ResumeV2Data,
-      _name: string,
       _text_content: string
     ): Promise<StepResult> => {
       try {
@@ -332,7 +331,7 @@ export default function ResumeDetails() {
           document.title = `简历JD优化 - 职管加`;
           window.history.replaceState(null, '', window.location.pathname + window.location.search + '#jd');
           
-          const result = await executeStep3_AnalyzeResume(id, structured_data as ResumeV2Data, name, text_content);
+          const result = await executeStep3_AnalyzeResume(id, structured_data as ResumeV2Data, text_content);
           if (!result.success) {
             showError(result.error || 'jd简历分析优化失败');
             console.warn(result.error);
@@ -342,7 +341,7 @@ export default function ResumeDetails() {
           document.title = `简历分析优化 - 职管加`;
           window.history.replaceState(null, '', window.location.pathname + window.location.search);
           
-          const result = await executeStep3_AnalyzeResume(id, structured_data as ResumeV2Data, name, text_content);
+          const result = await executeStep3_AnalyzeResume(id, structured_data as ResumeV2Data, text_content);
           if (!result.success) {
             showError(result.error || '简历分析优化失败');
             console.warn(result.error);
@@ -408,8 +407,12 @@ export default function ResumeDetails() {
   };
 
   // Handle resume data change
-  const handleResumeDataChange = (newData: ResumeV2Data) => {
-    setResumeData(newData);
+  const handleResumeDataChange = (newData: ResumeV2Data, require_commit: boolean) => {
+    if (require_commit) {
+      setNewResumeData(newData);
+    } else {
+      setResumeData(newData);
+    }
   };
 
   useEffect(() => {
@@ -555,7 +558,7 @@ export default function ResumeDetails() {
               resumeData={resumeData}
               newResumeData={newResumeData}
               onNewResumeDataChange={setNewResumeData}
-              onResumeDataChange={handleResumeDataChange}
+              onResumeDataChange={(data) => {handleResumeDataChange(data, false)}}
               fontSettings={fontSettings}
             />
           </div>
@@ -567,7 +570,7 @@ export default function ResumeDetails() {
                 initialMessages={chatMessages}
                 onMessagesChange={setChatMessages}
                 resumeData={resumeData}
-                onResumeDataChange={(data) => handleResumeDataChange(data as ResumeV2Data)}
+                onResumeDataChange={(data, require_commit) => handleResumeDataChange(data as ResumeV2Data, require_commit)}
                 isJD={isJD}
               />
             </div>

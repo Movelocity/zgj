@@ -7,6 +7,8 @@ import { showSuccess, showError } from '@/utils/toast';
 import { EditableText } from './EditableText';
 import { useEditing } from './useEditing';
 import { type FontSettings, getFontSizeClasses } from './FontSettingsPanel';
+import { buildBlockMatchMap, findNewBlocks } from './utils';
+import { useMemo } from 'react';
 
 interface ResumeEditorV2Props {
   resumeData: ResumeV2Data;
@@ -33,6 +35,29 @@ export default function ResumeEditorV2({
 
   // 获取字体大小样式
   const fontSizeClasses = getFontSizeClasses(fontSettings);
+
+  // Find new blocks that AI added
+  const blockMatchMap = useMemo(() => 
+    buildBlockMatchMap(resumeData, newResumeData), 
+    [resumeData, newResumeData]
+  );
+  
+  const newBlockIndices = useMemo(() => 
+    findNewBlocks(newResumeData, blockMatchMap),
+    [newResumeData, blockMatchMap]
+  );
+
+  // Add a new AI-suggested block to the resume
+  const addNewBlock = (newBlockIndex: number) => {
+    const blockToAdd = newResumeData.blocks[newBlockIndex];
+    if (!blockToAdd) return;
+
+    const updatedData = { ...resumeData };
+    updatedData.blocks.push({ ...blockToAdd });
+    onResumeDataChange(updatedData);
+    
+    showSuccess(`已添加板块: ${blockToAdd.title}`);
+  };
 
   // Handle portrait image upload for personal info block
   const handlePortraitUpload = async (e: React.ChangeEvent<HTMLInputElement>, blockIndex: number) => {
@@ -501,6 +526,40 @@ export default function ResumeEditorV2({
               </div>
             );
           })}
+
+          {/* AI Suggested New Blocks */}
+          {newBlockIndices.length > 0 && (
+            <div className="mt-6 mb-4">   
+              <div className="space-y-3">
+                {newBlockIndices.map((newBlockIdx) => {
+                  const block = newResumeData.blocks[newBlockIdx];
+                  if (!block) return null;
+                  
+                  return (
+                    <div key={newBlockIdx} className="bg-white rounded-md p-3 border border-blue-400">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <h4 className="font-medium text-gray-800 mb-1">新增板块：{block.title || '(无标题)'}</h4>
+                          <p className="text-xs text-gray-500">
+                            类型: {block.type === 'list' ? '列表' : block.type === 'text' ? '文本' : '对象'}
+                            {isListBlock(block) && ` (${block.data.length} 项)`}
+                          </p>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="primary"
+                          onClick={() => addNewBlock(newBlockIdx)}
+                          className="ml-2"
+                        >
+                          确认
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Add Block Button */}
           <div className="relative group mb-3 p-4 -m-4 opacity-0 hover:opacity-100 transition-opacity">
