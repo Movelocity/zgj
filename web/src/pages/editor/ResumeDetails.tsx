@@ -224,7 +224,7 @@ export default function ResumeDetails() {
         
         // 2. 格式化结果
         console.log('格式化优化后的简历...');
-        // const lightResume = parseResumeSummary(processedData);
+        setCurrentStage('exporting');
         const formatResult = await workflowAPI.executeWorkflow("smart-format-2", {
           current_resume: JSON.stringify(processedData),
           resume_edit: analysisContent
