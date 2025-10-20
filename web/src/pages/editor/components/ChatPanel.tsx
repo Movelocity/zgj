@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import Button from '@/components/ui/Button';
-import MarkdownRenderer from '@/components/ui/MarkdownRenderer';
+import AiMessageRenderer from './AiMessageRenderer';
 import { Send, Bot, Lightbulb, Sparkles } from 'lucide-react';
 import { FiMessageSquare, FiFileText } from 'react-icons/fi';
 // import type { ResumeData } from '@/types/resume';
@@ -63,6 +63,9 @@ export default function ChatPanel({
   const [debugType, setDebugType] = useState<'current_data'>('current_data');
   const [debugData, setDebugData] = useState('');
   
+  // 用于去重的哈希表，存储已处理的 blockId
+  const processedBlocksRef = useRef<Set<string>>(new Set());
+  
   // 监听 messages 变化并通知父组件
   useEffect(() => {
     onMessagesChange?.(messages);
@@ -80,6 +83,44 @@ export default function ChatPanel({
       window.removeEventListener('markdown-button-click' as any, handleMarkdownButtonClick);
     };
   }, []);
+
+  // 监听 resume-update-detected 事件
+  useEffect(() => {
+    const handleResumeUpdate = (event: CustomEvent<{ blockId: string; content: string; messageId: string }>) => {
+      const { blockId, content } = event.detail;
+      
+      // 使用哈希表去重，防止重复处理
+      if (processedBlocksRef.current.has(blockId)) {
+        console.log(`[Resume Update] 跳过重复的更新块: ${blockId}`);
+        return;
+      }
+      
+      // 标记为已处理
+      processedBlocksRef.current.add(blockId);
+      console.log(`[Resume Update] 处理更新块: ${blockId}`, content);
+      
+      try {
+        // 解析 JSON 并更新简历数据
+        const resumeUpdateData = parseAndFixResumeJson(content);
+
+        if(resumeUpdateData.blocks.length > 0) {
+          onResumeDataChange(resumeUpdateData, true);
+          console.log(`[Resume Update] 简历数据已更新`, resumeUpdateData);
+        } else if (content.length > 0 && !isFormatting) {
+          console.log(`[Resume Update] 开始解析格式化简历...`);
+          postProcess(content);
+        }
+      } catch (error) {
+        console.error(`[Resume Update] 解析失败:`, error);
+        console.error(`[Resume Update] 内容:`, content);
+      }
+    };
+
+    window.addEventListener('resume-update-detected' as any, handleResumeUpdate);
+    return () => {
+      window.removeEventListener('resume-update-detected' as any, handleResumeUpdate);
+    };
+  }, [onResumeDataChange]);
   
   useEffect(() => {
     if (scrollRef.current) {
@@ -147,6 +188,16 @@ export default function ChatPanel({
         setIsTyping(false);
       }, 500);
       return;
+    }
+
+    if (command === "last_msg") {
+      const aiMessages = messages.filter(m => m.type === 'assistant');
+      const lastMsg = aiMessages[aiMessages.length - 1];
+      if (lastMsg) {
+        console.log("lastMsg", lastMsg.content);
+      } else {
+        console.log("没有找到AI消息");
+      }
     }
 
     if (command === "peek") {
@@ -219,7 +270,7 @@ export default function ChatPanel({
           }
           aiResponse.content += data.answer || '';
           updateMessages(aiResponse);
-          console.log(`[${aiResponse.id}] `+data.answer);
+          console.debug(`[${aiResponse.id}] `+data.answer);
           break;
 
         case 'text_chunk':  // /workflows/run
@@ -272,7 +323,7 @@ export default function ChatPanel({
           onMessage: onMessage,
           onError: onError,
         });
-        postProcess(aiResponse.content);
+        // postProcess(aiResponse.content);
       }
     } catch (error: any) {
       console.error('Execution error:', error);
@@ -286,9 +337,6 @@ export default function ChatPanel({
   /** 已得到输出，重新调用阻塞式api，得到结构化的简历内容 */
   const postProcess = async (content: string): Promise<void> => {
     try{
-      if (!content.includes("优化后的简历片段")) {
-        return; // 不需要更新简历
-      }
       setIsFormatting(true);
       setTimeout(() => {
         // 滚动到底部
@@ -370,13 +418,12 @@ export default function ChatPanel({
                   </div>
                 </div>
               ) : (
-                // Bot消息改为全宽无边框渲染
-                <div className="w-full">
-                  <MarkdownRenderer 
-                    content={message.content} 
-                    className="text-sm leading-relaxed text-gray-800"
-                  />
-                </div>
+                // Bot消息使用 AiMessageRenderer 处理特殊的 resume-update 块
+                <AiMessageRenderer 
+                  content={message.content} 
+                  messageId={message.id}
+                  className="text-sm leading-relaxed text-gray-800"
+                />
               )}
             </div>
           ))}

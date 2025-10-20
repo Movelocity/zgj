@@ -1,6 +1,6 @@
 
 // 处理步骤类型
-export type ProcessingStage = 'parsing' | 'structuring' | 'analyzing' | 'completed';
+export type ProcessingStage = 'parsing' | 'structuring' | 'analyzing' | 'exporting' | 'completed';
 
 // 步骤处理结果
 export interface StepResult {

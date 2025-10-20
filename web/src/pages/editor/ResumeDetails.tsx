@@ -525,6 +525,13 @@ export default function ResumeDetails() {
                       </div>
                       <span className="text-sm font-medium">{isJD ? 'JD简历优化' : '简历分析'}</span>
                     </div>
+
+                    <div className={`flex items-center space-x-3 ${currentStage === 'exporting' ? 'text-blue-600' : currentStage === 'completed' ? 'text-green-600' : 'text-gray-400'}`}>
+                      <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ${currentStage === 'exporting' ? 'bg-blue-100 border-2 border-blue-600' : currentStage === 'completed' ? 'bg-green-100 border-2 border-green-600' : 'bg-gray-100 border-2 border-gray-300'}`}>
+                        {currentStage === 'exporting' ? '4' : currentStage === 'completed' ? '✓' : '4'}
+                      </div>
+                      <span className="text-sm font-medium">AI优化内容格式化</span>
+                    </div>
                   </div>
                   
                   <div className="w-full bg-gray-200 rounded-full h-2 mt-6">

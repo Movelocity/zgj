@@ -255,7 +255,7 @@ export default function ResumeEditorV2({
                     field="name"
                   />
                 </h4>
-                <p className={`text-blue-600 ${fontSizeClasses.content}`}>
+                <div className={`text-blue-600 ${fontSizeClasses.content}`}>
                   <EditableText
                     className={item.highlight ? '' : 'hide-when-print'}
                     editorState={editorState}
@@ -266,7 +266,7 @@ export default function ResumeEditorV2({
                     itemId={item.id}
                     field="highlight"
                   />
-                </p>
+                </div>
               </div>
               <span className={`text-gray-500 ml-4 ${fontSizeClasses.content}`}>
                 <EditableText

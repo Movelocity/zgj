@@ -23,7 +23,7 @@ export const useHover = () => {
     timeoutRef.current = setTimeout(() => {
       setIsHoverOpen(false)
       timeoutRef.current = null
-    }, 300)
+    }, 100)
   }
 
   return { isHoverOpen, handleMouseEnter, handleMouseLeave, setIsHoverOpen }
