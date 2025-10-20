@@ -84,41 +84,57 @@ export default function ChatPanel({
     };
   }, []);
 
-  // 监听 resume-update-detected 事件
+  // 监听 resume-update-detected 事件（直接解析成功的情况）
   useEffect(() => {
-    const handleResumeUpdate = (event: CustomEvent<{ blockId: string; content: string; messageId: string }>) => {
-      const { blockId, content } = event.detail;
+    const handleResumeUpdate = (event: CustomEvent<{ blockId: string; content: string; data: ResumeV2Data; messageId: string }>) => {
+      const { blockId, data } = event.detail;
       
       // 使用哈希表去重，防止重复处理
       if (processedBlocksRef.current.has(blockId)) {
-        console.log(`[Resume Update] 跳过重复的更新块: ${blockId}`);
+        console.log(`[ChatPanel] 跳过重复的更新块: ${blockId}`);
         return;
       }
       
       // 标记为已处理
       processedBlocksRef.current.add(blockId);
-      console.log(`[Resume Update] 处理更新块: ${blockId}`, content);
+      console.log(`[ChatPanel] 处理更新块: ${blockId}`, data);
       
-      try {
-        // 解析 JSON 并更新简历数据
-        const resumeUpdateData = parseAndFixResumeJson(content);
-
-        if(resumeUpdateData.blocks.length > 0) {
-          onResumeDataChange(resumeUpdateData, true);
-          console.log(`[Resume Update] 简历数据已更新`, resumeUpdateData);
-        } else if (content.length > 0 && !isFormatting) {
-          console.log(`[Resume Update] 开始解析格式化简历...`);
-          postProcess(content);
-        }
-      } catch (error) {
-        console.error(`[Resume Update] 解析失败:`, error);
-        console.error(`[Resume Update] 内容:`, content);
+      if (data && data.blocks && data.blocks.length > 0) {
+        onResumeDataChange(data, true);
+        console.log(`[ChatPanel] 简历数据已更新`);
       }
     };
 
     window.addEventListener('resume-update-detected' as any, handleResumeUpdate);
     return () => {
       window.removeEventListener('resume-update-detected' as any, handleResumeUpdate);
+    };
+  }, [onResumeDataChange]);
+
+  // 监听 resume-update-formatted 事件（格式化后的情况）
+  useEffect(() => {
+    const handleResumeFormatted = (event: CustomEvent<{ blockId: string; data: ResumeV2Data; messageId: string }>) => {
+      const { blockId, data } = event.detail;
+      
+      // 使用哈希表去重，防止重复处理
+      if (processedBlocksRef.current.has(`formatted-${blockId}`)) {
+        console.log(`[ChatPanel] 跳过重复的格式化块: ${blockId}`);
+        return;
+      }
+      
+      // 标记为已处理
+      processedBlocksRef.current.add(`formatted-${blockId}`);
+      console.log(`[ChatPanel] 处理格式化块: ${blockId}`, data);
+      
+      if (data && data.blocks && data.blocks.length > 0) {
+        onResumeDataChange(data, true);
+        console.log(`[ChatPanel] 格式化后的简历数据已更新`);
+      }
+    };
+
+    window.addEventListener('resume-update-formatted' as any, handleResumeFormatted);
+    return () => {
+      window.removeEventListener('resume-update-formatted' as any, handleResumeFormatted);
     };
   }, [onResumeDataChange]);
   
@@ -423,6 +439,7 @@ export default function ChatPanel({
                   content={message.content} 
                   messageId={message.id}
                   className="text-sm leading-relaxed text-gray-800"
+                  resumeData={resumeData}
                 />
               )}
             </div>
