@@ -58,9 +58,10 @@ export default function ChatPanel({
 
   const lastScrollTop = useRef(0);
   const lastAbortScrollMessageId = useRef('');
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const [debugModalOpen, setDebugModalOpen] = useState(false);
-  const [debugType, setDebugType] = useState<'current_data'>('current_data');
+  const [debugType, setDebugType] = useState<'current_data' | 'last_msg'>('current_data');
   const [debugData, setDebugData] = useState('');
   
   // 用于去重的哈希表，存储已处理的 blockId
@@ -70,6 +71,29 @@ export default function ChatPanel({
   useEffect(() => {
     onMessagesChange?.(messages);
   }, [messages, onMessagesChange]);
+
+  // 自动调整 textarea 高度，最大3行
+  const adjustTextareaHeight = useCallback(() => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+    
+    // 重置高度以获取正确的 scrollHeight
+    textarea.style.height = 'auto';
+    
+    // 计算行高（假设为24px，可以根据实际情况调整）
+    const lineHeight = 24;
+    const maxRows = 3;
+    const maxHeight = lineHeight * maxRows;
+    
+    // 设置新高度，不超过最大高度
+    const newHeight = Math.min(textarea.scrollHeight, maxHeight);
+    textarea.style.height = `${newHeight}px`;
+  }, []);
+
+  // 监听 inputValue 变化，自动调整高度
+  useEffect(() => {
+    adjustTextareaHeight();
+  }, [inputValue, adjustTextareaHeight]);
 
   // 监听 markdown 按钮点击事件
   useEffect(() => {
@@ -210,7 +234,9 @@ export default function ChatPanel({
       const aiMessages = messages.filter(m => m.type === 'assistant');
       const lastMsg = aiMessages[aiMessages.length - 1];
       if (lastMsg) {
-        console.log("lastMsg", lastMsg.content);
+        setDebugData(lastMsg.content);
+        setDebugType('last_msg');
+        setDebugModalOpen(true);
       } else {
         console.log("没有找到AI消息");
       }
@@ -237,6 +263,12 @@ export default function ChatPanel({
     setMessages(prev => [...prev, userMessage]);
     setInputValue('');
     setSuggestions([])
+    
+    // 重置 textarea 高度
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+    }
+    
     if (isResponding || isFormatting) return;
 
     if (query.startsWith("/")) { // 处理斜杠命令
@@ -525,6 +557,7 @@ export default function ChatPanel({
       <div className="px-4 py-2 border-t border-gray-200">
         <div className="flex gap-2 items-end">
           <textarea
+            ref={textareaRef}
             rows={1}
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
@@ -535,7 +568,8 @@ export default function ChatPanel({
               }
             }}
             placeholder="输入您的问题或需求..."
-            className="flex-1 px-3 py-2 bg-gray-50 rounded-lg focus:outline-none focus:bg-gray-100 transition-colors resize-none border border-gray-300 text-sm"
+            className="flex-1 px-3 py-2 bg-gray-50 rounded-lg focus:outline-none focus:bg-gray-100 transition-colors resize-none border border-gray-300 text-sm overflow-y-auto"
+            style={{ minHeight: '40px' }}
           />
           <button 
             onClick={() => handleSendMessage()}
@@ -571,12 +605,14 @@ export default function ChatPanel({
       <Modal 
         open={debugModalOpen} 
         onClose={() => setDebugModalOpen(false)}
-        title="调试"
+        title={debugType === 'current_data' ? '当前简历数据' : '最后一条AI消息'}
         footer={
           <div className="flex justify-end gap-2">
             <Button variant="outline" onClick={() => setDebugModalOpen(false)}>关闭</Button>
-            <Button variant="outline" onClick={() => onResumeDataChange(JSON.parse(debugData), true)}>更新到编辑区</Button>
-            <Button variant="outline" onClick={() => onResumeDataChange(JSON.parse(debugData), false)}>覆盖到编辑区</Button>
+            { debugType === 'current_data' && (<>
+              <Button variant="outline" onClick={() => onResumeDataChange(JSON.parse(debugData), true)}>更新到编辑区</Button>
+              <Button variant="outline" onClick={() => onResumeDataChange(JSON.parse(debugData), false)}>覆盖到编辑区</Button>
+            </>)}
           </div>
         }
       >
@@ -585,7 +621,7 @@ export default function ChatPanel({
             <textarea rows={20} value={debugData} onChange={(e) => setDebugData(e.target.value)} className="w-full p-2 text-sm border border-gray-300 rounded-md outline-none"></textarea>
           </div>
         ) : (
-          <pre className="text-sm text-gray-600 p-2">{JSON.stringify(resumeData, null, 2)}</pre>
+          <pre className="text-sm text-gray-600 p-4 whitespace-pre-wrap">{debugData}</pre>
         )}
       </Modal>
     </div>
