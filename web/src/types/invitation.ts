@@ -67,3 +67,9 @@ export interface UpdateInvitationRequest {
   note?: string | null;
 }
 
+export interface UserInvitationUseResponse {
+  has_used: boolean;
+  invitation_code?: string;
+  used_at?: string;
+}
+

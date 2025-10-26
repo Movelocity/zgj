@@ -63,25 +63,57 @@ func ValidateInvitation(c *gin.Context) {
 	utils.OkWithData(response, c)
 }
 
-// UseInvitation 使用邀请码
+// UseInvitation 使用邀请码（需要用户登录）
 func UseInvitation(c *gin.Context) {
-	var req invitationService.UseInvitationRequest
+	// 从 JWT 获取用户ID
+	userID := c.GetString("userID")
+	if userID == "" {
+		utils.FailWithMessage("用户未登录", c)
+		return
+	}
+
+	var req struct {
+		Code string `json:"code" binding:"required"`
+	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		utils.FailWithMessage("请求参数错误", c)
 		return
 	}
 
-	// 获取请求IP和UserAgent
-	req.IPAddress = c.ClientIP()
-	req.UserAgent = c.Request.UserAgent()
+	// 构建完整请求
+	useReq := invitationService.UseInvitationRequest{
+		Code:      req.Code,
+		UserID:    userID,
+		IPAddress: c.ClientIP(),
+		UserAgent: c.Request.UserAgent(),
+	}
 
 	// 调用服务层
-	if err := service.InvitationService.UseInvitation(req); err != nil {
+	if err := service.InvitationService.UseInvitation(useReq); err != nil {
 		utils.FailWithMessage(err.Error(), c)
 		return
 	}
 
 	utils.OkWithMessage("邀请码使用成功", c)
+}
+
+// GetUserInvitationUse 查询用户的邀请码使用记录
+func GetUserInvitationUse(c *gin.Context) {
+	// 从 JWT 获取用户ID
+	userID := c.GetString("userID")
+	if userID == "" {
+		utils.FailWithMessage("用户未登录", c)
+		return
+	}
+
+	// 调用服务层
+	response, err := service.InvitationService.GetUserInvitationUse(userID)
+	if err != nil {
+		utils.FailWithMessage(err.Error(), c)
+		return
+	}
+
+	utils.OkWithData(response, c)
 }
 
 // GetInvitationList 获取邀请码列表（管理员）

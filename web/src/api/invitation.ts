@@ -5,10 +5,10 @@ import type {
   AdminCreateInvitationRequest,
   ValidateInvitationRequest, 
   ValidateInvitationResponse,
-  UseInvitationRequest,
   InvitationListResponse,
   BatchUpdateInvitationRequest,
-  UpdateInvitationRequest
+  UpdateInvitationRequest,
+  UserInvitationUseResponse
 } from '@/types/invitation';
 import type { ApiResponse } from '@/types/global';
 
@@ -28,9 +28,14 @@ export const invitationAPI = {
     return apiClient.post('/api/invitations/validate', data);
   },
 
-  // 使用邀请码
-  useInvitation: (data: UseInvitationRequest): Promise<ApiResponse<null>> => {
-    return apiClient.post('/api/invitations/use', data);
+  // 使用邀请码（需要登录，会自动从 JWT 获取用户ID）
+  useInvitation: (code: string): Promise<ApiResponse<null>> => {
+    return apiClient.post('/api/invitations/use', { code });
+  },
+
+  // 查询当前用户的邀请码使用记录
+  getMyInvitationUse: (): Promise<ApiResponse<UserInvitationUseResponse>> => {
+    return apiClient.get('/api/invitations/my-use');
   },
 
   // 获取邀请码列表（管理员）

@@ -511,3 +511,26 @@ func (s *invitationService) BatchUpdateInvitation(req BatchUpdateInvitationReque
 	tx.Commit()
 	return nil
 }
+
+// GetUserInvitationUse 查询用户是否已使用过邀请码
+func (s *invitationService) GetUserInvitationUse(userID string) (*UserInvitationUseResponse, error) {
+	var invitationUse model.InvitationUse
+	err := global.DB.Where("used_by = ?", userID).First(&invitationUse).Error
+
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			// 用户未使用过邀请码
+			return &UserInvitationUseResponse{
+				HasUsed: false,
+			}, nil
+		}
+		return nil, errors.New("查询使用记录失败")
+	}
+
+	// 用户已使用过邀请码
+	return &UserInvitationUseResponse{
+		HasUsed:        true,
+		InvitationCode: invitationUse.InvitationCode,
+		UsedAt:         &invitationUse.UsedAt,
+	}, nil
+}

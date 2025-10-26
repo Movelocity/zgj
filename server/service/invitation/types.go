@@ -73,3 +73,10 @@ type UpdateInvitationRequest struct {
 	ExpiresInDays *int    `json:"expires_in_days"` // 有效期（天数，null表示不更新，0表示设为永不过期）
 	Note          *string `json:"note"`            // 备注（null表示不更新）
 }
+
+// UserInvitationUseResponse 用户邀请码使用记录响应
+type UserInvitationUseResponse struct {
+	HasUsed        bool       `json:"has_used"`                  // 是否已使用过邀请码
+	InvitationCode string     `json:"invitation_code,omitempty"` // 使用的邀请码
+	UsedAt         *time.Time `json:"used_at,omitempty"`         // 使用时间
+}
