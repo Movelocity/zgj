@@ -1,15 +1,16 @@
 import React, { useState } from 'react';
-import { FiSettings, FiUsers, FiFolder } from 'react-icons/fi';
-import { WorkflowManagement, UserManagement, FileManagement } from './components';
+import { FiSettings, FiUsers, FiFolder, FiGift } from 'react-icons/fi';
+import { WorkflowManagement, UserManagement, FileManagement, InvitationManagement } from './components';
 
-type TabType = 'workflows' | 'users' | 'files';
+type TabType = 'workflows' | 'users' | 'files' | 'invitations';
 
 const Administrator: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabType>('workflows');
 
   const tabs = [
-    { id: 'workflows' as TabType, name: '工作流管理', icon: FiSettings },
     { id: 'users' as TabType, name: '用户管理', icon: FiUsers },
+    { id: 'invitations' as TabType, name: '邀请码管理', icon: FiGift },
+    { id: 'workflows' as TabType, name: '工作流管理', icon: FiSettings },
     { id: 'files' as TabType, name: '文件管理', icon: FiFolder },
   ];
 
@@ -21,6 +22,8 @@ const Administrator: React.FC = () => {
         return <UserManagement />;
       case 'files':
         return <FileManagement />;
+      case 'invitations':
+        return <InvitationManagement />;
       default:
         return null;
     }

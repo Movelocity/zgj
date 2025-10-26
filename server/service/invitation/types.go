@@ -9,6 +9,14 @@ type CreateInvitationRequest struct {
 	Note          string `json:"note"`
 }
 
+// AdminCreateInvitationRequest 管理员创建邀请码请求（可指定创建者）
+type AdminCreateInvitationRequest struct {
+	CreatorID     string `json:"creator_id" binding:"required"` // 指定创建者用户ID
+	MaxUses       int    `json:"max_uses" binding:"required,min=-1"`
+	ExpiresInDays *int   `json:"expires_in_days"`
+	Note          string `json:"note"`
+}
+
 // InvitationCodeResponse 邀请码响应
 type InvitationCodeResponse struct {
 	Code      string     `json:"code"`
@@ -18,7 +26,8 @@ type InvitationCodeResponse struct {
 	CreatedAt time.Time  `json:"created_at"`
 	IsActive  bool       `json:"is_active"`
 	Note      string     `json:"note"`
-	Creator   string     `json:"creator,omitempty"`
+	CreatorID string     `json:"creator_id,omitempty"` // 创建者ID
+	Creator   string     `json:"creator,omitempty"`    // 创建者名称
 }
 
 // ValidateInvitationRequest 验证邀请码请求
@@ -49,4 +58,18 @@ type InvitationListResponse struct {
 	Total int64                    `json:"total"`
 	Page  int                      `json:"page"`
 	Limit int                      `json:"limit"`
+}
+
+// BatchUpdateInvitationRequest 批量更新邀请码请求
+type BatchUpdateInvitationRequest struct {
+	Codes         []string `json:"codes" binding:"required,min=1"` // 要更新的邀请码列表
+	MaxUses       *int     `json:"max_uses"`                       // 使用次数上限（-1表示无限次，null表示不更新）
+	ExpiresInDays *int     `json:"expires_in_days"`                // 有效期（天数，null表示不更新，0表示设为永不过期）
+}
+
+// UpdateInvitationRequest 更新单个邀请码请求
+type UpdateInvitationRequest struct {
+	MaxUses       *int    `json:"max_uses"`        // 使用次数上限（-1表示无限次，null表示不更新）
+	ExpiresInDays *int    `json:"expires_in_days"` // 有效期（天数，null表示不更新，0表示设为永不过期）
+	Note          *string `json:"note"`            // 备注（null表示不更新）
 }

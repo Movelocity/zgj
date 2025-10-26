@@ -86,6 +86,68 @@ func (s *invitationService) CreateInvitation(creatorID string, req CreateInvitat
 		CreatedAt: invitation.CreatedAt,
 		IsActive:  invitation.IsActive,
 		Note:      invitation.Note,
+		CreatorID: user.ID,
+		Creator:   user.Name,
+	}
+
+	return response, nil
+}
+
+// AdminCreateInvitation 管理员为指定用户创建邀请码
+func (s *invitationService) AdminCreateInvitation(req AdminCreateInvitationRequest) (*InvitationCodeResponse, error) {
+	// 验证创建者是否存在
+	var user model.User
+	if err := global.DB.Where("id = ?", req.CreatorID).First(&user).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errors.New("指定的用户不存在")
+		}
+		return nil, errors.New("查询用户失败")
+	}
+
+	// 生成唯一邀请码
+	var code string
+	for {
+		code = s.GenerateInvitationCode()
+		// 检查是否已存在
+		var existingCode model.InvitationCode
+		if err := global.DB.Where("code = ?", code).First(&existingCode).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				break // 邀请码不存在，可以使用
+			}
+		}
+	}
+
+	// 计算过期时间
+	var expiresAt *time.Time
+	if req.ExpiresInDays != nil && *req.ExpiresInDays > 0 {
+		expires := time.Now().AddDate(0, 0, *req.ExpiresInDays)
+		expiresAt = &expires
+	}
+
+	// 创建邀请码记录
+	invitation := model.InvitationCode{
+		Code:      code,
+		CreatorID: req.CreatorID,
+		MaxUses:   req.MaxUses,
+		UsedCount: 0,
+		ExpiresAt: expiresAt,
+		IsActive:  true,
+		Note:      req.Note,
+	}
+
+	if err := global.DB.Create(&invitation).Error; err != nil {
+		return nil, errors.New("创建邀请码失败")
+	}
+
+	response := &InvitationCodeResponse{
+		Code:      invitation.Code,
+		ExpiresAt: invitation.ExpiresAt,
+		MaxUses:   invitation.MaxUses,
+		UsedCount: invitation.UsedCount,
+		CreatedAt: invitation.CreatedAt,
+		IsActive:  invitation.IsActive,
+		Note:      invitation.Note,
+		CreatorID: user.ID,
 		Creator:   user.Name,
 	}
 
@@ -239,6 +301,7 @@ func (s *invitationService) GetInvitationList(page, limit string) (*InvitationLi
 			CreatedAt: inv.CreatedAt,
 			IsActive:  inv.IsActive,
 			Note:      inv.Note,
+			CreatorID: inv.CreatorID,
 			Creator:   inv.Creator.Name,
 		})
 	}
@@ -309,8 +372,142 @@ func (s *invitationService) GetInvitationDetail(code string) (*InvitationCodeRes
 		CreatedAt: invitation.CreatedAt,
 		IsActive:  invitation.IsActive,
 		Note:      invitation.Note,
+		CreatorID: invitation.CreatorID,
 		Creator:   invitation.Creator.Name,
 	}
 
 	return response, nil
+}
+
+// UpdateInvitation 更新单个邀请码（管理员）
+func (s *invitationService) UpdateInvitation(code string, req UpdateInvitationRequest) error {
+	// 开启事务
+	tx := global.DB.Begin()
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
+
+	// 查询邀请码是否存在
+	var invitation model.InvitationCode
+	if err := tx.Where("code = ?", code).First(&invitation).Error; err != nil {
+		tx.Rollback()
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return errors.New("邀请码不存在")
+		}
+		return errors.New("查询邀请码失败")
+	}
+
+	// 构建更新字段
+	updates := make(map[string]interface{})
+
+	// 更新使用次数上限
+	if req.MaxUses != nil {
+		if *req.MaxUses < -1 || *req.MaxUses == 0 {
+			tx.Rollback()
+			return errors.New("使用次数必须为 -1（无限次）或大于 0")
+		}
+		updates["max_uses"] = *req.MaxUses
+	}
+
+	// 更新过期时间
+	if req.ExpiresInDays != nil {
+		if *req.ExpiresInDays == 0 {
+			// 0 表示设为永不过期
+			updates["expires_at"] = nil
+		} else if *req.ExpiresInDays > 0 {
+			// 计算新的过期时间
+			expires := time.Now().AddDate(0, 0, *req.ExpiresInDays)
+			updates["expires_at"] = expires
+		} else {
+			tx.Rollback()
+			return errors.New("有效期必须大于等于 0")
+		}
+	}
+
+	// 更新备注
+	if req.Note != nil {
+		updates["note"] = *req.Note
+	}
+
+	// 如果没有要更新的字段
+	if len(updates) == 0 {
+		tx.Rollback()
+		return errors.New("没有需要更新的字段")
+	}
+
+	// 执行更新
+	if err := tx.Model(&invitation).Updates(updates).Error; err != nil {
+		tx.Rollback()
+		return errors.New("更新邀请码失败")
+	}
+
+	tx.Commit()
+	return nil
+}
+
+// BatchUpdateInvitation 批量更新邀请码（管理员）
+func (s *invitationService) BatchUpdateInvitation(req BatchUpdateInvitationRequest) error {
+	// 开启事务
+	tx := global.DB.Begin()
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
+
+	// 检查所有邀请码是否存在
+	var count int64
+	if err := tx.Model(&model.InvitationCode{}).Where("code IN ?", req.Codes).Count(&count).Error; err != nil {
+		tx.Rollback()
+		return errors.New("查询邀请码失败")
+	}
+
+	if int(count) != len(req.Codes) {
+		tx.Rollback()
+		return errors.New("部分邀请码不存在")
+	}
+
+	// 构建更新字段
+	updates := make(map[string]interface{})
+
+	// 更新使用次数上限
+	if req.MaxUses != nil {
+		if *req.MaxUses < -1 || *req.MaxUses == 0 {
+			tx.Rollback()
+			return errors.New("使用次数必须为 -1（无限次）或大于 0")
+		}
+		updates["max_uses"] = *req.MaxUses
+	}
+
+	// 更新过期时间
+	if req.ExpiresInDays != nil {
+		if *req.ExpiresInDays == 0 {
+			// 0 表示设为永不过期
+			updates["expires_at"] = nil
+		} else if *req.ExpiresInDays > 0 {
+			// 计算新的过期时间
+			expires := time.Now().AddDate(0, 0, *req.ExpiresInDays)
+			updates["expires_at"] = expires
+		} else {
+			tx.Rollback()
+			return errors.New("有效期必须大于等于 0")
+		}
+	}
+
+	// 如果没有要更新的字段
+	if len(updates) == 0 {
+		tx.Rollback()
+		return errors.New("没有需要更新的字段")
+	}
+
+	// 执行批量更新
+	if err := tx.Model(&model.InvitationCode{}).Where("code IN ?", req.Codes).Updates(updates).Error; err != nil {
+		tx.Rollback()
+		return errors.New("批量更新邀请码失败")
+	}
+
+	tx.Commit()
+	return nil
 }
