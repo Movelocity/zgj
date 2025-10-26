@@ -26,4 +26,5 @@ func InitRoutes(r *gin.Engine) {
 	InitResumeRouter(PrivateGroup, PublicGroup, AdminGroup)
 	InitFileRouter(PrivateGroup, PublicGroup, AdminGroup)
 	InitSystemRouter(PrivateGroup, PublicGroup, AdminGroup)
+	InitInvitationRouter(PrivateGroup, PublicGroup, AdminGroup)
 }
