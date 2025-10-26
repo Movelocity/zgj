@@ -1,5 +1,5 @@
-import { useEffect, useState, useCallback, useRef } from 'react';
-import { FiMessageSquare, FiCheckCircle, FiSave } from 'react-icons/fi';
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
+import { FiMessageSquare, FiSave } from 'react-icons/fi';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Sparkles, ArrowLeftIcon } from 'lucide-react';
 import Button from "@/components/ui/Button";
@@ -7,6 +7,7 @@ import { useGlobalStore } from '@/store';
 import ChatPanel, { type Message } from './components/ChatPanel';
 import ResumeEditorV2 from './components/ResumeEditor';
 import FontSettingsPanel, { type FontSettings } from './components/FontSettingsPanel';
+import LoadingIndicator, { type LoadingStage } from '@/components/LoadingIndicator';
 import type { ResumeV2Data } from '@/types/resumeV2';
 import { defaultResumeV2Data } from '@/types/resumeV2';
 import { resumeAPI } from '@/api/resume';
@@ -61,6 +62,14 @@ export default function ResumeDetails() {
     contentSize: 'medium',
   });
 
+  // 加载步骤配置
+  const loadingStages: LoadingStage[] = useMemo(() => [
+    { key: 'parsing', label: '简历文件解析', order: 1 },
+    { key: 'structuring', label: '简历数据结构化', order: 2 },
+    { key: 'analyzing', label: isJD ? 'JD简历优化' : '简历分析', order: 3 },
+    { key: 'exporting', label: 'AI优化内容格式化', order: 4 },
+  ], [isJD]);
+
   // 初始化进度更新器
   const initProgressUpdater = useCallback(() => {
     if (progressUpdaterRef.current) {
@@ -111,159 +120,160 @@ export default function ResumeDetails() {
     setChatMessages(prev => [...prev, newMessage]);
   }, []);
 
-    // 步骤1：解析文件到文本
-    const executeStep1_ParseFile = useCallback(async (resumeId: string): Promise<StepResult> => {
-      try {
-        setCurrentStage('parsing');
-        setLoading(true);
-        
-        const updater = initProgressUpdater();
-        updater.startStep(0);
-  
-        const response = await resumeAPI.resumeFileToText(resumeId);
-        if (response.code === 0) {
-          updater.completeCurrentStep();
-          return { success: true, needsReload: true };
-        } else {
-          return { success: false, error: '文件解析失败' };
-        }
-      } catch (error) {
-        return { success: false, error: error instanceof Error ? error.message : '文件解析失败' };
-      }
-    }, [initProgressUpdater]);
-  
-    // 步骤2：结构化文本数据
-    const executeStep2_StructureData = useCallback(async (id: string, content: string): Promise<StepResult> => {
-      try {
-        setCurrentStage('structuring');
-        setLoading(true);
-        
-        const updater = initProgressUpdater();
-        updater.startStep(1);
-  
-        // const response = await resumeAPI.structureTextToJSON(resumeId);
-        // 2. 调用阻塞式api，得到结构化的简历内容
-        const uploadData = {
-          current_resume: content,
-          resume_edit: "请先结构化原文"
-        }
-        const structuredResumeResult = await workflowAPI.executeWorkflow("smart-format-2", uploadData, true);
-        if (structuredResumeResult.code !== 0) {
-          console.error('Execution error:', structuredResumeResult.data.message);
-          return { success: false, error: '数据结构化失败' };
-        }
-        const structuredResumeData = structuredResumeResult.data.data.outputs?.output;
-        console.log('structuredResumeData', structuredResumeData);
+  // 步骤1：解析文件到文本
+  const executeStep1_ParseFile = useCallback(async (resumeId: string): Promise<StepResult> => {
+    try {
+      setCurrentStage('parsing');
+      setLoading(true);
+      
+      const updater = initProgressUpdater();
+      updater.startStep(0);
 
-        if (structuredResumeData && typeof structuredResumeData === 'string') {
-          const finalResumeData = parseAndFixResumeJson(structuredResumeData as string);
-          setResumeData(finalResumeData);
-          resumeAPI.updateResume(id, {
-            structured_data: finalResumeData
-          });
-        }
-        
+      const response = await resumeAPI.resumeFileToText(resumeId);
+      if (response.code === 0) {
         updater.completeCurrentStep();
         return { success: true, needsReload: true };
-      } catch (error) {
-        return { success: false, error: error instanceof Error ? error.message : '数据结构化失败' };
+      } else {
+        return { success: false, error: '文件解析失败' };
       }
-    }, [initProgressUpdater]);
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : '文件解析失败' };
+    }
+  }, [initProgressUpdater]);
   
-    // 步骤3：分析优化简历
-    const executeStep3_AnalyzeResume = useCallback(async (
-      _resumeId: string, // 保留用于未来扩展
-      processedData: ResumeV2Data,
-      _text_content: string
-    ): Promise<StepResult> => {
-      try {
-        setCurrentStage('analyzing');
-        setLoading(true);
-        
-        const updater = initProgressUpdater();
-        updater.startStep(2);
+    // 步骤2：结构化文本数据
+  const executeStep2_StructureData = useCallback(async (id: string, content: string): Promise<StepResult> => {
+    try {
+      setCurrentStage('structuring');
+      setLoading(true);
+      
+      const updater = initProgressUpdater();
+      updater.startStep(1);
 
-        let analysisResult;
-
-        if (appTypeRef.current === "jd") {
-          // 1. 调用阻塞式 API common-analysis
-          const job_description = localStorage.getItem('job_description');
-          if (!job_description) {
-            throw new Error('职位描述不存在，终止分析优化');
-          }
-          console.log('开始jd分析优化...', {
-            job_description,
-            resume_text: processedData
-          });
-          analysisResult = await workflowAPI.executeWorkflow("job-description-fitter", {
-            job_description: job_description,
-            resume_text: JSON.stringify(processedData)
-          }, true);
-        } else if (appTypeRef.current === "new-resume") {
-          console.log('开始新简历分析优化...');
-          analysisResult = await workflowAPI.executeWorkflow("common-analysis", {
-            origin_resume: JSON.stringify(processedData)
-          }, true);
-        } else {
-          return { success: false, error: '没有匹配的分析优化方式' };
-        }
-        
-        if (analysisResult.code !== 0) {
-          throw new Error('简历分析失败');
-        }
-        
-        const analysisContent = analysisResult.data.data.outputs?.reply;
-        console.log('分析结果:', analysisContent);
-
-        // 添加AI优化消息到聊天面板
-        addChatMessage(analysisContent, 'assistant');
-        
-        if (!analysisContent || typeof analysisContent !== 'string') {
-          throw new Error('分析结果格式错误');
-        }
-        
-        // 2. 格式化结果
-        console.log('格式化优化后的简历...');
-        setCurrentStage('exporting');
-        const formatResult = await workflowAPI.executeWorkflow("smart-format-2", {
-          current_resume: JSON.stringify(processedData),
-          resume_edit: analysisContent
-        }, true);
-        
-        if (formatResult.code !== 0) {
-          throw new Error('简历格式化失败');
-        }
-        
-        const structuredResumeData = formatResult.data.data.outputs?.output;
-        console.log('格式化结果:', structuredResumeData);
-        
-        if (structuredResumeData && typeof structuredResumeData === 'string') {
-          const finalResumeData = parseAndFixResumeJson(structuredResumeData as string);
-          
-          // parseAndFixResumeJson 已经确保了数据的有效性，直接使用
-          // 更新到newResumeData而不是直接更新resumeData
-          setNewResumeData(finalResumeData);
-          
-          // 原始数据保持不变
-          setResumeData(processedData);
-          
-          updater.completeCurrentStep();
-          console.log('简历优化完成');
-          return { success: true };
-        } else {
-          throw new Error('格式化结果格式错误');
-        }
-      } catch (error) {
-        console.error('第三阶段处理失败:', error);
-        return { success: false, error: error instanceof Error ? error.message : '简历分析优化失败' };
-      } finally {
-        setLoading(false);
+      // const response = await resumeAPI.structureTextToJSON(resumeId);
+      // 2. 调用阻塞式api，得到结构化的简历内容
+      const uploadData = {
+        current_resume: content,
+        resume_edit: "请先结构化原文"
       }
-    }, [initProgressUpdater, addChatMessage]);
+      const structuredResumeResult = await workflowAPI.executeWorkflow("smart-format-2", uploadData, true);
+      if (structuredResumeResult.code !== 0) {
+        console.error('Execution error:', structuredResumeResult.data.message);
+        return { success: false, error: '数据结构化失败' };
+      }
+      const structuredResumeData = structuredResumeResult.data.data.outputs?.output;
+      console.log('structuredResumeData', structuredResumeData);
+
+      if (structuredResumeData && typeof structuredResumeData === 'string') {
+        const finalResumeData = parseAndFixResumeJson(structuredResumeData as string);
+        setResumeData(finalResumeData);
+        resumeAPI.updateResume(id, {
+          structured_data: finalResumeData
+        });
+      }
+      
+      updater.completeCurrentStep();
+      return { success: true, needsReload: true };
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : '数据结构化失败' };
+    }
+  }, [initProgressUpdater]);
+  
+  // 步骤3：分析优化简历
+  const executeStep3_AnalyzeResume = useCallback(async (
+    _resumeId: string, // 保留用于未来扩展
+    processedData: ResumeV2Data,
+    _text_content: string
+  ): Promise<StepResult> => {
+    try {
+      setCurrentStage('analyzing');
+      setLoading(true);
+      
+      const updater = initProgressUpdater();
+      updater.startStep(2);
+
+      let analysisResult;
+
+      if (appTypeRef.current === "jd") {
+        // 1. 调用阻塞式 API common-analysis
+        const job_description = localStorage.getItem('job_description');
+        if (!job_description) {
+          throw new Error('职位描述不存在，终止分析优化');
+        }
+        console.log('开始jd分析优化...', {
+          job_description,
+          resume_text: processedData
+        });
+        analysisResult = await workflowAPI.executeWorkflow("job-description-fitter", {
+          job_description: job_description,
+          resume_text: JSON.stringify(processedData)
+        }, true);
+      } else if (appTypeRef.current === "new-resume") {
+        console.log('开始新简历分析优化...');
+        analysisResult = await workflowAPI.executeWorkflow("common-analysis", {
+          origin_resume: JSON.stringify(processedData)
+        }, true);
+      } else {
+        return { success: false, error: '没有匹配的分析优化方式' };
+      }
+      
+      if (analysisResult.code !== 0) {
+        throw new Error('简历分析失败');
+      }
+      
+      const analysisContent = analysisResult.data.data.outputs?.reply;
+      console.log('分析结果:', analysisContent);
+
+      // 添加AI优化消息到聊天面板
+      addChatMessage(analysisContent, 'assistant');
+      
+      if (!analysisContent || typeof analysisContent !== 'string') {
+        throw new Error('分析结果格式错误');
+      }
+      
+      // 2. 格式化结果
+      console.log('格式化优化后的简历...');
+      setCurrentStage('exporting');
+      updater.startStep(3);
+      const formatResult = await workflowAPI.executeWorkflow("smart-format-2", {
+        current_resume: JSON.stringify(processedData),
+        resume_edit: analysisContent
+      }, true);
+      
+      if (formatResult.code !== 0) {
+        throw new Error('简历格式化失败');
+      }
+      
+      const structuredResumeData = formatResult.data.data.outputs?.output;
+      console.log('格式化结果:', structuredResumeData);
+      
+      if (structuredResumeData && typeof structuredResumeData === 'string') {
+        const finalResumeData = parseAndFixResumeJson(structuredResumeData as string);
+        
+        // parseAndFixResumeJson 已经确保了数据的有效性，直接使用
+        // 更新到newResumeData而不是直接更新resumeData
+        setNewResumeData(finalResumeData);
+        
+        // 原始数据保持不变
+        setResumeData(processedData);
+        
+        updater.completeCurrentStep();
+        console.log('简历优化完成');
+        return { success: true };
+      } else {
+        throw new Error('格式化结果格式错误');
+      }
+    } catch (error) {
+      console.error('第三阶段处理失败:', error);
+      return { success: false, error: error instanceof Error ? error.message : '简历分析优化失败' };
+    }
+  }, [initProgressUpdater, addChatMessage]);
 
   // Load resume detail
   const loadResumeDetail = useCallback(async () => {
     if (!id) return;
+    
+    let shouldCleanup = true; // 用于控制是否清理状态
     
     try {
       setLoading(true);
@@ -279,6 +289,7 @@ export default function ResumeDetails() {
       if (!text_content && file_id) {
         const result = await executeStep1_ParseFile(id);
         if (result.success && result.needsReload) {
+          shouldCleanup = false; // 需要重新加载，不清理状态
           setTimeout(() => loadResumeDetail(), 1000);
           return;
         } else if (!result.success) {
@@ -290,6 +301,7 @@ export default function ResumeDetails() {
       if (text_content && text_content.length > 20 && (!structured_data || !Object.keys(structured_data).length)) {
         const result = await executeStep2_StructureData(id, text_content);
         if (result.success && result.needsReload) {
+          shouldCleanup = false; // 需要重新加载，不清理状态
           setTimeout(() => loadResumeDetail(), 1000);
           return;
         } else if (!result.success) {
@@ -301,7 +313,6 @@ export default function ResumeDetails() {
       if (text_content && text_content.length <= 20) {
         // setEditForm({ name, text_content, structured_data: defaultResumeV2Data });
         setResumeData(defaultResumeV2Data);
-        setLoading(false);
         return;
       }
 
@@ -353,12 +364,13 @@ export default function ResumeDetails() {
         }
       }
       
-      setLoading(false);
     } catch (error) {
-      setLoading(false);
       showError(error instanceof Error ? error.message : '获取简历详情失败');
     } finally {
-      cleanupProgressState();
+      // 只有在不需要重新加载时才清理状态
+      if (shouldCleanup) {
+        cleanupProgressState();
+      }
     }
   }, [id, addChatMessage, executeStep1_ParseFile, executeStep2_StructureData, executeStep3_AnalyzeResume, cleanupProgressState]);
 
@@ -486,7 +498,7 @@ export default function ResumeDetails() {
               disabled={isSaving}
               icon={<FiSave className="w-4 h-4 mr-2" />}
             >
-              {isSaving ? '保存中...' : '保存'}
+              保存
             </Button>
           </div>
         </div>
@@ -495,68 +507,14 @@ export default function ResumeDetails() {
       {/* Main Content */}
       <div className="flex-1 flex">
         {loading ? (
-          <div className="flex justify-center items-center h-full w-full">
-            <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-8 max-w-md w-full mx-4">
-              {!showCompleted ? (
-                <div className="space-y-6">
-                  <div className="text-center">
-                    <h3 className="text-lg font-medium mb-4">正在处理您的简历</h3>
-                  </div>
-                  
-                  {/* 步骤指示器 */}
-                  <div className="space-y-3">
-                    <div className={`flex items-center space-x-3 ${currentStage === 'parsing' ? 'text-blue-600' : currentStage === 'structuring' || currentStage === 'analyzing' || currentStage === 'completed' ? 'text-green-600' : 'text-gray-400'}`}>
-                      <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ${currentStage === 'parsing' ? 'bg-blue-100 border-2 border-blue-600' : currentStage === 'structuring' || currentStage === 'analyzing' || currentStage === 'completed' ? 'bg-green-100 border-2 border-green-600' : 'bg-gray-100 border-2 border-gray-300'}`}>
-                        {currentStage === 'parsing' ? '1' : '✓'}
-                      </div>
-                      <span className="text-sm font-medium">简历文件解析</span>
-                    </div>
-                    
-                    <div className={`flex items-center space-x-3 ${currentStage === 'structuring' ? 'text-blue-600' : currentStage === 'analyzing' || currentStage === 'completed' ? 'text-green-600' : 'text-gray-400'}`}>
-                      <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ${currentStage === 'structuring' ? 'bg-blue-100 border-2 border-blue-600' : currentStage === 'analyzing' || currentStage === 'completed' ? 'bg-green-100 border-2 border-green-600' : 'bg-gray-100 border-2 border-gray-300'}`}>
-                        {currentStage === 'structuring' ? '2' : currentStage === 'analyzing' || currentStage === 'completed' ? '✓' : '2'}
-                      </div>
-                      <span className="text-sm font-medium">简历数据结构化</span>
-                    </div>
-                    
-                    <div className={`flex items-center space-x-3 ${currentStage === 'analyzing' ? 'text-blue-600' : currentStage === 'completed' ? 'text-green-600' : 'text-gray-400'}`}>
-                      <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ${currentStage === 'analyzing' ? 'bg-blue-100 border-2 border-blue-600' : currentStage === 'completed' ? 'bg-green-100 border-2 border-green-600' : 'bg-gray-100 border-2 border-gray-300'}`}>
-                        {currentStage === 'analyzing' ? '3' : currentStage === 'completed' ? '✓' : '3'}
-                      </div>
-                      <span className="text-sm font-medium">{isJD ? 'JD简历优化' : '简历分析'}</span>
-                    </div>
-
-                    <div className={`flex items-center space-x-3 ${currentStage === 'exporting' ? 'text-blue-600' : currentStage === 'completed' ? 'text-green-600' : 'text-gray-400'}`}>
-                      <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ${currentStage === 'exporting' ? 'bg-blue-100 border-2 border-blue-600' : currentStage === 'completed' ? 'bg-green-100 border-2 border-green-600' : 'bg-gray-100 border-2 border-gray-300'}`}>
-                        {currentStage === 'exporting' ? '4' : currentStage === 'completed' ? '✓' : '4'}
-                      </div>
-                      <span className="text-sm font-medium">AI优化内容格式化</span>
-                    </div>
-                  </div>
-                  
-                  <div className="w-full bg-gray-200 rounded-full h-2 mt-6">
-                    <div 
-                      className="bg-blue-600 h-2 rounded-full transition-all duration-500" 
-                      style={{ width: `${progress}%` }}
-                    ></div>
-                  </div>
-                  
-                  {/* 当前处理步骤文本 */}
-                  {progressText && (
-                    <div className="text-center mt-4">
-                      <p className="text-sm text-blue-600 font-medium">{progressText}</p>
-                      <p className="text-xs text-gray-500 mt-1">{progress}% 完成</p>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="text-center space-y-4">
-                  <FiCheckCircle className="w-16 h-16 text-green-500 mx-auto" />
-                  <h3 className="text-lg font-medium">处理完成！</h3>
-                </div>
-              )}
-            </div>
-          </div>
+          <LoadingIndicator
+            stages={loadingStages}
+            currentStage={currentStage}
+            progress={progress}
+            progressText={progressText}
+            showCompleted={showCompleted}
+            title="正在处理您的简历"
+          />
         ) : (
           <>
           {/* Editor Panel */}

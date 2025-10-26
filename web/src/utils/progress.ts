@@ -3,11 +3,30 @@
  * 用于基于时间预期的进度更新
  */
 
+import type { LoadingStage } from '@/components/LoadingIndicator';
+
 export interface ProgressStep {
   name: string;
   expectedDuration: number; // 预期持续时间（秒）
   startProgress: number; // 起始进度百分比
   endProgress: number; // 结束进度百分比
+}
+
+/**
+ * 将进度步骤转换为加载阶段配置
+ * @param steps 进度步骤列表
+ * @param stageKeyPrefix 阶段key的前缀（可选）
+ * @returns 加载阶段配置列表
+ */
+export function convertProgressStepsToLoadingStages(
+  steps: ProgressStep[],
+  stageKeyPrefix: string = 'step'
+): LoadingStage[] {
+  return steps.map((step, index) => ({
+    key: `${stageKeyPrefix}_${index}`,
+    label: step.name,
+    order: index + 1,
+  }));
 }
 
 export interface ProgressCallbacks {
@@ -162,14 +181,20 @@ export const RESUME_PROCESSING_STEPS: ProgressStep[] = [
   },
   {
     name: '简历数据结构化',
-    expectedDuration: 60, // 60秒
+    expectedDuration: 25, // 60秒
     startProgress: 20,
-    endProgress: 85
+    endProgress: 45
   },
   {
-    name: '简历分析优化',
-    expectedDuration: 80, // 80秒
-    startProgress: 85,
+    name: '简历分析',
+    expectedDuration: 25, // 80秒
+    startProgress: 45,
+    endProgress: 70
+  },
+  {
+    name: 'AI优化内容格式化',
+    expectedDuration: 30, // 80秒
+    startProgress: 70,
     endProgress: 100
   }
 ];
