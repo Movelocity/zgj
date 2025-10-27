@@ -5,6 +5,7 @@ import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import { showSuccess, showError } from '@/utils/toast';
 import type { InvitationCode } from '@/types/invitation';
+import type { User } from '@/types/user';
 import { FiCopy, FiCheck, FiPlus, FiUsers, FiEdit } from 'react-icons/fi';
 
 const InvitationManagement: React.FC = () => {
@@ -156,23 +157,56 @@ const InvitationManagement: React.FC = () => {
     try {
       setBatchCreateLoading(true);
       
-      // 获取所有用户
-      const usersResponse = await adminAPI.getUsers({ page: 1, page_size: 1000 });
-      if (usersResponse.code !== 0) {
-        showError('获取用户列表失败');
-        return;
-      }
-
-      const users = usersResponse.data.list || [];
+      // 获取所有用户（分页获取）
+      const allUsers: User[] = [];
+      let currentPage = 1;
+      const pageSize = 100; // 每页100条
       
-      // 获取所有邀请码
-      const invitationsResponse = await invitationAPI.getInvitationList({ page: 1, limit: 1000 });
-      if (invitationsResponse.code !== 0) {
-        showError('获取邀请码列表失败');
-        return;
-      }
+      while (true) {
+        const usersResponse = await adminAPI.getUsers({ page: currentPage, page_size: pageSize });
+        if (usersResponse.code !== 0) {
+          showError('获取用户列表失败');
+          return;
+        }
 
-      const allInvitations = invitationsResponse.data.data || [];
+        const users = usersResponse.data.list || [];
+        allUsers.push(...users);
+        
+        // 检查是否还有更多数据
+        const total = usersResponse.data.total || 0;
+        if (allUsers.length >= total) {
+          break;
+        }
+        
+        currentPage++;
+      }
+      
+      // 获取所有邀请码（分页获取）
+      const allInvitations: InvitationCode[] = [];
+      currentPage = 1;
+      const invitationPageSize = 100; // 每页100条
+      
+      while (true) {
+        const invitationsResponse = await invitationAPI.getInvitationList({ 
+          page: currentPage, 
+          limit: invitationPageSize 
+        });
+        if (invitationsResponse.code !== 0) {
+          showError('获取邀请码列表失败');
+          return;
+        }
+
+        const invitations = invitationsResponse.data.data || [];
+        allInvitations.push(...invitations);
+        
+        // 检查是否还有更多数据
+        const total = invitationsResponse.data.total || 0;
+        if (allInvitations.length >= total) {
+          break;
+        }
+        
+        currentPage++;
+      }
       
       // 统计每个用户（按ID）拥有的邀请码数量
       const userIdsWithInvitation = new Set<string>();
@@ -183,7 +217,7 @@ const InvitationManagement: React.FC = () => {
       }
 
       // 找出没有邀请码的用户
-      const usersWithoutInvitation = users.filter(user => !userIdsWithInvitation.has(user.id));
+      const usersWithoutInvitation = allUsers.filter(user => !userIdsWithInvitation.has(user.id));
 
       if (usersWithoutInvitation.length === 0) {
         showSuccess('所有用户都已有邀请码');
