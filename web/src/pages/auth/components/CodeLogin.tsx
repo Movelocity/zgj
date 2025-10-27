@@ -109,7 +109,7 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onSuccess }) => {
           <Input
             id="phone"
             type="tel"
-            placeholder="请输入管理员手机号"
+            placeholder="请输入手机号"
             value={formData.phone}
             onChange={handleInputChange('phone')}
             onKeyPress={handleKeyPress}
@@ -122,7 +122,7 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onSuccess }) => {
           <Input
             id="password"
             type="password"
-            placeholder="请输入管理员密码"
+            placeholder="请输入密码"
             value={formData.password}
             onChange={handleInputChange('password')}
             onKeyPress={handleKeyPress}

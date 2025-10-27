@@ -78,11 +78,12 @@ const ProfileInfo: React.FC<ProfileInfoProps> = ({ loading, setLoading }) => {
     }
   };
 
-  // 复制邀请码
+  // 复制邀请码（生成完整注册链接）
   const handleCopyCode = async (code: string) => {
     try {
-      await navigator.clipboard.writeText(code);
-      showSuccess('邀请码已复制到剪贴板');
+      const registerUrl = `${window.location.origin}/register?invite=${code}`;
+      await navigator.clipboard.writeText(registerUrl);
+      showSuccess('注册链接已复制到剪贴板');
     } catch (error) {
       showError('复制失败，请手动复制');
       console.error('复制失败:', error);

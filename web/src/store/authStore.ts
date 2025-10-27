@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { User, LoginCredentials, AuthData } from '@/types/user';
+import type { User, LoginCredentials, AuthData, RegisterData } from '@/types/user';
 import { authAPI } from '@/api/auth';
 import { TOKEN_KEY } from '@/utils/constants';
 
@@ -14,6 +14,7 @@ interface AuthState {
   // Actions
   login: (credentials: LoginCredentials) => Promise<void>;
   auth: (data: AuthData) => Promise<void>;
+  register: (data: RegisterData) => Promise<void>;
   logout: () => void;
   checkAuth: () => Promise<boolean>;
   clearError: () => void;
@@ -68,6 +69,28 @@ export const useAuthStore = create<AuthState>()(
           set({ 
             isLoading: false, 
             error: error instanceof Error ? error.message : '认证失败' 
+          });
+          throw error;
+        }
+      },
+
+      register: async (data: RegisterData) => {
+        set({ isLoading: true, error: null });
+        try {
+          const response = await authAPI.register(data);
+          const { token, user } = response.data;
+          
+          localStorage.setItem(TOKEN_KEY, token);
+          set({ 
+            isAuthenticated: true, 
+            user, 
+            token, 
+            isLoading: false 
+          });
+        } catch (error) {
+          set({ 
+            isLoading: false, 
+            error: error instanceof Error ? error.message : '注册失败' 
           });
           throw error;
         }

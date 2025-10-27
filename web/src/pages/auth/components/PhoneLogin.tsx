@@ -1,17 +1,20 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Button, Input, Loading } from '@/components/ui';
 import { authAPI } from '@/api/auth';
 import { useAuthStore } from '@/store/authStore';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 interface PhoneLoginProps {
   onSuccess?: () => void;
+  isRegisterMode?: boolean;
 }
 
-const PhoneLogin: React.FC<PhoneLoginProps> = ({ onSuccess }) => {
+const PhoneLogin: React.FC<PhoneLoginProps> = ({ onSuccess, isRegisterMode = false }) => {
+  const [searchParams] = useSearchParams();
   const [formData, setFormData] = useState({
     phone: '',
-    smsCode: ''
+    smsCode: '',
+    inviteCode: ''
   });
   const [loading, setLoading] = useState(false);
   const [sendingCode, setSendingCode] = useState(false);
@@ -19,8 +22,16 @@ const PhoneLogin: React.FC<PhoneLoginProps> = ({ onSuccess }) => {
   const [error, setError] = useState('');
   const [agreed, setAgreed] = useState(false);
 
-  const { auth } = useAuthStore();
+  const { auth, register, isAuthenticated } = useAuthStore();
   const navigate = useNavigate();
+
+  // 从 URL 参数中获取邀请码并自动填充（仅在未登录且为注册模式时）
+  const inviteFromUrl = searchParams.get('invite');
+  useEffect(() => {
+    if (inviteFromUrl && isRegisterMode && !isAuthenticated) {
+      setFormData(prev => ({ ...prev, inviteCode: inviteFromUrl }));
+    }
+  }, [inviteFromUrl, isRegisterMode, isAuthenticated]);
 
   // 手机号验证
   const validatePhone = (phone: string) => {
@@ -65,8 +76,8 @@ const PhoneLogin: React.FC<PhoneLoginProps> = ({ onSuccess }) => {
     await handleSendCode();
   }, [countdown, handleSendCode]);
 
-  // 验证码登录
-  const handleLogin = useCallback(async () => {
+  // 验证码登录或注册
+  const handleSubmit = useCallback(async () => {
     if (!validatePhone(formData.phone)) {
       setError('请输入正确的手机号码');
       return;
@@ -86,11 +97,20 @@ const PhoneLogin: React.FC<PhoneLoginProps> = ({ onSuccess }) => {
     setError('');
 
     try {
-      // 使用store的auth方法，不传递name参数，后端将使用手机号作为默认姓名
-      await auth({
-        phone: formData.phone,
-        sms_code: formData.smsCode
-      });
+      if (isRegisterMode) {
+        // 注册模式：使用 register 方法
+        await register({
+          phone: formData.phone,
+          sms_code: formData.smsCode,
+          invitation_code: formData.inviteCode
+        });
+      } else {
+        // 登录模式：使用 auth 方法（后端会自动注册，不需要邀请码）
+        await auth({
+          phone: formData.phone,
+          sms_code: formData.smsCode
+        });
+      }
 
       // 成功回调
       onSuccess?.();
@@ -98,11 +118,12 @@ const PhoneLogin: React.FC<PhoneLoginProps> = ({ onSuccess }) => {
       // 跳转到首页
       navigate('/');
     } catch (err: any) {
-      setError(err.response?.data?.message || '登录失败，请重试');
+      const message = err.response?.data?.message || err.message;
+      setError(message || (isRegisterMode ? '注册失败，请重试' : '登录失败，请重试'));
     } finally {
       setLoading(false);
     }
-  }, [formData, agreed, auth, navigate, onSuccess]);
+  }, [formData, agreed, auth, register, navigate, onSuccess, isRegisterMode]);
 
   // 输入处理
   const handleInputChange = (field: keyof typeof formData) => (
@@ -115,7 +136,9 @@ const PhoneLogin: React.FC<PhoneLoginProps> = ({ onSuccess }) => {
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <h2 className="text-2xl font-bold text-gray-900">手机号登录</h2>
+        <h2 className="text-2xl font-bold text-gray-900">
+          {isRegisterMode ? '注册账号' : '手机号登录'}
+        </h2>
       </div>
 
       <div className="space-y-4">
@@ -131,7 +154,6 @@ const PhoneLogin: React.FC<PhoneLoginProps> = ({ onSuccess }) => {
             className="w-full"
           />
         </div>
-
 
         {/* 验证码输入和发送按钮 */}
         <div>
@@ -162,6 +184,21 @@ const PhoneLogin: React.FC<PhoneLoginProps> = ({ onSuccess }) => {
           </div>
         </div>
 
+        {/* 邀请码输入（仅注册模式显示） */}
+        {isRegisterMode && (
+          <div>
+            <Input
+              id="inviteCode"
+              type="text"
+              placeholder={inviteFromUrl ? "使用链接中的邀请码" : "邀请码（选填）"}
+              value={formData.inviteCode}
+              onChange={handleInputChange('inviteCode')}
+              disabled={!!inviteFromUrl}
+              className="w-full"
+            />
+          </div>
+        )}
+
         {/* 错误信息 */}
         {error && (
           <div className="text-sm text-red-600 bg-red-50 p-3 rounded-md">
@@ -169,19 +206,24 @@ const PhoneLogin: React.FC<PhoneLoginProps> = ({ onSuccess }) => {
           </div>
         )}
 
-        {/* 登录按钮 */}
+        {/* 提交按钮 */}
         <Button
-          onClick={handleLogin}
-          disabled={loading || !formData.phone || !formData.smsCode || !agreed}
+          onClick={handleSubmit}
+          disabled={
+            loading || 
+            !formData.phone || 
+            !formData.smsCode || 
+            !agreed
+          }
           className="w-full"
         >
           {loading ? (
             <>
               <Loading size="sm" className="mr-2" />
-              登录中...
+              {isRegisterMode ? '注册中...' : '登录中...'}
             </>
           ) : (
-            '登录'
+            isRegisterMode ? '注册' : '登录'
           )}
         </Button>
 

@@ -34,6 +34,10 @@ export const routes = [
     element: <Auth />,
   },
   {
+    path: '/register',
+    element: <Auth />,
+  },
+  {
     path: '/code-auth',
     element: <CodeAuth />,
   },

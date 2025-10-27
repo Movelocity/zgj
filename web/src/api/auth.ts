@@ -1,5 +1,5 @@
 import apiClient from './client';
-import type { LoginCredentials, AuthData, User, UserProfileResponse } from '@/types/user';
+import type { LoginCredentials, AuthData, RegisterData, User, UserProfileResponse } from '@/types/user';
 import type { ApiResponse } from '@/types/global';
 
 export const authAPI = {
@@ -8,9 +8,14 @@ export const authAPI = {
     return apiClient.post('/api/user/login', credentials);
   },
 
-  // 手机号+验证码认证
-  auth: (data: AuthData): Promise<ApiResponse<{ token: string; user: User }>> => {
+  // 手机号+验证码认证（自动注册，不需要邀请码）
+  auth: (data: AuthData): Promise<ApiResponse<{ token: string; user: User; is_new_user?: boolean }>> => {
     return apiClient.post('/api/user/auth', data);
+  },
+
+  // 注册（需要邀请码）
+  register: (data: RegisterData): Promise<ApiResponse<{ token: string; user: User }>> => {
+    return apiClient.post('/api/user/register', data);
   },
 
   // 发送短信验证码

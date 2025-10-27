@@ -14,7 +14,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// Register 用户注册
+// Register 用户注册（需要邀请码）
 func Register(c *gin.Context) {
 	var req userService.RegisterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -28,13 +28,24 @@ func Register(c *gin.Context) {
 		return
 	}
 
-	// 调用服务层
-	if err := service.UserService.Register(req.Name, req.Phone, req.Password); err != nil {
+	// 获取IP和UserAgent
+	ipAddress := c.ClientIP()
+	userAgent := c.GetHeader("User-Agent")
+
+	// 调用服务层注册（带邀请码验证）
+	token, userInfo, err := service.UserService.RegisterWithInvitation(req.Phone, req.Name, req.InvitationCode, ipAddress, userAgent)
+	if err != nil {
 		utils.FailWithMessage(err.Error(), c)
 		return
 	}
 
-	utils.OkWithMessage("注册成功", c)
+	response := userService.LoginResponse{
+		Token:     token,
+		ExpiresAt: time.Now().Add(global.CONFIG.JWT.ExpiresTime),
+		User:      *userInfo,
+	}
+
+	utils.OkWithData(response, c)
 }
 
 // Login 用户登录

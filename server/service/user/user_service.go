@@ -18,41 +18,71 @@ type userService struct{}
 
 var UserService = &userService{}
 
-// Register 用户注册
-func (s *userService) Register(name, phone, password string) error {
+// RegisterWithInvitation 使用邀请码注册用户
+func (s *userService) RegisterWithInvitation(phone, name, invitationCode, ipAddress, userAgent string) (string, *UserInfo, error) {
 	// 检查手机号是否已存在
 	var existUser model.User
 	if err := global.DB.Where("phone = ? AND active = ?", phone, true).First(&existUser).Error; err == nil {
-		return errors.New("手机号已被注册")
+		return "", nil, errors.New("手机号已被注册")
 	}
 
-	// 哈希密码
-	hashedPassword, err := utils.HashPassword(password)
-	if err != nil {
-		return errors.New("密码加密失败")
+	// 验证邀请码
+	var invitation model.InvitationCode
+	if err := global.DB.Where("code = ?", invitationCode).First(&invitation).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return "", nil, errors.New("邀请码不存在")
+		}
+		return "", nil, errors.New("查询邀请码失败")
 	}
+
+	// 检查邀请码是否有效
+	if !invitation.IsValid() {
+		if !invitation.IsActive {
+			return "", nil, errors.New("邀请码已被禁用")
+		} else if invitation.ExpiresAt != nil && time.Now().After(*invitation.ExpiresAt) {
+			return "", nil, errors.New("邀请码已过期")
+		} else if invitation.MaxUses != -1 && invitation.UsedCount >= invitation.MaxUses {
+			return "", nil, errors.New("邀请码使用次数已达上限")
+		}
+		return "", nil, errors.New("邀请码无效")
+	}
+
+	// 开启事务
+	tx := global.DB.Begin()
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
 
 	// 检查系统中是否已有用户，如果没有则第一个注册的用户为管理员
 	var userCount int64
-	global.DB.Model(&model.User{}).Where("active = ?", true).Count(&userCount)
+	tx.Model(&model.User{}).Where("active = ?", true).Count(&userCount)
 
 	userRole := 666 // 默认为普通用户
 	if userCount == 0 {
 		userRole = 888 // 第一个用户设为管理员
 	}
 
-	// 创建用户
+	// 如果没有提供用户名，使用手机号后4位
+	if name == "" {
+		name = "用户" + phone[len(phone)-4:]
+	}
+
+	// 创建用户（设置默认密码）
+	hashedDefaultPassword, _ := utils.HashPassword("123456")
 	newUser := model.User{
 		ID:       utils.GenerateTLID(),
 		Name:     name,
 		Phone:    phone,
-		Password: hashedPassword,
+		Password: hashedDefaultPassword,
 		Active:   true,
 		Role:     userRole,
 	}
 
-	if err := global.DB.Create(&newUser).Error; err != nil {
-		return errors.New("用户创建失败")
+	if err := tx.Create(&newUser).Error; err != nil {
+		tx.Rollback()
+		return "", nil, errors.New("用户创建失败")
 	}
 
 	// 创建用户档案
@@ -63,8 +93,34 @@ func (s *userService) Register(name, phone, password string) error {
 		Resumes: model.JSON("[]"),
 	}
 
-	if err := global.DB.Create(&userProfile).Error; err != nil {
-		return errors.New("用户档案创建失败")
+	if err := tx.Create(&userProfile).Error; err != nil {
+		tx.Rollback()
+		return "", nil, errors.New("用户档案创建失败")
+	}
+
+	// 创建邀请码使用记录
+	invitationUse := model.InvitationUse{
+		InvitationCode: invitationCode,
+		UsedBy:         newUser.ID,
+		UsedAt:         time.Now(),
+		IPAddress:      ipAddress,
+		UserAgent:      userAgent,
+	}
+
+	if err := tx.Create(&invitationUse).Error; err != nil {
+		tx.Rollback()
+		return "", nil, errors.New("创建邀请码使用记录失败")
+	}
+
+	// 更新邀请码使用次数
+	if err := tx.Model(&invitation).Update("used_count", gorm.Expr("used_count + ?", 1)).Error; err != nil {
+		tx.Rollback()
+		return "", nil, errors.New("更新邀请码使用次数失败")
+	}
+
+	// 提交事务
+	if err := tx.Commit().Error; err != nil {
+		return "", nil, errors.New("注册失败")
 	}
 
 	// 如果是第一个用户（管理员），输出提示信息
@@ -72,7 +128,26 @@ func (s *userService) Register(name, phone, password string) error {
 		fmt.Printf("首个用户注册成功，已自动设为管理员 - 手机号: %s, 用户名: %s\n", phone, name)
 	}
 
-	return nil
+	// 生成JWT token
+	token, err := utils.GenerateToken(newUser.ID, newUser.Name, newUser.Role)
+	if err != nil {
+		return "", nil, errors.New("token生成失败")
+	}
+
+	// 构建用户信息
+	userInfo := &UserInfo{
+		ID:        newUser.ID,
+		Name:      newUser.Name,
+		Phone:     newUser.Phone,
+		Email:     newUser.Email,
+		HeaderImg: newUser.HeaderImg,
+		Role:      newUser.Role,
+		Active:    newUser.Active,
+		LastLogin: newUser.LastLogin,
+		CreatedAt: newUser.CreatedAt,
+	}
+
+	return token, userInfo, nil
 }
 
 // Login 用户登录

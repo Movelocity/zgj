@@ -38,9 +38,9 @@ export interface AuthData {
 
 export interface RegisterData {
   phone: string;
-  password: string;
   sms_code: string;
-  nickname?: string;
+  invitation_code: string; // 注册必填邀请码
+  name?: string; // 可选，用户名
 }
 
 export interface User {
