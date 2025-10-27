@@ -3,6 +3,7 @@ import { Button, Input, Loading } from '@/components/ui';
 import { authAPI } from '@/api/auth';
 import { useAuthStore } from '@/store/authStore';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { showInfo } from '@/utils/toast';
 
 interface PhoneLoginProps {
   onSuccess?: () => void;
@@ -99,11 +100,16 @@ const PhoneLogin: React.FC<PhoneLoginProps> = ({ onSuccess, isRegisterMode = fal
     try {
       if (isRegisterMode) {
         // 注册模式：使用 register 方法
-        await register({
+        const response: { token: string; user: any; message?: string } = await register({
           phone: formData.phone,
           sms_code: formData.smsCode,
           invitation_code: formData.inviteCode
         });
+        
+        // 如果后端返回了提示消息（如"已有账号，直接登录"），显示toast提示
+        if (response?.message) {
+          showInfo(response.message);
+        }
       } else {
         // 登录模式：使用 auth 方法（后端会自动注册，不需要邀请码）
         await auth({

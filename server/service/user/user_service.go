@@ -1,10 +1,13 @@
 package user
 
 import (
+	"crypto/rand"
+	"encoding/base32"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"gorm.io/gorm"
@@ -18,33 +21,155 @@ type userService struct{}
 
 var UserService = &userService{}
 
-// RegisterWithInvitation 使用邀请码注册用户
-func (s *userService) RegisterWithInvitation(phone, name, invitationCode, ipAddress, userAgent string) (string, *UserInfo, error) {
+// generateInvitationCode 生成邀请码（格式：ABCD-EFGH-IJKL）
+func (s *userService) generateInvitationCode() string {
+	b := make([]byte, 9) // 9字节可以生成15个字符（base32编码）
+	rand.Read(b)
+	code := base32.StdEncoding.EncodeToString(b)
+	code = strings.TrimRight(code, "=") // 移除填充字符
+
+	// 格式化为 XXXX-XXXX-XXXX
+	if len(code) >= 12 {
+		return code[:4] + "-" + code[4:8] + "-" + code[8:12]
+	}
+	return code
+}
+
+// createUnlimitedInvitationForUser 为用户创建无限制邀请码
+func (s *userService) createUnlimitedInvitationForUser(tx *gorm.DB, userID string) error {
+	// 生成唯一邀请码
+	var code string
+	for {
+		code = s.generateInvitationCode()
+		// 检查是否已存在
+		var existingCode model.InvitationCode
+		if err := tx.Where("code = ?", code).First(&existingCode).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				break // 邀请码不存在，可以使用
+			}
+		}
+	}
+
+	// 创建无限制邀请码记录
+	invitation := model.InvitationCode{
+		Code:      code,
+		CreatorID: userID,
+		MaxUses:   -1, // -1 表示无限次使用
+		UsedCount: 0,
+		ExpiresAt: nil,  // nil 表示永不过期
+		IsActive:  true, // 激活状态
+		Note:      "用户注册自动生成",
+	}
+
+	if err := tx.Create(&invitation).Error; err != nil {
+		return errors.New("创建邀请码失败")
+	}
+
+	fmt.Printf("为用户 %s 自动创建无限制邀请码: %s\n", userID, code)
+	return nil
+}
+
+// RegisterWithInvitation 使用邀请码注册用户（邀请码选填）
+// 如果用户已存在，则直接登录；如果不存在，则注册新用户
+func (s *userService) RegisterWithInvitation(phone, name, invitationCode, ipAddress, userAgent string) (string, *UserInfo, string, error) {
 	// 检查手机号是否已存在
 	var existUser model.User
-	if err := global.DB.Where("phone = ? AND active = ?", phone, true).First(&existUser).Error; err == nil {
-		return "", nil, errors.New("手机号已被注册")
+	err := global.DB.Where("phone = ?", phone).First(&existUser).Error
+
+	if err == nil {
+		// 用户已存在，执行登录逻辑
+		if !existUser.Active {
+			return "", nil, "", errors.New("用户已被停用")
+		}
+
+		// 更新最后登录时间
+		global.DB.Model(&existUser).Update("last_login", time.Now())
+
+		// 处理邀请码逻辑（如果提供了邀请码）
+		if invitationCode != "" {
+			// 检查用户是否已有邀请码使用记录
+			var existingUse model.InvitationUse
+			if err := global.DB.Where("used_by = ?", existUser.ID).First(&existingUse).Error; err != nil {
+				if errors.Is(err, gorm.ErrRecordNotFound) {
+					// 用户没有邀请码使用记录，记录新邀请码
+					// 验证邀请码
+					var invitation model.InvitationCode
+					if err := global.DB.Where("code = ?", invitationCode).First(&invitation).Error; err == nil {
+						// 邀请码存在且有效，创建使用记录
+						if invitation.IsValid() {
+							tx := global.DB.Begin()
+							invitationUse := model.InvitationUse{
+								InvitationCode: invitationCode,
+								UsedBy:         existUser.ID,
+								UsedAt:         time.Now(),
+								IPAddress:      ipAddress,
+								UserAgent:      userAgent,
+							}
+							if err := tx.Create(&invitationUse).Error; err == nil {
+								// 更新邀请码使用次数
+								tx.Model(&invitation).Update("used_count", gorm.Expr("used_count + ?", 1))
+								tx.Commit()
+							} else {
+								tx.Rollback()
+							}
+						}
+					}
+					// 忽略邀请码验证失败的情况，因为用户已存在
+				}
+				// 如果用户已有邀请码使用记录，忽略新邀请码
+			}
+		}
+
+		// 生成JWT token
+		token, err := utils.GenerateToken(existUser.ID, existUser.Name, existUser.Role)
+		if err != nil {
+			return "", nil, "", errors.New("token生成失败")
+		}
+
+		// 构建用户信息
+		userInfo := &UserInfo{
+			ID:        existUser.ID,
+			Name:      existUser.Name,
+			Phone:     existUser.Phone,
+			Email:     existUser.Email,
+			HeaderImg: existUser.HeaderImg,
+			Role:      existUser.Role,
+			Active:    existUser.Active,
+			LastLogin: existUser.LastLogin,
+			CreatedAt: existUser.CreatedAt,
+		}
+
+		return token, userInfo, "已有账号，直接登录", nil
 	}
 
-	// 验证邀请码
-	var invitation model.InvitationCode
-	if err := global.DB.Where("code = ?", invitationCode).First(&invitation).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return "", nil, errors.New("邀请码不存在")
-		}
-		return "", nil, errors.New("查询邀请码失败")
+	// 用户不存在，执行注册逻辑
+	if !errors.Is(err, gorm.ErrRecordNotFound) {
+		return "", nil, "", errors.New("数据库查询失败")
 	}
 
-	// 检查邀请码是否有效
-	if !invitation.IsValid() {
-		if !invitation.IsActive {
-			return "", nil, errors.New("邀请码已被禁用")
-		} else if invitation.ExpiresAt != nil && time.Now().After(*invitation.ExpiresAt) {
-			return "", nil, errors.New("邀请码已过期")
-		} else if invitation.MaxUses != -1 && invitation.UsedCount >= invitation.MaxUses {
-			return "", nil, errors.New("邀请码使用次数已达上限")
+	// 如果提供了邀请码，需要验证
+	var invitation *model.InvitationCode
+	if invitationCode != "" {
+		var inv model.InvitationCode
+		if err := global.DB.Where("code = ?", invitationCode).First(&inv).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return "", nil, "", errors.New("邀请码不存在")
+			}
+			return "", nil, "", errors.New("查询邀请码失败")
 		}
-		return "", nil, errors.New("邀请码无效")
+
+		// 检查邀请码是否有效
+		if !inv.IsValid() {
+			if !inv.IsActive {
+				return "", nil, "", errors.New("邀请码已被禁用")
+			} else if inv.ExpiresAt != nil && time.Now().After(*inv.ExpiresAt) {
+				return "", nil, "", errors.New("邀请码已过期")
+			} else if inv.MaxUses != -1 && inv.UsedCount >= inv.MaxUses {
+				return "", nil, "", errors.New("邀请码使用次数已达上限")
+			}
+			return "", nil, "", errors.New("邀请码无效")
+		}
+		invitation = &inv
 	}
 
 	// 开启事务
@@ -82,7 +207,7 @@ func (s *userService) RegisterWithInvitation(phone, name, invitationCode, ipAddr
 
 	if err := tx.Create(&newUser).Error; err != nil {
 		tx.Rollback()
-		return "", nil, errors.New("用户创建失败")
+		return "", nil, "", errors.New("用户创建失败")
 	}
 
 	// 创建用户档案
@@ -95,32 +220,40 @@ func (s *userService) RegisterWithInvitation(phone, name, invitationCode, ipAddr
 
 	if err := tx.Create(&userProfile).Error; err != nil {
 		tx.Rollback()
-		return "", nil, errors.New("用户档案创建失败")
+		return "", nil, "", errors.New("用户档案创建失败")
 	}
 
-	// 创建邀请码使用记录
-	invitationUse := model.InvitationUse{
-		InvitationCode: invitationCode,
-		UsedBy:         newUser.ID,
-		UsedAt:         time.Now(),
-		IPAddress:      ipAddress,
-		UserAgent:      userAgent,
+	// 如果提供了邀请码，创建邀请码使用记录
+	if invitation != nil {
+		invitationUse := model.InvitationUse{
+			InvitationCode: invitationCode,
+			UsedBy:         newUser.ID,
+			UsedAt:         time.Now(),
+			IPAddress:      ipAddress,
+			UserAgent:      userAgent,
+		}
+
+		if err := tx.Create(&invitationUse).Error; err != nil {
+			tx.Rollback()
+			return "", nil, "", errors.New("创建邀请码使用记录失败")
+		}
+
+		// 更新邀请码使用次数
+		if err := tx.Model(invitation).Update("used_count", gorm.Expr("used_count + ?", 1)).Error; err != nil {
+			tx.Rollback()
+			return "", nil, "", errors.New("更新邀请码使用次数失败")
+		}
 	}
 
-	if err := tx.Create(&invitationUse).Error; err != nil {
+	// 为新用户创建无限制邀请码
+	if err := s.createUnlimitedInvitationForUser(tx, newUser.ID); err != nil {
 		tx.Rollback()
-		return "", nil, errors.New("创建邀请码使用记录失败")
-	}
-
-	// 更新邀请码使用次数
-	if err := tx.Model(&invitation).Update("used_count", gorm.Expr("used_count + ?", 1)).Error; err != nil {
-		tx.Rollback()
-		return "", nil, errors.New("更新邀请码使用次数失败")
+		return "", nil, "", err
 	}
 
 	// 提交事务
 	if err := tx.Commit().Error; err != nil {
-		return "", nil, errors.New("注册失败")
+		return "", nil, "", errors.New("注册失败")
 	}
 
 	// 如果是第一个用户（管理员），输出提示信息
@@ -131,7 +264,7 @@ func (s *userService) RegisterWithInvitation(phone, name, invitationCode, ipAddr
 	// 生成JWT token
 	token, err := utils.GenerateToken(newUser.ID, newUser.Name, newUser.Role)
 	if err != nil {
-		return "", nil, errors.New("token生成失败")
+		return "", nil, "", errors.New("token生成失败")
 	}
 
 	// 构建用户信息
@@ -147,7 +280,7 @@ func (s *userService) RegisterWithInvitation(phone, name, invitationCode, ipAddr
 		CreatedAt: newUser.CreatedAt,
 	}
 
-	return token, userInfo, nil
+	return token, userInfo, "", nil
 }
 
 // Login 用户登录
@@ -549,6 +682,14 @@ func (s *userService) LoginOrRegister(phone, name string) (string, *UserInfo, bo
 		userRole = 888 // 第一个用户设为管理员
 	}
 
+	// 开启事务
+	tx := global.DB.Begin()
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
+
 	// 创建新用户（无需密码）
 	hashedDefaultPassword, _ := utils.HashPassword("123456") // 设置默认密码，用户可后续修改
 	newUser := model.User{
@@ -560,7 +701,8 @@ func (s *userService) LoginOrRegister(phone, name string) (string, *UserInfo, bo
 		Role:     userRole,
 	}
 
-	if err := global.DB.Create(&newUser).Error; err != nil {
+	if err := tx.Create(&newUser).Error; err != nil {
+		tx.Rollback()
 		return "", nil, false, errors.New("用户创建失败")
 	}
 
@@ -572,8 +714,20 @@ func (s *userService) LoginOrRegister(phone, name string) (string, *UserInfo, bo
 		Resumes: model.JSON("[]"),
 	}
 
-	if err := global.DB.Create(&userProfile).Error; err != nil {
+	if err := tx.Create(&userProfile).Error; err != nil {
+		tx.Rollback()
 		return "", nil, false, errors.New("用户档案创建失败")
+	}
+
+	// 为新用户创建无限制邀请码
+	if err := s.createUnlimitedInvitationForUser(tx, newUser.ID); err != nil {
+		tx.Rollback()
+		return "", nil, false, err
+	}
+
+	// 提交事务
+	if err := tx.Commit().Error; err != nil {
+		return "", nil, false, errors.New("注册失败")
 	}
 
 	// 如果是第一个用户（管理员），输出提示信息

@@ -39,7 +39,7 @@ export interface AuthData {
 export interface RegisterData {
   phone: string;
   sms_code: string;
-  invitation_code: string; // 注册必填邀请码
+  invitation_code?: string; // 邀请码选填
   name?: string; // 可选，用户名
 }
 

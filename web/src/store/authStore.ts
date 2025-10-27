@@ -14,7 +14,7 @@ interface AuthState {
   // Actions
   login: (credentials: LoginCredentials) => Promise<void>;
   auth: (data: AuthData) => Promise<void>;
-  register: (data: RegisterData) => Promise<void>;
+  register: (data: RegisterData) => Promise<{ token: string; user: User; message?: string }>;
   logout: () => void;
   checkAuth: () => Promise<boolean>;
   clearError: () => void;
@@ -78,7 +78,7 @@ export const useAuthStore = create<AuthState>()(
         set({ isLoading: true, error: null });
         try {
           const response = await authAPI.register(data);
-          const { token, user } = response.data;
+          const { token, user, message } = response.data;
           
           localStorage.setItem(TOKEN_KEY, token);
           set({ 
@@ -87,6 +87,8 @@ export const useAuthStore = create<AuthState>()(
             token, 
             isLoading: false 
           });
+          
+          return { token, user, message };
         } catch (error) {
           set({ 
             isLoading: false, 

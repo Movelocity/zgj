@@ -6,8 +6,8 @@ import "time"
 type RegisterRequest struct {
 	Phone          string `json:"phone" binding:"required"`
 	SmsCode        string `json:"sms_code" binding:"required"`
-	InvitationCode string `json:"invitation_code" binding:"required"` // 邀请码必填
-	Name           string `json:"name"`                               // 可选，用户名
+	InvitationCode string `json:"invitation_code"` // 邀请码选填
+	Name           string `json:"name"`            // 可选，用户名
 }
 
 // LoginRequest 用户登录请求
@@ -47,6 +47,7 @@ type LoginResponse struct {
 	Token     string    `json:"token"`
 	ExpiresAt time.Time `json:"expires_at"`
 	User      UserInfo  `json:"user"`
+	Message   string    `json:"message,omitempty"` // 可选，用于特殊提示信息
 }
 
 // UserInfo 用户信息

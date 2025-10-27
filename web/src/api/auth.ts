@@ -13,8 +13,8 @@ export const authAPI = {
     return apiClient.post('/api/user/auth', data);
   },
 
-  // 注册（需要邀请码）
-  register: (data: RegisterData): Promise<ApiResponse<{ token: string; user: User }>> => {
+  // 注册（邀请码选填，如果用户已存在则直接登录）
+  register: (data: RegisterData): Promise<ApiResponse<{ token: string; user: User; message?: string }>> => {
     return apiClient.post('/api/user/register', data);
   },
 
