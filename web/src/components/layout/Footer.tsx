@@ -63,9 +63,9 @@ const Footer: React.FC = () => {
                 </a>
               </li>
               <li>
-                <a href="#" className="hover:text-white">
+                <Link to={ROUTES.CONTACT} className="hover:text-white">
                   联系我们
-                </a>
+                </Link>
               </li>
               <li>
                 <a href="#" className="hover:text-white">

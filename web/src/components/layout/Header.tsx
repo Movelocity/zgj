@@ -45,6 +45,12 @@ const Header: React.FC = () => {
             >
               我的简历
             </Link>
+            <Link
+              to={ROUTES.CONTACT}
+              className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium"
+            >
+              联系我们
+            </Link>
 
           </nav>
 

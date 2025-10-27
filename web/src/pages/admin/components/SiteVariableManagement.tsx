@@ -417,7 +417,7 @@ const SiteVariableManagement: React.FC = () => {
         }}
         title="编辑网站变量"
       >
-        <div className="space-y-4">
+        <div className="space-y-4 p-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               键名 (Key)

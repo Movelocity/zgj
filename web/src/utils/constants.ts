@@ -20,6 +20,7 @@ export const ROUTES = {
   JOB_RESUME: '/job-resume',
   PROFILE: '/profile',
   ADMINISTRATOR: '/administrator',
+  CONTACT: '/contact',
   API_TEST: '/api-test',
 } as const;
 

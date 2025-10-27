@@ -19,6 +19,7 @@ const ResumeEditor = lazy(() => import('@/pages/editor/ResumeDetails'));
 // const ResumeEditorV2 = lazy(() => import('@/pages/editor/ResumeDetails'));
 const Profile = lazy(() => import('@/pages/profile/Profile'));
 const Administrator = lazy(() => import('@/pages/admin/Administrator'));
+const Contact = lazy(() => import('@/pages/contact/Contact'));
 const NotFound = lazy(() => import('@/pages/error/NotFound'));
 const ServerError = lazy(() => import('@/pages/error/ServerError'));
 const TestModal = lazy(() => import('@/pages/test/Modal.example'));
@@ -76,6 +77,10 @@ export const routes = [
   {
     path: '/administrator',
     element: <Administrator />,
+  },
+  {
+    path: '/contact',
+    element: <Contact />,
   },
   {
     path: '/test-modal',
