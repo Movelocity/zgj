@@ -53,14 +53,14 @@ const Footer: React.FC = () => {
             <h4 className="text-md font-semibold mb-4">帮助支持</h4>
             <ul className="space-y-2 text-gray-400">
               <li>
-                <a href="#" className="hover:text-white">
+                <Link to={ROUTES.CONTACT} className="hover:text-white">
                   使用指南
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#" className="hover:text-white">
+                <Link to={ROUTES.CONTACT} className="hover:text-white">
                   常见问题
-                </a>
+                </Link>
               </li>
               <li>
                 <Link to={ROUTES.CONTACT} className="hover:text-white">
@@ -68,9 +68,9 @@ const Footer: React.FC = () => {
                 </Link>
               </li>
               <li>
-                <a href="#" className="hover:text-white">
+                <Link to={ROUTES.CONTACT} className="hover:text-white">
                   隐私政策
-                </a>
+                </Link>
               </li>
             </ul>
           </div>
