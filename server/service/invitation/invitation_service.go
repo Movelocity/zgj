@@ -212,6 +212,12 @@ func (s *invitationService) UseInvitation(req UseInvitationRequest) error {
 		return errors.New("查询邀请码失败")
 	}
 
+	// 检查是否是用户自己的邀请码
+	if invitation.CreatorID == req.UserID {
+		tx.Rollback()
+		return errors.New("不能使用自己创建的邀请码")
+	}
+
 	// 检查邀请码是否有效
 	if !invitation.IsValid() {
 		tx.Rollback()
@@ -533,4 +539,62 @@ func (s *invitationService) GetUserInvitationUse(userID string) (*UserInvitation
 		InvitationCode: invitationUse.InvitationCode,
 		UsedAt:         &invitationUse.UsedAt,
 	}, nil
+}
+
+// GetUserCreatedInvitationList 获取用户创建的邀请码列表
+func (s *invitationService) GetUserCreatedInvitationList(userID string, page, limit string) (*InvitationListResponse, error) {
+	pageInt, _ := strconv.Atoi(page)
+	limitInt, _ := strconv.Atoi(limit)
+
+	if pageInt <= 0 {
+		pageInt = 1
+	}
+	if limitInt <= 0 || limitInt > 100 {
+		limitInt = 20
+	}
+
+	offset := (pageInt - 1) * limitInt
+
+	var invitations []model.InvitationCode
+	var total int64
+
+	// 查询总数
+	if err := global.DB.Model(&model.InvitationCode{}).Where("creator_id = ?", userID).Count(&total).Error; err != nil {
+		return nil, errors.New("查询邀请码总数失败")
+	}
+
+	// 分页查询，关联创建者
+	if err := global.DB.Preload("Creator").
+		Where("creator_id = ?", userID).
+		Order("created_at DESC").
+		Limit(limitInt).
+		Offset(offset).
+		Find(&invitations).Error; err != nil {
+		return nil, errors.New("查询邀请码列表失败")
+	}
+
+	// 转换为响应格式
+	data := make([]InvitationCodeResponse, 0, len(invitations))
+	for _, inv := range invitations {
+		data = append(data, InvitationCodeResponse{
+			Code:      inv.Code,
+			ExpiresAt: inv.ExpiresAt,
+			MaxUses:   inv.MaxUses,
+			UsedCount: inv.UsedCount,
+			CreatedAt: inv.CreatedAt,
+			IsActive:  inv.IsActive,
+			Note:      inv.Note,
+			CreatorID: inv.CreatorID,
+			Creator:   inv.Creator.Name,
+		})
+	}
+
+	response := &InvitationListResponse{
+		Data:  data,
+		Total: total,
+		Page:  pageInt,
+		Limit: limitInt,
+	}
+
+	return response, nil
 }

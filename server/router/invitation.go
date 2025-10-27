@@ -17,9 +17,10 @@ func InitInvitationRouter(privateGroup *gin.RouterGroup, publicGroup *gin.Router
 	// 私有路由 - 需要认证的用户操作
 	InvitationPrivateRouter := privateGroup.Group("/api/invitations")
 	{
-		InvitationPrivateRouter.POST("", invitation.CreateInvitation)           // 创建邀请码
-		InvitationPrivateRouter.POST("/use", invitation.UseInvitation)          // 使用邀请码（需要登录）
-		InvitationPrivateRouter.GET("/my-use", invitation.GetUserInvitationUse) // 查询当前用户的邀请码使用记录
+		InvitationPrivateRouter.POST("", invitation.CreateInvitation)                       // 创建邀请码
+		InvitationPrivateRouter.POST("/use", invitation.UseInvitation)                      // 使用邀请码（需要登录）
+		InvitationPrivateRouter.GET("/my-use", invitation.GetUserInvitationUse)             // 查询当前用户的邀请码使用记录
+		InvitationPrivateRouter.GET("/my-created", invitation.GetUserCreatedInvitationList) // 获取当前用户创建的邀请码列表
 	}
 
 	// 管理员路由 - 邀请码管理

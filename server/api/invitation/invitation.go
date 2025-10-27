@@ -116,6 +116,28 @@ func GetUserInvitationUse(c *gin.Context) {
 	utils.OkWithData(response, c)
 }
 
+// GetUserCreatedInvitationList 获取用户创建的邀请码列表
+func GetUserCreatedInvitationList(c *gin.Context) {
+	// 从 JWT 获取用户ID
+	userID := c.GetString("userID")
+	if userID == "" {
+		utils.FailWithMessage("用户未登录", c)
+		return
+	}
+
+	page := c.DefaultQuery("page", "1")
+	limit := c.DefaultQuery("limit", "20")
+
+	// 调用服务层
+	response, err := service.InvitationService.GetUserCreatedInvitationList(userID, page, limit)
+	if err != nil {
+		utils.FailWithMessage(err.Error(), c)
+		return
+	}
+
+	utils.OkWithData(response, c)
+}
+
 // GetInvitationList 获取邀请码列表（管理员）
 func GetInvitationList(c *gin.Context) {
 	page := c.DefaultQuery("page", "1")

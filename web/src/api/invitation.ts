@@ -38,6 +38,11 @@ export const invitationAPI = {
     return apiClient.get('/api/invitations/my-use');
   },
 
+  // 获取当前用户创建的邀请码列表
+  getMyCreatedInvitations: (params?: { page?: number; limit?: number }): Promise<ApiResponse<InvitationListResponse>> => {
+    return apiClient.get('/api/invitations/my-created', { params });
+  },
+
   // 获取邀请码列表（管理员）
   getInvitationList: (params?: { page?: number; limit?: number }): Promise<ApiResponse<InvitationListResponse>> => {
     return apiClient.get('/api/invitations', { params });
