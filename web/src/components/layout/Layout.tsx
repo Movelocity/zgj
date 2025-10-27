@@ -16,16 +16,16 @@ const Layout: React.FC = () => {
       setTimeout(() => {
         // 延迟加载页脚，防止在开始动画前占据页面
         setFooterVisible(true);
-      }, 2000);
+      }, 1);
     } else {
       setFooterVisible(false);
     }
   }, [isHomePage]); 
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="bg-gray-50 flex flex-col">
       {showBanner && <Header />}
-      <main className="flex-1">
+      <main className="flex-1 min-h-screen">
         <Outlet />
       </main>
       {footerVisible && <Footer />}

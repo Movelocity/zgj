@@ -4,6 +4,7 @@ import { useSiteVariable } from '@/hooks/useSiteVariable';
 import { FaEnvelope, FaPhone, FaMapMarkerAlt } from 'react-icons/fa';
 import Loading from '@/components/ui/Loading';
 import { ROUTES } from '@/utils/constants';
+import Footer from '@/components/layout/Footer';
 
 const Contact: React.FC = () => {
   const { value: contactImg, loading: imgLoading } = useSiteVariable('contact_img');
@@ -114,76 +115,7 @@ const Contact: React.FC = () => {
       </div>
 
       {/* Footer Section */}
-      <footer className="bg-gray-800 text-white mt-auto">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            {/* 公司信息 */}
-            <div className="col-span-1 md:col-span-2">
-              <h3 className="text-lg font-semibold mb-4">职管加</h3>
-              <p className="text-gray-400 mb-4">
-                专业的简历润色工具，帮助求职者打造完美简历，提升求职成功率。
-              </p>
-              <p className="text-gray-400 text-sm">
-                © 2024 职管加. All rights reserved.
-              </p>
-            </div>
-
-            {/* 产品功能 */}
-            <div>
-              <h4 className="text-md font-semibold mb-4">产品功能</h4>
-              <ul className="space-y-2 text-gray-400">
-                <li>
-                  <Link to={ROUTES.SIMPLE_RESUME} className="hover:text-white text-sm">
-                    简历优化
-                  </Link>
-                </li>
-                <li>
-                  <Link to={ROUTES.JOB_RESUME} className="hover:text-white text-sm">
-                    职位匹配
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/resumes" className="hover:text-white text-sm">
-                    简历管理
-                  </Link>
-                </li>
-              </ul>
-            </div>
-
-            {/* 联系我们 */}
-            <div>
-              <h4 className="text-md font-semibold mb-4">联系我们</h4>
-              <ul className="space-y-2 text-gray-400">
-                {contactEmail && (
-                  <li>
-                    <a href={`mailto:${contactEmail}`} className="hover:text-white text-sm flex items-center">
-                      <FaEnvelope className="mr-2 w-4 h-4" />
-                      邮箱联系
-                    </a>
-                  </li>
-                )}
-                {contactPhone && (
-                  <li>
-                    <a href={`tel:${contactPhone}`} className="hover:text-white text-sm flex items-center">
-                      <FaPhone className="mr-2 w-4 h-4" />
-                      电话咨询
-                    </a>
-                  </li>
-                )}
-                <li>
-                  <Link to={ROUTES.CONTACT} className="hover:text-white text-sm">
-                    联系页面
-                  </Link>
-                </li>
-              </ul>
-            </div>
-          </div>
-
-          <div className="border-t border-gray-700 mt-8 pt-8 text-center text-gray-400 text-sm">
-            <p>技术支持：AI 驱动的简历优化系统</p>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 };
