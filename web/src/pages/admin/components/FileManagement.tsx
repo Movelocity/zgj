@@ -10,7 +10,8 @@ import {
   FiRefreshCw,
   FiInfo,
   FiFilter,
-  FiSearch
+  FiSearch,
+  FiLink
 } from 'react-icons/fi';
 import { adminAPI } from '@/api/admin';
 import { showSuccess, showError, showInfo } from '@/utils/toast';
@@ -280,6 +281,18 @@ const FileManagement: React.FC = () => {
     }
   };
 
+  // 复制文件相对链接
+  const copyFileLink = async (file: FileInfo) => {
+    try {
+      const link = `/api/files/${file.id}/preview`;
+      await navigator.clipboard.writeText(link);
+      showSuccess('文件链接已复制到剪贴板');
+    } catch (error) {
+      console.error('复制链接失败:', error);
+      showError('复制链接失败');
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* 顶部操作栏 */}
@@ -440,8 +453,18 @@ const FileManagement: React.FC = () => {
                     <Button
                       variant="ghost"
                       size="sm"
+                      onClick={() => copyFileLink(file)}
+                      className="text-green-600 hover:text-green-800"
+                      title="复制相对链接"
+                    >
+                      <FiLink className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       onClick={() => downloadFile(file)}
                       className="text-blue-600 hover:text-blue-800"
+                      title="下载文件"
                     >
                       <FiDownload className="w-4 h-4" />
                     </Button>
@@ -450,6 +473,7 @@ const FileManagement: React.FC = () => {
                       size="sm"
                       onClick={() => handleDeleteFile(file.id)}
                       className="text-red-600 hover:text-red-800"
+                      title="删除文件"
                     >
                       <FiTrash2 className="w-4 h-4" />
                     </Button>

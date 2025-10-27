@@ -65,6 +65,7 @@ func InitDB() {
 		&model.File{},
 		&model.InvitationCode{},
 		&model.InvitationUse{},
+		&model.SiteVariable{},
 	); err != nil {
 		panic(fmt.Errorf("failed to migrate database: %s", err))
 	}
