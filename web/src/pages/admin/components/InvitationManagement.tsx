@@ -411,7 +411,7 @@ const InvitationManagement: React.FC = () => {
       <div className="p-6">
         {/* 头部操作栏 */}
         <div className="flex justify-between items-center mb-6">
-          <div>
+          <div className="flex items-baseline gap-4">
             <h2 className="text-2xl font-bold text-gray-900">邀请码管理</h2>
             <p className="text-sm text-gray-500 mt-1">
               管理和查看所有邀请码的使用情况

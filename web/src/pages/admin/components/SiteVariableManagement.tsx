@@ -170,7 +170,7 @@ const SiteVariableManagement: React.FC = () => {
           <Button
             onClick={loadVariables}
             variant="outline"
-            icon={<FiRefreshCw className={loading ? 'animate-spin' : ''} />}
+            icon={<FiRefreshCw className={loading ? 'animate-spin mr-1' : 'mr-1'} />}
             disabled={loading}
           >
             刷新

@@ -204,6 +204,7 @@ export const EditableText = ({
         className, 
         !value ? 'text-gray-400 italic' : ''
       )}
+      style={{lineHeight: '1.2'}}
       onClick={() => startEditing(fieldId, value)}
     >
       {content}

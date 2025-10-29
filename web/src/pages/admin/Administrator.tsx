@@ -5,7 +5,7 @@ import { WorkflowManagement, UserManagement, FileManagement, InvitationManagemen
 type TabType = 'workflows' | 'users' | 'files' | 'invitations' | 'variables';
 
 const Administrator: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<TabType>('workflows');
+  const [activeTab, setActiveTab] = useState<TabType>('users');
 
   const tabs = [
     { id: 'users' as TabType, name: '用户管理', icon: FiUsers },
@@ -49,7 +49,7 @@ const Administrator: React.FC = () => {
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`flex items-center py-2 px-1 border-b-2 font-medium text-sm ${
+                    className={`flex items-center py-2 px-1 border-b-2 font-medium text-sm cursor-pointer ${
                       activeTab === tab.id
                         ? 'border-blue-500 text-blue-600'
                         : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'

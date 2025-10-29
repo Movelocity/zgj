@@ -184,8 +184,11 @@ const UserManagement: React.FC = () => {
       <div className="p-6">
         {/* 头部操作栏 */}
         <div className="flex justify-between items-center mb-6">
-          <div>
+          <div className="flex items-baseline gap-4">
             <h2 className="text-2xl font-bold text-gray-900">用户管理</h2>
+            <div className="text-sm text-gray-600">
+              共找到 <span className="font-medium text-gray-900">{pagination.total}</span> 个用户
+            </div>
           </div>
           <div className="flex gap-2">
             <div>
@@ -205,16 +208,6 @@ const UserManagement: React.FC = () => {
               <Button variant="outline" onClick={handleResetSearch}>
                 重置
               </Button>
-            )}
-          </div>
-        </div>
-
-        {/* 用户统计 */}
-        <div className="bg-gray-50 p-4 rounded-lg mb-6">
-          <div className="text-sm text-gray-600">
-            共找到 <span className="font-medium text-gray-900">{pagination.total}</span> 个用户
-            {searchKeyword && (
-              <span>，搜索关键词：<span className="font-medium text-blue-600">"{searchKeyword}"</span></span>
             )}
           </div>
         </div>

@@ -42,6 +42,8 @@ func SendSMS(phone string, code string) error {
 		return nil
 	}
 
+	validMinutes := 15
+
 	// GET https://push.spug.cc/send/...&targets=18816742740 is enough
 	// {
 	//    "code": 200,
@@ -49,8 +51,8 @@ func SendSMS(phone string, code string) error {
 	//    "request_id": "NbKBjzgRO0DrpxWe"
 	// }
 	name := url.QueryEscape(global.CONFIG.SpugSMS.Name)
-	requestURL := fmt.Sprintf("https://push.spug.cc/send/%s?key1=%s&key2=%s&key3=15&&targets=%s",
-		global.CONFIG.SpugSMS.Token, name, code, phone)
+	requestURL := fmt.Sprintf("https://push.spug.cc/send/%s?key1=%s&key2=%s&key3=%d&&targets=%s",
+		global.CONFIG.SpugSMS.Token, name, code, validMinutes, phone)
 
 	fmt.Printf("[SMS] 准备发送短信到 %s，验证码：%s\n", phone, code)
 

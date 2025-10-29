@@ -7,7 +7,7 @@ import Input from '@/components/ui/Input';
 import { showSuccess, showError } from '@/utils/toast';
 import type { UserInvitationUseResponse, InvitationCode } from '@/types/invitation';
 // import type { UserProfileResponse } from '@/types/user';
-import { CopyIcon } from 'lucide-react';
+// import { CopyIcon } from 'lucide-react';
 
 interface ProfileInfoProps {
   loading: boolean;
@@ -227,7 +227,7 @@ const ProfileInfo: React.FC<ProfileInfoProps> = ({ loading, setLoading }) => {
                 {profileForm.name || '未设置'}
               </div>
               <Button
-                variant="ghost"
+                variant="text"
                 onClick={handleStartEditName}
                 disabled={loading}
               >
@@ -318,17 +318,23 @@ const ProfileInfo: React.FC<ProfileInfoProps> = ({ loading, setLoading }) => {
           <div className="">
             <div className="flex items-center gap-3">
               <h3 className="text-sm font-medium text-gray-700">我的邀请码</h3>
+              <div className="text-xs text-gray-500">
+                已邀请 {activeInvitation.used_count} 人
+              </div>
+              
+            </div>
+            <div>
               <code className="text-base font-mono font-semibold text-gray-900 bg-gray-50 px-3 py-1.5 rounded">
                 {activeInvitation.code}
               </code>
               <Button
-                variant="ghost"
+                variant="text"
                 onClick={() => handleCopyCode(activeInvitation.code)}
                 className=""
                 title="复制邀请码"
-                icon={<CopyIcon className="w-4 h-4 mr-2" />}
+                // icon={<CopyIcon className="w-4 h-4 mr-1" />}
               >
-                复制链接
+                复制邀请链接
               </Button>
             </div>
           </div>
