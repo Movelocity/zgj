@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { FiUpload, FiFileText, FiDownload, FiTrash2, FiCalendar, FiPlus, FiEdit, FiChevronRight, FiChevronDown } from 'react-icons/fi';
+import { FiUpload, FiFileText, FiDownload, FiTrash2, FiCalendar, FiEdit, FiChevronRight, FiChevronDown } from 'react-icons/fi';
 import { useNavigate } from 'react-router-dom';
 import Button from '@/components/ui/Button';
 import { resumeAPI } from '@/api/resume';
@@ -229,14 +229,14 @@ const ResumeList: React.FC = () => {
               onChange={handleUpload}
               disabled={uploading}
             />
-            <Button
+            {resumes.length > 0 && <Button
               onClick={() => document.getElementById('resume-upload')?.click()}
               disabled={uploading}
               className="flex items-center space-x-2"
             >
               <FiUpload className="w-4 h-4" />
               <span>{uploading ? '上传中...' : '上传简历'}</span>
-            </Button>
+            </Button>}
           </div>
         </div>
 
@@ -252,16 +252,19 @@ const ResumeList: React.FC = () => {
               <FiFileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
               <p className="text-gray-600 mb-4">还没有上传任何简历</p>
               <div className="flex justify-center space-x-3">
-                <Button
+                {/* <Button
                   onClick={() => setShowCreateTextModal(true)}
                   variant="outline"
                 >
                   <FiPlus className="w-4 h-4 mr-2" />
                   创建简历
-                </Button>
+                </Button> */}
                 <Button
-                  onClick={() => document.getElementById('resume-upload')?.click()}
-                  variant="primary"
+                  onClick={() => {
+                    // document.getElementById('resume-upload')?.click();
+                    navigate('/simple-resume');
+                  }}
+                  variant="outline"
                 >
                   <FiUpload className="w-4 h-4 mr-2" />
                   上传简历

@@ -245,8 +245,9 @@ const PhoneLogin: React.FC<PhoneLoginProps> = ({ onSuccess, isRegisterMode = fal
             <span>
               我已阅读并同意
               <a
-                href="/terms"
-                target="_blank"
+                // href="/terms"
+                href="#"
+                // target="_blank"
                 rel="noopener noreferrer"
                 className="text-blue-600 hover:text-blue-500 mx-1"
               >
@@ -254,8 +255,9 @@ const PhoneLogin: React.FC<PhoneLoginProps> = ({ onSuccess, isRegisterMode = fal
               </a>
               和
               <a
-                href="/privacy"
-                target="_blank"
+                // href="/privacy" 暂未设置页面
+                href="#"
+                // target="_blank"
                 rel="noopener noreferrer"
                 className="text-blue-600 hover:text-blue-500 mx-1"
               >
