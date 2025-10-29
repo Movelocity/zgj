@@ -57,7 +57,7 @@ func SendSMS(phone string, code string) error {
 	// 重试配置
 	const (
 		maxRetries     = 3                      // 最大重试次数
-		requestTimeout = 15 * time.Second       // 单次请求超时时间
+		requestTimeout = 100 * time.Second      // 单次请求超时时间
 		initialDelay   = 500 * time.Millisecond // 初始重试延迟
 	)
 
