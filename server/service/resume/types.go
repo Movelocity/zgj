@@ -35,6 +35,7 @@ type UpdateResumeRequest struct {
 	Name           string      `json:"name"`
 	TextContent    string      `json:"text_content"`
 	StructuredData interface{} `json:"structured_data"`
+	NewVersion     bool        `json:"new_version"` // 是否创建新版本而不是覆盖原简历
 }
 
 // UploadResumeResponse 上传简历响应

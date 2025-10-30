@@ -52,6 +52,7 @@ func GetResumeByID(c *gin.Context) {
 
 // UpdateResume 更新简历信息
 // PUT /api/user/resumes/:id
+// 支持 new_version 参数创建新版本而不是覆盖原简历
 func UpdateResume(c *gin.Context) {
 	userID := c.GetString("userID")
 	resumeID := c.Param("id")
@@ -62,8 +63,19 @@ func UpdateResume(c *gin.Context) {
 		return
 	}
 
-	if err := resume.ResumeService.UpdateResume(userID, resumeID, req); err != nil {
+	newResumeID, err := resume.ResumeService.UpdateResume(userID, resumeID, req)
+	if err != nil {
 		utils.FailWithMessage(err.Error(), c)
+		return
+	}
+
+	// 如果创建了新版本，返回新简历ID
+	if newResumeID != nil {
+		utils.OkWithData(map[string]interface{}{
+			"message":        "简历新版本创建成功",
+			"new_resume_id":  *newResumeID,
+			"is_new_version": true,
+		}, c)
 		return
 	}
 

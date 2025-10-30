@@ -5,6 +5,7 @@ import type {
   ResumeUploadResponse,
   ResumeListResponse,
   ResumeUpdateRequest,
+  ResumeUpdateResponse,
   ResumeOptimizationRequest,
   CreateTextResumeData
 } from '@/types/resume';
@@ -46,7 +47,8 @@ export const resumeAPI = {
   },
 
   // 更新简历信息
-  updateResume: (id: string, data: ResumeUpdateRequest): Promise<ApiResponse> => {
+  // 支持 new_version 参数创建新版本
+  updateResume: (id: string, data: ResumeUpdateRequest): Promise<ApiResponse<ResumeUpdateResponse>> => {
     return apiClient.put(`/api/user/resumes/${id}`, data);
   },
 

@@ -78,6 +78,14 @@ export interface ResumeUpdateRequest {
   name?: string;
   text_content?: string;
   structured_data?: any;
+  new_version?: boolean; // 是否创建新版本而不是覆盖原简历
+}
+
+// 简历更新响应（创建新版本时）
+export interface ResumeUpdateResponse {
+  message: string;
+  new_resume_id?: string; // 创建新版本时返回的新简历ID
+  is_new_version?: boolean; // 是否创建了新版本
 }
 
 export interface ResumeVersion {

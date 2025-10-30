@@ -152,17 +152,27 @@ func (s *resumeService) GetResumeByID(userID, resumeID string) (*ResumeDetailInf
 }
 
 // UpdateResume 更新简历信息（重命名等）
-func (s *resumeService) UpdateResume(userID, resumeID string, req UpdateResumeRequest) error {
+// 返回新简历ID（如果创建了新版本）和错误信息
+func (s *resumeService) UpdateResume(userID, resumeID string, req UpdateResumeRequest) (*string, error) {
 	// 检查简历是否存在且属于用户
 	var resume model.ResumeRecord
 	if err := global.DB.Where("id = ? AND user_id = ? AND status = ?", resumeID, userID, "active").First(&resume).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return errors.New("简历不存在")
+			return nil, errors.New("简历不存在")
 		}
-		return errors.New("查询简历失败")
+		return nil, errors.New("查询简历失败")
 	}
 
-	// 更新字段
+	// 如果启用 new_version，创建新版本而不是覆盖原简历
+	if req.NewVersion {
+		newResumeID, err := s.createNewResumeVersion(userID, &resume, req)
+		if err != nil {
+			return nil, err
+		}
+		return &newResumeID, nil
+	}
+
+	// 常规更新逻辑：更新现有简历
 	updates := make(map[string]interface{})
 	if req.Name != "" {
 		updates["name"] = req.Name
@@ -173,7 +183,7 @@ func (s *resumeService) UpdateResume(userID, resumeID string, req UpdateResumeRe
 	if req.StructuredData != nil {
 		dataJSON, err := json.Marshal(req.StructuredData)
 		if err != nil {
-			return errors.New("结构化数据格式错误")
+			return nil, errors.New("结构化数据格式错误")
 		}
 		updates["structured_data"] = model.JSON(dataJSON)
 	}
@@ -181,11 +191,64 @@ func (s *resumeService) UpdateResume(userID, resumeID string, req UpdateResumeRe
 	if len(updates) > 0 {
 		updates["updated_at"] = time.Now()
 		if err := global.DB.Model(&resume).Updates(updates).Error; err != nil {
-			return errors.New("更新简历失败")
+			return nil, errors.New("更新简历失败")
 		}
 	}
 
-	return nil
+	return nil, nil
+}
+
+// createNewResumeVersion 创建简历的新版本
+// 参考 ReorganizeResumeVersions 逻辑，按 resume_number 管理版本号
+// 返回新创建的简历ID
+func (s *resumeService) createNewResumeVersion(userID string, originalResume *model.ResumeRecord, req UpdateResumeRequest) (string, error) {
+	// 查询该 resume_number 下的最大版本号
+	var maxVersion int
+	if err := global.DB.Model(&model.ResumeRecord{}).
+		Where("user_id = ? AND resume_number = ? AND status = ?", userID, originalResume.ResumeNumber, "active").
+		Select("COALESCE(MAX(version), 0)").
+		Scan(&maxVersion).Error; err != nil {
+		return "", errors.New("查询最大版本号失败")
+	}
+
+	// 创建新版本简历记录，复制原简历的所有字段
+	newResume := model.ResumeRecord{
+		ID:               utils.GenerateTLID(),
+		UserID:           userID,
+		ResumeNumber:     originalResume.ResumeNumber, // 复用相同的简历编号
+		Version:          maxVersion + 1,              // 版本号递增
+		Name:             originalResume.Name,
+		OriginalFilename: originalResume.OriginalFilename,
+		FileID:           originalResume.FileID,
+		TextContent:      originalResume.TextContent,
+		StructuredData:   originalResume.StructuredData,
+		PortraitImg:      originalResume.PortraitImg,
+		Status:           "active",
+		CreatedAt:        time.Now(),
+		UpdatedAt:        time.Now(),
+	}
+
+	// 应用请求中的更新内容
+	if req.Name != "" {
+		newResume.Name = req.Name
+	}
+	if req.TextContent != "" {
+		newResume.TextContent = req.TextContent
+	}
+	if req.StructuredData != nil {
+		dataJSON, err := json.Marshal(req.StructuredData)
+		if err != nil {
+			return "", errors.New("结构化数据格式错误")
+		}
+		newResume.StructuredData = model.JSON(dataJSON)
+	}
+
+	// 保存新版本简历
+	if err := global.DB.Create(&newResume).Error; err != nil {
+		return "", errors.New("创建新版本简历失败")
+	}
+
+	return newResume.ID, nil
 }
 
 // DeleteResume 删除简历（软删除）
