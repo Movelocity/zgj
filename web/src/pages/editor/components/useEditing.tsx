@@ -27,6 +27,9 @@ export const useEditing = (
   // Build block match mapping: resumeData index -> newResumeData index
   // This ensures blocks are matched by title+type, not by position
   const blockMatchMap = useMemo(() => {
+    if (!resumeData.blocks || !newResumeData.blocks) {
+      return [];
+    }
     return buildBlockMatchMap(resumeData, newResumeData);
   }, [resumeData, newResumeData]);
 

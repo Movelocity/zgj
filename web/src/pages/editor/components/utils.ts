@@ -23,7 +23,7 @@ export function buildBlockMatchMap(
 
   // Build reverse index for newResumeData: key -> array of indices
   const newBlocksIndex = new Map<string, number[]>();
-  newResumeData.blocks.forEach((block, index) => {
+  newResumeData.blocks?.forEach((block, index) => {
     const key = getBlockKey(block);
     if (!newBlocksIndex.has(key)) {
       newBlocksIndex.set(key, []);
@@ -32,7 +32,7 @@ export function buildBlockMatchMap(
   });
 
   // Match each block in resumeData
-  resumeData.blocks.forEach((block, resumeIndex) => {
+  resumeData.blocks?.forEach((block, resumeIndex) => {
     const key = getBlockKey(block);
     const candidates = newBlocksIndex.get(key);
 
