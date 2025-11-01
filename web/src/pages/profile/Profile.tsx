@@ -1,17 +1,8 @@
 import React, { useState } from 'react';
-import { ProfileInfo, ChangePassword } from './components';
-
-type TabType = 'profile' | 'password';
+import { ProfileInfo } from './components';
 
 const Profile: React.FC = () => {
   const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<TabType>('profile');
-  
-  // 获取可用的标签页
-  const availableTabs = [
-    { key: 'profile' as TabType, label: '个人信息' },
-    { key: 'password' as TabType, label: '修改密码' },
-  ];
 
   return (
     <div className="min-h-screen bg-gray-50 py-20">
@@ -20,35 +11,8 @@ const Profile: React.FC = () => {
           个人中心
         </h1>
         
-        {/* 标签页 */}
-        <div className="bg-white rounded-lg shadow-md">
-          <div className="border-b border-gray-200">
-            <nav className="-mb-px flex space-x-6 px-6">
-              {availableTabs.map((tab) => (
-                <button
-                  key={tab.key}
-                  className={`cursor-pointer py-3 px-1 border-b-2 font-medium text-sm ${
-                    activeTab === tab.key
-                      ? 'border-blue-500 text-blue-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  }`}
-                  onClick={() => setActiveTab(tab.key)}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </nav>
-          </div>
-
-          <div className="p-6">
-            {activeTab === 'profile' && (
-              <ProfileInfo loading={loading} setLoading={setLoading} />
-            )}
-
-            {activeTab === 'password' && (
-              <ChangePassword loading={loading} setLoading={setLoading} />
-            )}
-          </div>
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <ProfileInfo loading={loading} setLoading={setLoading} />
         </div>
       </div>
     </div>

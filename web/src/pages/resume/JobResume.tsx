@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { FiUpload, FiFileText, FiStar, FiX, FiFolder, FiBriefcase } from 'react-icons/fi';
-import Button from "@/components/ui/Button";
+import { Button, Modal } from "@/components/ui";
 import type { ResumeUploadData, ResumeInfo } from '@/types/resume';
 import { resumeAPI } from '@/api/resume';
 import { useNavigate } from 'react-router-dom';
@@ -37,8 +37,24 @@ const HistoryResumeSelector: React.FC<{
   };
   
   return (
-    <div className="h-screen fixed inset-0 bg-black/50 flex items-center justify-center z-1000">
-      <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+    <Modal
+      open={true}
+      onClose={onClose}
+      title="选择已有简历"
+      size="sm"
+      showFooter={true}
+      footer={
+        <Button 
+          onClick={() => onClose()}
+          className="w-full"
+          variant="outline"
+        >
+          关闭
+        </Button>
+      }
+      zIndex={1000}
+    >
+      <div className="p-6">
         <div className="text-center mb-4">
           <div className="flex items-center justify-center mb-2">
             <FiFolder className="w-5 h-5 mr-2 text-blue-600" />
@@ -83,16 +99,8 @@ const HistoryResumeSelector: React.FC<{
             </div>
           )}
         </div>
-        
-        <Button 
-          onClick={() => onClose()}
-          className="w-full mt-4"
-          variant="outline"
-        >
-          关闭
-        </Button>
       </div>
-    </div>
+    </Modal>
   );
 };
 

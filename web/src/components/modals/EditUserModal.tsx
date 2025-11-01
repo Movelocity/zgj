@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import Button from '@/components/ui/Button';
-import Input from '@/components/ui/Input';
+import { Modal, Input } from '@/components/ui';
 import { showSuccess, showError } from '@/utils/toast';
 import { adminAPI } from '@/api/admin';
 import type { User } from '@/types/user';
@@ -33,8 +32,8 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
     }
   }, [user]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async () => {
+    // e.preventDefault();
     if (!user) return;
 
     try {
@@ -69,66 +68,54 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
   if (!isOpen || !user) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h3 className="text-lg font-medium text-gray-900">
-            编辑用户信息
-          </h3>
-          <p className="text-sm text-gray-500 mt-1">
-            用户手机号：{user.phone}
-          </p>
+    <Modal
+      open={isOpen}
+      onClose={onClose}
+      title="编辑用户信息"
+      size="sm"
+      showFooter={true}
+      confirmText={loading ? '保存中...' : '保存'}
+      cancelText="取消"
+      onConfirm={handleSubmit}
+      onCancel={onClose}
+      confirmLoading={loading}
+    >
+      <div className="p-6 space-y-4">
+        <p className="text-sm text-gray-500">
+          用户手机号：{user.phone}
+        </p>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            用户姓名
+          </label>
+          <Input
+            type="text"
+            value={formData.name}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => 
+              handleInputChange('name', e.target.value)
+            }
+            placeholder="请输入用户姓名"
+            disabled={loading}
+          />
         </div>
 
-        <form onSubmit={handleSubmit} className="px-6 py-4 space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              用户姓名
-            </label>
-            <Input
-              type="text"
-              value={formData.name}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => 
-                handleInputChange('name', e.target.value)
-              }
-              placeholder="请输入用户姓名"
-              disabled={loading}
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              邮箱地址
-            </label>
-            <Input
-              type="email"
-              value={formData.email}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => 
-                handleInputChange('email', e.target.value)
-              }
-              placeholder="请输入邮箱地址"
-              disabled={loading}
-            />
-          </div>
-        </form>
-
-        <div className="px-6 py-4 border-t border-gray-200 flex justify-end gap-3">
-          <Button
-            variant="outline"
-            onClick={onClose}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            邮箱地址
+          </label>
+          <Input
+            type="email"
+            value={formData.email}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => 
+              handleInputChange('email', e.target.value)
+            }
+            placeholder="请输入邮箱地址"
             disabled={loading}
-          >
-            取消
-          </Button>
-          <Button
-            onClick={handleSubmit}
-            loading={loading}
-          >
-            保存
-          </Button>
+          />
         </div>
       </div>
-    </div>
+    </Modal>
   );
 };
 

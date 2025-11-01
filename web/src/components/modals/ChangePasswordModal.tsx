@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import Button from '@/components/ui/Button';
-import Input from '@/components/ui/Input';
+import { Modal, Input } from '@/components/ui';
 import { showSuccess, showError } from '@/utils/toast';
 import { adminAPI } from '@/api/admin';
 import type { User } from '@/types/user';
@@ -45,8 +44,8 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async () => {
+    // e.preventDefault();
     if (!user || !validateForm()) return;
 
     try {
@@ -95,18 +94,24 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
   if (!isOpen || !user) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h3 className="text-lg font-medium text-gray-900">
-            修改用户密码
-          </h3>
-          <p className="text-sm text-gray-500 mt-1">
-            用户：{user.name || user.phone}
-          </p>
-        </div>
+    <Modal
+      open={isOpen}
+      onClose={handleClose}
+      title="修改用户密码"
+      size="sm"
+      showFooter={true}
+      confirmText={loading ? '修改中...' : '确认修改'}
+      cancelText="取消"
+      onConfirm={handleSubmit}
+      onCancel={handleClose}
+      confirmLoading={loading}
+    >
+      <div className="p-6">
+        <p className="text-sm text-gray-500 mb-4">
+          用户：{user.name || user.phone}
+        </p>
 
-        <form onSubmit={handleSubmit} className="px-6 py-4 space-y-4">
+        
           <div className="bg-blue-50 border border-blue-200 rounded-md p-3 mb-4">
             <div className="flex">
               <div className="flex-shrink-0">
@@ -151,25 +156,9 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
               <p className="mt-1 text-sm text-red-600">{errors.confirmPassword}</p>
             )}
           </div>
-        </form>
-
-        <div className="px-6 py-4 border-t border-gray-200 flex justify-end gap-3">
-          <Button
-            variant="outline"
-            onClick={handleClose}
-            disabled={loading}
-          >
-            取消
-          </Button>
-          <Button
-            onClick={handleSubmit}
-            loading={loading}
-          >
-            确认修改
-          </Button>
-        </div>
+      
       </div>
-    </div>
+    </Modal>
   );
 };
 

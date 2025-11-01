@@ -5,6 +5,7 @@ import { useAuthStore } from '@/store/authStore';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import { showSuccess, showError } from '@/utils/toast';
+import UserChangePasswordModal from '@/components/modals/UserChangePasswordModal';
 import type { UserInvitationUseResponse, InvitationCode } from '@/types/invitation';
 // import type { UserProfileResponse } from '@/types/user';
 // import { CopyIcon } from 'lucide-react';
@@ -35,6 +36,9 @@ const ProfileInfo: React.FC<ProfileInfoProps> = ({ loading, setLoading }) => {
 
   // 用户创建的邀请码列表
   const [myInvitations, setMyInvitations] = useState<InvitationCode[]>([]);
+
+  // 修改密码 modal 状态
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
 
   // 加载用户资料
   const loadProfile = async () => {
@@ -197,7 +201,6 @@ const ProfileInfo: React.FC<ProfileInfoProps> = ({ loading, setLoading }) => {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-lg font-medium text-gray-900">个人信息</h2>
       
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
         <div>
@@ -341,11 +344,19 @@ const ProfileInfo: React.FC<ProfileInfoProps> = ({ loading, setLoading }) => {
         );
       })()}
 
-      <div className="flex justify-end">
+      <div className="flex justify-end gap-3">
+        {/* <Button variant="outline" onClick={() => setIsPasswordModalOpen(true)}>
+          修改密码
+        </Button> */}
         <Button variant="outline" onClick={handleLogout}>
           退出登录
         </Button>
       </div>
+
+      <UserChangePasswordModal
+        isOpen={isPasswordModalOpen}
+        onClose={() => setIsPasswordModalOpen(false)}
+      />
     </div>
   );
 };

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { FiX, FiAlertTriangle } from 'react-icons/fi';
-import { Button, Input } from '@/components/ui';
+import { FiAlertTriangle } from 'react-icons/fi';
+import { Button, Input, Modal } from '@/components/ui';
 import type { WorkflowConflict } from '@/types/workflow';
 
 interface WorkflowConflictModalProps {
@@ -60,9 +60,31 @@ const WorkflowConflictModal: React.FC<WorkflowConflictModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-hidden">
-        {/* 头部 */}
+    <Modal
+      open={true}
+      onClose={onCancel}
+      title=""
+      size="xl"
+      showHeader={false}
+      showFooter={true}
+      confirmText="确认导入"
+      cancelText="取消导入"
+      onConfirm={handleConfirm}
+      onCancel={onCancel}
+      // footer={
+      //   <div className="flex items-center justify-end space-x-3">
+      //     <Button variant="text" onClick={onCancel}>
+      //       取消导入
+      //     </Button>
+      //     <Button onClick={handleConfirm}>
+      //       确认导入
+      //     </Button>
+      //   </div>
+      // }
+      contentClassName="max-h-[90vh] overflow-hidden"
+    >
+      <div>
+        {/* 自定义头部 */}
         <div className="flex items-center justify-between p-6 border-b">
           <div className="flex items-center space-x-3">
             <FiAlertTriangle className="text-yellow-500" size={24} />
@@ -71,12 +93,6 @@ const WorkflowConflictModal: React.FC<WorkflowConflictModalProps> = ({
               <p className="text-sm text-gray-500">发现 {conflicts.length} 个工作流名称冲突，请选择处理方式</p>
             </div>
           </div>
-          <button
-            onClick={onCancel}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
-          >
-            <FiX size={24} />
-          </button>
         </div>
 
         {/* 批量操作 */}
@@ -177,18 +193,8 @@ const WorkflowConflictModal: React.FC<WorkflowConflictModalProps> = ({
             </div>
           ))}
         </div>
-
-        {/* 底部操作 */}
-        <div className="flex items-center justify-end space-x-3 p-6 border-t bg-gray-50">
-          <Button variant="text" onClick={onCancel}>
-            取消导入
-          </Button>
-          <Button onClick={handleConfirm}>
-            确认导入
-          </Button>
-        </div>
       </div>
-    </div>
+    </Modal>
   );
 };
 

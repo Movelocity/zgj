@@ -15,7 +15,7 @@ const SiteVariableManagement: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize] = useState(20);
-  const [total, setTotal] = useState(0);
+  // const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [searchKeyword, setSearchKeyword] = useState('');
   
@@ -44,7 +44,7 @@ const SiteVariableManagement: React.FC = () => {
       
       if (response.code === 0) {
         setVariables(response.data.list || []);
-        setTotal(response.data.total || 0);
+        // setTotal(response.data.total || 0);
         setTotalPages(response.data.totalPages || 0);
       }
     } catch (error) {
@@ -188,11 +188,11 @@ const SiteVariableManagement: React.FC = () => {
       </div>
 
       {/* 统计信息 */}
-      <div className="bg-white rounded-lg shadow p-4">
+      {/* <div className="bg-white rounded-lg shadow p-4">
         <div className="text-sm text-gray-600">
           共 <span className="font-semibold text-gray-900">{total}</span> 个网站变量
         </div>
-      </div>
+      </div> */}
 
       {/* 变量列表 */}
       <div className="bg-white rounded-lg shadow overflow-hidden">

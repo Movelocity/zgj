@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FiUpload, FiCalendar, FiPlus, FiList } from 'react-icons/fi';
 import { useNavigate, Link } from 'react-router-dom';
-import Button from '@/components/ui/Button';
+import { Button, Modal } from '@/components/ui';
 import { resumeAPI } from '@/api/resume';
 import type { ResumeInfo, ResumeUploadData, CreateTextResumeData } from '@/types/resume';
 import { showSuccess, showError, showWarning } from '@/utils/toast';
@@ -293,78 +293,58 @@ const ResumeCardView: React.FC = () => {
         )}
 
         {/* 创建纯文本简历弹窗 */}
-        {showCreateTextModal && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[1000]">
-            <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-medium text-gray-900">创建纯文本简历</h3>
-                <button
-                  onClick={() => {
-                    setShowCreateTextModal(false);
-                    setTextResumeForm({ name: '', text_content: '' });
-                  }}
-                  className="text-gray-400 hover:text-gray-600 cursor-pointer"
-                >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
+        <Modal
+          open={showCreateTextModal}
+          onClose={() => {
+            setShowCreateTextModal(false);
+            setTextResumeForm({ name: '', text_content: '' });
+          }}
+          title="创建纯文本简历"
+          size="lg"
+          showFooter={true}
+          confirmText={uploading ? '创建中...' : '创建简历'}
+          cancelText="取消"
+          onConfirm={handleCreateTextResume}
+          onCancel={() => {
+            setShowCreateTextModal(false);
+            setTextResumeForm({ name: '', text_content: '' });
+          }}
+          confirmLoading={uploading}
+          confirmDisabled={uploading || !textResumeForm.name.trim() || !textResumeForm.text_content.trim()}
+          contentClassName="max-h-[90vh] overflow-y-auto"
+        >
+          <div className="p-6 space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                简历名称 *
+              </label>
+              <input
+                type="text"
+                value={textResumeForm.name}
+                onChange={(e) => setTextResumeForm({ ...textResumeForm, name: e.target.value })}
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:border-blue-600 focus:outline-none"
+                placeholder="请输入简历名称"
+                maxLength={100}
+              />
+            </div>
 
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    简历名称 *
-                  </label>
-                  <input
-                    type="text"
-                    value={textResumeForm.name}
-                    onChange={(e) => setTextResumeForm({ ...textResumeForm, name: e.target.value })}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:border-blue-600 focus:outline-none"
-                    placeholder="请输入简历名称"
-                    maxLength={100}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    简历内容 *
-                  </label>
-                  <textarea
-                    value={textResumeForm.text_content}
-                    onChange={(e) => setTextResumeForm({ ...textResumeForm, text_content: e.target.value })}
-                    rows={12}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:border-blue-600 focus:outline-none resize-vertical"
-                    placeholder="请输入简历内容，包括个人信息、工作经历、教育背景、技能等..."
-                  />
-                  <p className="text-sm text-gray-500 mt-1">
-                    支持纯文本格式，建议包含：个人信息、工作经历、教育背景、专业技能、项目经验等
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex justify-end space-x-3 mt-6 pt-4 border-t border-gray-200">
-                <Button
-                  onClick={() => {
-                    setShowCreateTextModal(false);
-                    setTextResumeForm({ name: '', text_content: '' });
-                  }}
-                  variant="outline"
-                  disabled={uploading}
-                >
-                  取消
-                </Button>
-                <Button
-                  onClick={handleCreateTextResume}
-                  variant="primary"
-                  disabled={uploading || !textResumeForm.name.trim() || !textResumeForm.text_content.trim()}
-                >
-                  {uploading ? '创建中...' : '创建简历'}
-                </Button>
-              </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                简历内容 *
+              </label>
+              <textarea
+                value={textResumeForm.text_content}
+                onChange={(e) => setTextResumeForm({ ...textResumeForm, text_content: e.target.value })}
+                rows={12}
+                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:border-blue-600 focus:outline-none resize-vertical"
+                placeholder="请输入简历内容，包括个人信息、工作经历、教育背景、技能等..."
+              />
+              <p className="text-sm text-gray-500 mt-1">
+                支持纯文本格式，建议包含：个人信息、工作经历、教育背景、专业技能、项目经验等
+              </p>
             </div>
           </div>
-        )}
+        </Modal>
       </div>
     </div>
   );

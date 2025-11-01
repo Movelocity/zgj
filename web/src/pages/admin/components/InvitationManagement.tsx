@@ -739,93 +739,111 @@ const InvitationManagement: React.FC = () => {
       )}
 
       {/* 批量更新模态框 */}
-      {showBatchUpdateModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-lg w-full mx-4">
-            <h3 className="text-lg font-semibold mb-4">批量更新邀请码</h3>
-            <p className="text-sm text-gray-600 mb-4">
-              将更新 <span className="font-semibold text-blue-600">{selectedCodes.length}</span> 个邀请码
-            </p>
+      <Modal
+        open={showBatchUpdateModal}
+        onClose={() => {
+          setShowBatchUpdateModal(false);
+          setBatchUpdateForm({ max_uses: null, expires_in_days: null });
+        }}
+        title="批量更新邀请码"
+        size="lg"
+        showFooter={true}
+        confirmText={batchUpdateLoading ? '更新中...' : '确认更新'}
+        cancelText="取消"
+        onConfirm={handleBatchUpdateInvitations}
+        onCancel={() => {
+          setShowBatchUpdateModal(false);
+          setBatchUpdateForm({ max_uses: null, expires_in_days: null });
+        }}
+        confirmLoading={batchUpdateLoading}
+        confirmDisabled={batchUpdateLoading}
+      >
+        <div className="p-6">
+          <p className="text-sm text-gray-600 mb-4">
+            将更新 <span className="font-semibold text-blue-600">{selectedCodes.length}</span> 个邀请码
+          </p>
 
-            <div className="space-y-4 mb-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  使用次数上限
-                </label>
-                <div className="flex items-center gap-2">
-                  <Input
-                    type="number"
-                    value={batchUpdateForm.max_uses ?? ''}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                      setBatchUpdateForm({
-                        ...batchUpdateForm,
-                        max_uses: e.target.value ? parseInt(e.target.value) : null,
-                      })
-                    }
-                    placeholder="不修改则留空"
-                    min="-1"
-                  />
-                  <span className="text-sm text-gray-500 whitespace-nowrap">
-                    （-1 = 无限次）
-                  </span>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  有效期（天）
-                </label>
-                <div className="flex items-center gap-2">
-                  <Input
-                    type="number"
-                    value={batchUpdateForm.expires_in_days ?? ''}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                      setBatchUpdateForm({
-                        ...batchUpdateForm,
-                        expires_in_days: e.target.value ? parseInt(e.target.value) : null,
-                      })
-                    }
-                    placeholder="不修改则留空"
-                    min="0"
-                  />
-                  <span className="text-sm text-gray-500 whitespace-nowrap">
-                    （0 = 永不过期）
-                  </span>
-                </div>
-              </div>
-
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-                <p className="text-sm text-yellow-800">
-                  <strong>注意：</strong>
-                  留空的字段不会被更新。至少需要填写一个字段。
-                </p>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                使用次数上限
+              </label>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="number"
+                  value={batchUpdateForm.max_uses ?? ''}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                    setBatchUpdateForm({
+                      ...batchUpdateForm,
+                      max_uses: e.target.value ? parseInt(e.target.value) : null,
+                    })
+                  }
+                  placeholder="不修改则留空"
+                  min="-1"
+                />
+                <span className="text-sm text-gray-500 whitespace-nowrap">
+                  （-1 = 无限次）
+                </span>
               </div>
             </div>
 
-            <div className="flex justify-end gap-2">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setShowBatchUpdateModal(false);
-                  setBatchUpdateForm({ max_uses: null, expires_in_days: null });
-                }}
-                disabled={batchUpdateLoading}
-              >
-                取消
-              </Button>
-              <Button onClick={handleBatchUpdateInvitations} disabled={batchUpdateLoading}>
-                {batchUpdateLoading ? '更新中...' : '确认更新'}
-              </Button>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                有效期（天）
+              </label>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="number"
+                  value={batchUpdateForm.expires_in_days ?? ''}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                    setBatchUpdateForm({
+                      ...batchUpdateForm,
+                      expires_in_days: e.target.value ? parseInt(e.target.value) : null,
+                    })
+                  }
+                  placeholder="不修改则留空"
+                  min="0"
+                />
+                <span className="text-sm text-gray-500 whitespace-nowrap">
+                  （0 = 永不过期）
+                </span>
+              </div>
+            </div>
+
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+              <p className="text-sm text-yellow-800">
+                <strong>注意：</strong>
+                留空的字段不会被更新。至少需要填写一个字段。
+              </p>
             </div>
           </div>
         </div>
-      )}
+      </Modal>
 
       {/* 编辑邀请码模态框 */}
-      {showEditModal && editingInvitation && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-lg w-full mx-4">
-            <h3 className="text-lg font-semibold mb-4">编辑邀请码</h3>
+      {editingInvitation && (
+        <Modal
+          open={showEditModal}
+          onClose={() => {
+            setShowEditModal(false);
+            setEditingInvitation(null);
+            setEditForm({ max_uses: null, expires_in_days: null, note: '' });
+          }}
+          title="编辑邀请码"
+          size="lg"
+          showFooter={true}
+          confirmText={editLoading ? '更新中...' : '确认更新'}
+          cancelText="取消"
+          onConfirm={handleEditInvitation}
+          onCancel={() => {
+            setShowEditModal(false);
+            setEditingInvitation(null);
+            setEditForm({ max_uses: null, expires_in_days: null, note: '' });
+          }}
+          confirmLoading={editLoading}
+          confirmDisabled={editLoading}
+        >
+          <div className="p-6">
             <div className="mb-4">
               <div className="flex items-center gap-2 text-sm text-gray-600">
                 <span>邀请码：</span>
@@ -835,7 +853,7 @@ const InvitationManagement: React.FC = () => {
               </div>
             </div>
 
-            <div className="space-y-4 mb-6">
+            <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   使用次数上限
@@ -912,25 +930,8 @@ const InvitationManagement: React.FC = () => {
                 </p>
               </div>
             </div>
-
-            <div className="flex justify-end gap-2">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setShowEditModal(false);
-                  setEditingInvitation(null);
-                  setEditForm({ max_uses: null, expires_in_days: null, note: '' });
-                }}
-                disabled={editLoading}
-              >
-                取消
-              </Button>
-              <Button onClick={handleEditInvitation} disabled={editLoading}>
-                {editLoading ? '更新中...' : '确认更新'}
-              </Button>
-            </div>
           </div>
-        </div>
+        </Modal>
       )}
     </div>
   );
