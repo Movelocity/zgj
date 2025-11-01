@@ -164,7 +164,7 @@ const Modal: React.FC<ModalProps> = ({
 
         {/* 模态框底部 */}
         {(showFooter || footer || onConfirm) && (
-          <div className="flex items-center justify-end space-x-3 p-3 border-t border-gray-200 bg-gray-50">
+          <div className="flex items-center justify-end space-x-3 p-3 border-t border-gray-200 bg-gray-50 rounded-b-lg">
             {footer ? (
               footer
             ) : (

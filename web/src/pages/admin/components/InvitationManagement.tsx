@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { invitationAPI } from '@/api/invitation';
 import { adminAPI } from '@/api/admin';
-import Button from '@/components/ui/Button';
-import Input from '@/components/ui/Input';
+import {Button, Modal, Input} from '@/components/ui';
 import { showSuccess, showError } from '@/utils/toast';
 import type { InvitationCode } from '@/types/invitation';
 import type { User } from '@/types/user';
@@ -694,7 +693,7 @@ const InvitationManagement: React.FC = () => {
       </div>
 
       {/* 批量创建确认模态框 */}
-      {showBatchCreateModal && (
+      {/* {showBatchCreateModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
             <h3 className="text-lg font-semibold mb-4">批量创建邀请码</h3>
@@ -715,6 +714,28 @@ const InvitationManagement: React.FC = () => {
             </div>
           </div>
         </div>
+      )} */}
+      {showBatchCreateModal && (
+        <Modal
+          open={showBatchCreateModal}
+          size="sm"
+          onClose={() => setShowBatchCreateModal(false)}
+          title="批量创建邀请码"
+          footer={
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setShowBatchCreateModal(false)} disabled={batchCreateLoading}>
+                取消
+              </Button>
+              <Button onClick={handleBatchCreateInvitations} disabled={batchCreateLoading}>
+                {batchCreateLoading ? '创建中...' : '确认创建'}
+              </Button>
+            </div>
+          }
+        >
+          <div className="p-6">
+            <p>此操作将为所有没有邀请码的用户创建邀请码（每个邀请码可使用10次，永不过期）。确认继续？</p>
+          </div>
+        </Modal>
       )}
 
       {/* 批量更新模态框 */}

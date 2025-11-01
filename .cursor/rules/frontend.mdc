@@ -19,6 +19,11 @@ import { showSuccess, showError, showWarning, showInfo } from '@/utils/toast';
 // showInfo: (message: string, duration?: number) => void;
 ```
 
+## Project level componentx
+```tsx
+import {Button, Modal, Input} from '@/components/ui';
+```
+
 ## Misc
 - use `bg-black/50` instead of `bg-opacity-50` in modal background
 - api response.code == 0 means success, there is nothing to do with 200 status
