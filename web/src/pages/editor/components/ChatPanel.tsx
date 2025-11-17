@@ -59,6 +59,7 @@ export default function ChatPanel({
   const lastScrollTop = useRef(0);
   const lastAbortScrollMessageId = useRef('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const isComposingRef = useRef(false);
 
   const [debugModalOpen, setDebugModalOpen] = useState(false);
   const [debugType, setDebugType] = useState<'current_data' | 'last_msg'>('current_data');
@@ -591,7 +592,17 @@ export default function ChatPanel({
             rows={1}
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
+            onCompositionStart={() => {
+              isComposingRef.current = true;
+            }}
+            onCompositionEnd={() => {
+              isComposingRef.current = false;
+            }}
             onKeyDown={(e) => {
+              // 如果正在使用输入法合成（如中文输入），忽略Enter键
+              if (isComposingRef.current) {
+                return;
+              }
               if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
                 handleSendMessage();

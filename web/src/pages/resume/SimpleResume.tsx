@@ -111,18 +111,94 @@ const ResumeSelector: React.FC<{
   onSelect: (file: File | ResumeInfo | null) => void;
 }> = ({ selectedFile, onSelect }) => {
   const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+
+  // 验证文件类型和大小
+  const validateFile = (file: File): boolean => {
+    const allowedTypes = ['.pdf', '.doc', '.docx'];
+    const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase();
+    
+    if (!allowedTypes.includes(fileExtension)) {
+      showError('不支持的文件格式，请上传 PDF 或 Word 文件');
+      return false;
+    }
+    
+    const maxSize = 10 * 1024 * 1024; // 10MB
+    if (file.size > maxSize) {
+      showError('文件大小不能超过 10MB');
+      return false;
+    }
+    
+    return true;
+  };
+
+  // 处理文件选择（用于点击上传和拖拽上传）
+  const handleFileSelect = (file: File | null) => {
+    if (file && validateFile(file)) {
+      onSelect(file);
+    }
+  };
+
+  // 拖拽事件处理
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!selectedFile) {
+      setIsDragging(true);
+    }
+  };
+
+  const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!selectedFile) {
+      setIsDragging(true);
+    }
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    // 只有当离开整个拖拽区域时才清除状态
+    if (e.currentTarget === e.target) {
+      setIsDragging(false);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    if (selectedFile) {
+      return; // 如果已有文件，不处理拖拽
+    }
+
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) {
+      handleFileSelect(files[0]);
+    }
+  };
 
   return (
     <>
       {/* 文件上传区域 */}
       <div 
         title="支持PDF、Word等格式，文件大小不超过10MB"
-        className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center relative py-24"
+        className={`border-2 border-dashed rounded-lg p-8 text-center relative py-24 transition-colors ${
+          isDragging 
+            ? 'border-blue-500 bg-blue-50' 
+            : 'border-gray-300'
+        }`}
+        onDragOver={handleDragOver}
+        onDragEnter={handleDragEnter}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
       >
         {/* 选择已有简历按钮 */}
         <button
           onClick={() => setShowHistoryModal(true)}
-          className="absolute top-3 right-3 px-3 py-1 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors flex items-center text-sm"
+          className="absolute top-3 right-3 px-3 py-1 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors flex items-center text-sm z-10"
         >
           <FiFolder className="w-4 h-4 mr-2" />
           选择已有简历
@@ -135,7 +211,7 @@ const ResumeSelector: React.FC<{
           accept=".pdf,.doc,.docx"
           onChange={(event) => {
             if (event.target.files?.[0]) {
-              onSelect(event.target.files?.[0]);
+              handleFileSelect(event.target.files[0]);
             }
           }}
         />
@@ -160,8 +236,14 @@ const ResumeSelector: React.FC<{
             htmlFor="resume-upload"
             className="cursor-pointer flex flex-col items-center"
           >
-            <FiUpload className="w-12 h-12 text-gray-400 mb-4" />
-            <span className="text-lg mb-2">点击上传</span>
+            <FiUpload className={`w-12 h-12 mb-4 transition-colors ${
+              isDragging ? 'text-blue-500' : 'text-gray-400'
+            }`} />
+            <span className={`text-lg mb-2 transition-colors ${
+              isDragging ? 'text-blue-600' : ''
+            }`}>
+              {isDragging ? '松开鼠标上传文件' : '点击上传'}
+            </span>
             <span className="text-sm text-gray-500">
               或拖拽文件到此处
             </span>

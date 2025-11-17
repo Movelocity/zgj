@@ -8,7 +8,8 @@ import { EditableText } from './EditableText';
 import { useEditing } from './useEditing';
 import { type FontSettings, getFontSizeClasses } from './FontSettingsPanel';
 import { buildBlockMatchMap, findNewBlocks } from './utils';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
+import cn from 'classnames';
 
 interface ResumeEditorV2Props {
   resumeData: ResumeV2Data;
@@ -36,15 +37,24 @@ export default function ResumeEditorV2({
   // 获取字体大小样式
   const fontSizeClasses = getFontSizeClasses(fontSettings);
 
+  // Track rejected new block indices
+  const [rejectedBlockIndices, setRejectedBlockIndices] = useState<Set<number>>(new Set());
+
   // Find new blocks that AI added
   const blockMatchMap = useMemo(() => 
     buildBlockMatchMap(resumeData, newResumeData), 
     [resumeData, newResumeData]
   );
   
-  const newBlockIndices = useMemo(() => 
+  const allNewBlockIndices = useMemo(() => 
     findNewBlocks(newResumeData, blockMatchMap),
     [newResumeData, blockMatchMap]
+  );
+
+  // Filter out rejected blocks
+  const newBlockIndices = useMemo(() => 
+    allNewBlockIndices.filter(idx => !rejectedBlockIndices.has(idx)),
+    [allNewBlockIndices, rejectedBlockIndices]
   );
 
   // Add a new AI-suggested block to the resume
@@ -56,7 +66,23 @@ export default function ResumeEditorV2({
     updatedData.blocks.push({ ...blockToAdd });
     onResumeDataChange(updatedData);
     
+    // Remove from rejected list if it was rejected before
+    setRejectedBlockIndices(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(newBlockIndex);
+      return newSet;
+    });
+    
     showSuccess(`已添加板块: ${blockToAdd.title}`);
+  };
+
+  // Reject a new AI-suggested block
+  const rejectNewBlock = (newBlockIndex: number) => {
+    const blockToReject = newResumeData.blocks[newBlockIndex];
+    if (!blockToReject) return;
+
+    setRejectedBlockIndices(prev => new Set(prev).add(newBlockIndex));
+    showSuccess(`已拒绝板块: ${blockToReject.title || '(无标题)'}`);
   };
 
   // Handle portrait image upload for personal info block
@@ -204,7 +230,7 @@ export default function ResumeEditorV2({
   // Render list block
   const renderListBlock = (block: ResumeBlock & { data: ResumeBlockListItem[] }, blockIndex: number) => {
     return (
-      <div className="space-y-2">
+      <div className="">
         {block.data.map((item, itemIndex) => (
           <div key={item.id} className="relative group pl-3">
             {/* 小板块操作 - 左侧面板 */}
@@ -255,7 +281,7 @@ export default function ResumeEditorV2({
                     field="name"
                   />
                 </h4>
-                <div className={`text-blue-600 ${fontSizeClasses.content}`}>
+                {/* <div className={`text-blue-600 ${fontSizeClasses.content}`}>
                   <EditableText
                     className={item.highlight ? '' : 'hide-when-print'}
                     editorState={editorState}
@@ -266,9 +292,15 @@ export default function ResumeEditorV2({
                     itemId={item.id}
                     field="highlight"
                   />
-                </div>
+                </div> */}
               </div>
-              <span className={`text-gray-500 ml-4 ${fontSizeClasses.content}`}>
+              <span 
+                className={cn(
+                  'text-gray-500 ml-4', 
+                  fontSizeClasses.content, 
+                  item.time ? '' : 'hide-when-print'
+                )}
+              >
                 <EditableText
                   editorState={editorState}
                   fieldId={`block${blockIndex}-${item.id}-time`}
@@ -280,7 +312,11 @@ export default function ResumeEditorV2({
                 />
               </span>
             </div>
-            <div className={`text-gray-700 leading-relaxed whitespace-pre-line mt-1 ${fontSizeClasses.content}`}>
+            <div className={cn(
+              'text-gray-700 leading-relaxed whitespace-pre-line', 
+              fontSizeClasses.content,
+              item.description ? '' : 'hide-when-print'
+            )}>
               <EditableText
                 editorState={editorState}
                 fieldId={`block${blockIndex}-${item.id}-description`}
@@ -443,7 +479,7 @@ export default function ResumeEditorV2({
     <div className="h-full bg-white">
       <div className="py-8 px-6 max-w-4xl mx-auto" data-resume-editor>
         {/* Blocks Section */}
-        <div className="space-y-3">
+        <div className="">
           {personalInfoBlock && personalInfoBlockIndex >= 0 && (
             <div key={personalInfoBlock.title} className="p-4 -m-4 rounded-lg relative group">
               {renderPersonalInfoBlock(personalInfoBlock, personalInfoBlockIndex)}
@@ -454,7 +490,7 @@ export default function ResumeEditorV2({
             if (block.type === 'object') return null;
             
             return (
-              <div key={originalIndex} className="p-4 -m-4 rounded-lg relative">
+              <div key={originalIndex} className="p-3 -m-4 rounded-lg relative">
                 {/* Block Header with left border */}
                 <div className="relative">
                   <h3 className={`text-gray-800 border-l-4 border-blue-600 pl-2 inline-block font-semibold ${fontSizeClasses.title}`}>
@@ -545,14 +581,22 @@ export default function ResumeEditorV2({
                             {isListBlock(block) && ` (${block.data.length} 项)`}
                           </p>
                         </div>
-                        <Button
-                          size="sm"
-                          variant="primary"
-                          onClick={() => addNewBlock(newBlockIdx)}
-                          className="ml-2"
-                        >
-                          确认
-                        </Button>
+                        <div className="flex gap-2 ml-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => rejectNewBlock(newBlockIdx)}
+                          >
+                            拒绝
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="primary"
+                            onClick={() => addNewBlock(newBlockIdx)}
+                          >
+                            确认
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   );

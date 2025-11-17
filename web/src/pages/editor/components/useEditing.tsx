@@ -67,6 +67,35 @@ export const useEditing = (
       }
     }
     
+    // 同时清除 newResumeData 中对应的字段，避免误判为 AI 优化内容
+    const newBlockIndex = blockMatchMap[blockIndex];
+    if (newBlockIndex !== undefined && newBlockIndex !== -1 && 
+        newBlockIndex >= 0 && newBlockIndex < newResumeData.blocks.length) {
+      const clearedNewData = { ...newResumeData };
+      const clearedBlock = clearedNewData.blocks[newBlockIndex];
+      
+      if (clearedBlock && typeof clearedBlock === 'object') {
+        // 优先处理 object 类型的字段（包括 title）
+        if (isObjectBlock(clearedBlock) && field) {
+          // 对于 object 类型，所有字段（包括 title）都是 data 内的字段
+          // 使用用户刚刚编辑的值更新 newResumeData，避免误判
+          (clearedBlock.data as any)[field] = currentValue;
+        } else if (field === 'title') {
+          // 对于非 object 类型，title 是 block 的 title
+          clearedBlock.title = currentValue;
+        } else if (isTextBlock(clearedBlock)) {
+          clearedBlock.data = currentValue;
+        } else if (isListBlock(clearedBlock) && itemId && field) {
+          const clearedItem = clearedBlock.data.find(item => item.id === itemId);
+          if (clearedItem) {
+            (clearedItem as any)[field] = currentValue;
+          }
+        }
+        
+        onNewResumeDataChange(clearedNewData);
+      }
+    }
+    
     onResumeDataChange(newData);
     setEditingField(null);
   };
@@ -115,7 +144,7 @@ export const useEditing = (
     return '';
   };
 
-  // Accept update - copy from newResumeData to resumeData
+  // Accept update - copy from newResumeData to resumeData and clear newResumeData
   const acceptUpdate = (blockIndex: number, itemId?: string, field?: string) => {
     // Use block match map to find corresponding block in newResumeData
     const newBlockIndex = blockMatchMap[blockIndex];
@@ -127,33 +156,59 @@ export const useEditing = (
     }
     
     const newData = { ...resumeData };
+    const clearedNewData = { ...newResumeData };
     
     if (blockIndex < 0 || blockIndex >= newData.blocks.length) return;
     if (newBlockIndex < 0 || newBlockIndex >= newResumeData.blocks.length) return;
     
     const block = newData.blocks[blockIndex];
     const newBlock = newResumeData.blocks[newBlockIndex];
+    const clearedBlock = clearedNewData.blocks[newBlockIndex];
     
     // 优先处理 object 类型的字段更新（包括 title 字段）
     if (isObjectBlock(block) && isObjectBlock(newBlock) && field && field !== 'title') {
       (block.data as any)[field] = (newBlock.data as any)[field];
+      // 同时清除 newResumeData 中对应的字段，避免编辑时重新识别
+      if (isObjectBlock(clearedBlock)) {
+        (clearedBlock.data as any)[field] = (block.data as any)[field];
+      }
     } else if (isObjectBlock(block) && isObjectBlock(newBlock) && field === 'title') {
       // 对于 object 类型，title 是 data 内的字段，不是 block 的 title
       (block.data as any)[field] = (newBlock.data as any)[field];
+      // 同时清除 newResumeData 中对应的字段
+      if (isObjectBlock(clearedBlock)) {
+        (clearedBlock.data as any)[field] = (block.data as any)[field];
+      }
     } else if (field === 'title') {
       // 对于非 object 类型，title 是 block 的 title
       block.title = newBlock.title;
+      // 同时清除 newResumeData 中对应的字段
+      clearedBlock.title = block.title;
     } else if (isTextBlock(block) && isTextBlock(newBlock)) {
       block.data = newBlock.data;
+      // 同时清除 newResumeData 中对应的字段
+      if (isTextBlock(clearedBlock)) {
+        clearedBlock.data = block.data;
+      }
     } else if (isListBlock(block) && isListBlock(newBlock) && itemId && field) {
       const item = block.data.find(item => item.id === itemId);
       const newItem = newBlock.data.find(item => item.id === itemId);
       if (item && newItem) {
         (item as any)[field] = (newItem as any)[field];
+        // 同时清除 newResumeData 中对应的字段
+        if (isListBlock(clearedBlock)) {
+          const clearedItem = clearedBlock.data.find(item => item.id === itemId);
+          if (clearedItem) {
+            (clearedItem as any)[field] = (item as any)[field];
+          }
+        }
       }
     }
     
+    // 更新 resumeData
     onResumeDataChange(newData);
+    // 清除 newResumeData 中对应的字段，避免编辑时重新识别
+    onNewResumeDataChange(clearedNewData);
   };
 
   // Clear new value - reset newResumeData to match resumeData

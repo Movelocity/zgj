@@ -26,10 +26,11 @@ export const EditableText = ({
   itemId?: string;
   field?: string;
 }) => {
-  const { editingField, editingValueRef, startEditing, saveEdit, cancelEdit, getNewValue, acceptUpdate, clearNewValue } = editorState;
+  const { editingField, editingValueRef, startEditing, saveEdit, getNewValue, acceptUpdate, clearNewValue } = editorState;
   const isCurrentlyEditing = editingField === fieldId;
   const inputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const ignoreBlurRef = useRef(false);
   
   // Get new content from newResumeData
   const newValue = blockIndex !== undefined ? getNewValue(blockIndex, itemId, field) : '';
@@ -61,18 +62,39 @@ export const EditableText = ({
   // Accept update
   const handleAcceptUpdate = () => {
     if (blockIndex !== undefined) {
+      // acceptUpdate 会同时更新 resumeData 和清除 newResumeData 中的对应字段
       acceptUpdate(blockIndex, itemId, field);
-      clearNewValue(blockIndex, itemId, field);
+      // 重置显示状态
+      setShowingOriginal(false);
     }
   };
   
   // Reject update
   const handleRejectUpdate = () => {
     if (blockIndex !== undefined) {
+      // 清除 newResumeData 中的对应字段，避免编辑时重新识别
       clearNewValue(blockIndex, itemId, field);
+      // 重置显示状态
+      setShowingOriginal(false);
     }
   };
   
+  // Handle blur event to save edit
+  const handleBlur = () => {
+    // Delay blur handling to allow button clicks to process first
+    setTimeout(() => {
+      // Ignore blur if button was clicked
+      if (ignoreBlurRef.current) {
+        ignoreBlurRef.current = false;
+        return;
+      }
+      const element = multiline ? textareaRef.current : inputRef.current;
+      if (element && isCurrentlyEditing) {
+        saveEdit(fieldId, element);
+      }
+    }, 0);
+  };
+
   // Editing mode
   if (isCurrentlyEditing) {
     return (
@@ -81,11 +103,12 @@ export const EditableText = ({
           <textarea
             ref={textareaRef}
             defaultValue={editingValueRef.current}
-            className="flex-1 min-h-20 p-2 resize-none outline-none bg-gray-100 rounded overflow-hidden"
+            className="flex-1 min-h-20 px-1 py-0.5 resize-none outline-none bg-gray-100 rounded overflow-hidden"
             autoFocus
             onInput={(e) => {
               adjustTextareaHeight(e.currentTarget);
             }}
+            onBlur={handleBlur}
           />
         ) : (
           <input
@@ -93,16 +116,23 @@ export const EditableText = ({
             defaultValue={editingValueRef.current}
             className="flex-1 h-8 px-2 focus:outline-none outline-none bg-gray-100 rounded"
             autoFocus
+            onBlur={handleBlur}
           />
         )}
-        <div className="absolute top-full right-0 bg-white border border-gray-200 rounded-md shadow-lg whitespace-nowrap z-20 flex items-center p-1 gap-1 mt-1">
+        {/* <div className="absolute top-full right-0 bg-white border border-gray-200 rounded-md shadow-lg whitespace-nowrap z-20 flex items-center p-1 gap-1 mt-1">
           <Button 
             size="xs2" 
             variant="none"
             className="bg-green-100 hover:bg-green-200 rounded text-green-700"
+            onMouseDown={() => {
+              ignoreBlurRef.current = true;
+            }}
             onClick={() => {
               const element = multiline ? textareaRef.current : inputRef.current;
-              if (element) saveEdit(fieldId, element);
+              if (element) {
+                saveEdit(fieldId, element);
+              }
+              ignoreBlurRef.current = false;
             }}
           >
             确定
@@ -110,12 +140,18 @@ export const EditableText = ({
           <Button 
             size="xs2" 
             variant="none" 
-            className="bg-red-100 hover:bg-red-200 rounded text-red-700" 
-            onClick={cancelEdit}
+            className="bg-red-100 hover:bg-red-200 rounded text-red-700"
+            onMouseDown={() => {
+              ignoreBlurRef.current = true;
+            }}
+            onClick={() => {
+              cancelEdit();
+              ignoreBlurRef.current = false;
+            }}
           >
             取消
           </Button>
-        </div>
+        </div> */}
       </div>
     );
   }
@@ -197,9 +233,9 @@ export const EditableText = ({
   
   // Normal display without new content
   return (
-    <span 
+    <div 
       className={cn(
-        'cursor-pointer hover:bg-gray-100 px-1 py-0.5 rounded transition-colors',
+        'cursor-pointer hover:bg-gray-100 px-1 py-0.5 rounded transition-colors whitespace-pre-line',
         baseClasses, 
         className, 
         !value ? 'text-gray-400 italic' : ''
@@ -207,6 +243,6 @@ export const EditableText = ({
       onClick={() => startEditing(fieldId, value)}
     >
       {content}
-    </span>
+    </div>
   );
 };
