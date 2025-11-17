@@ -456,7 +456,7 @@ export default function ResumeEditorV2({
             return (
               <div key={originalIndex} className="p-4 -m-4 rounded-lg relative">
                 {/* Block Header with left border */}
-                <div className="relative mb-2">
+                <div className="relative">
                   <h3 className={`text-gray-800 border-l-4 border-blue-600 pl-3 inline-block font-semibold ${fontSizeClasses.title}`}>
                     <EditableText
                       editorState={editorState}

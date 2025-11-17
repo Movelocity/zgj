@@ -412,7 +412,7 @@ const InvitationManagement: React.FC = () => {
         <div className="flex justify-between items-center mb-6">
           <div className="flex items-baseline gap-4">
             <h2 className="text-2xl font-bold text-gray-900">邀请码管理</h2>
-            <p className="text-sm text-gray-500 mt-1">
+            <p className="text-sm text-gray-500 mt-1 hidden sm:block">
               管理和查看所有邀请码的使用情况
               {selectedCodes.length > 0 && (
                 <span className="ml-2 text-blue-600 font-medium">
@@ -421,7 +421,7 @@ const InvitationManagement: React.FC = () => {
               )}
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row gap-2">
             {selectedCodes.length > 0 && (
               <Button
                 variant="outline"

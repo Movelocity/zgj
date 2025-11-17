@@ -146,7 +146,7 @@ const SiteVariableManagement: React.FC = () => {
     <div className="space-y-6">
       {/* 头部操作栏 */}
       <div className="flex justify-between items-center">
-        <div className="flex items-center space-x-4">
+        <div className="flex flex-col sm:flex-row gap-2">
           <div className="relative">
             <input
               type="text"
@@ -166,7 +166,7 @@ const SiteVariableManagement: React.FC = () => {
             搜索
           </Button>
         </div>
-        <div className="flex items-center space-x-3">
+        <div className="flex flex-col sm:flex-row gap-2">
           <Button
             onClick={loadVariables}
             variant="outline"

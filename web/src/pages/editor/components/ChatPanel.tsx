@@ -213,6 +213,36 @@ export default function ChatPanel({
       setIsTyping(false);
       return;
     }
+
+    if (command === "error") {
+      const testData = {
+        "blocks": [
+          {
+            "title": "工作经历",
+            "type": "list",
+            "data": [
+              {
+                "id": "1",
+                "name": 123,
+                "description": [123],
+                "time": "2021-01-0122",
+                "highlight": "nothing"
+              }
+            ]
+          }
+        ]
+      };
+      // 测试错误捕获的流程
+      onResumeDataChange(testData as any, true);
+      const aiResponse: Message = {
+        id: (Date.now() + 1).toString(),
+        type: 'assistant',
+        content: "测试错误捕获的流程",
+        timestamp: new Date(),
+      };
+      updateMessages(aiResponse);
+      throw new Error("测试错误捕获的流程");
+    }
     
     if (command === "test"){
       // 模拟AI回复

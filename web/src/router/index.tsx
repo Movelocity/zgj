@@ -16,13 +16,11 @@ const ResumeList = lazy(() => import('@/pages/resume/ResumeList'));
 const ResumeCardView = lazy(() => import('@/pages/resume/ResumeCardView'));
 const ResumeDetail = lazy(() => import('@/pages/resume/ResumeDetail'));
 const ResumeEditor = lazy(() => import('@/pages/editor/ResumeDetails'));
-// const ResumeEditorV2 = lazy(() => import('@/pages/editor/ResumeDetails'));
 const Profile = lazy(() => import('@/pages/profile/Profile'));
 const Administrator = lazy(() => import('@/pages/admin/Administrator'));
 const Contact = lazy(() => import('@/pages/contact/Contact'));
 const NotFound = lazy(() => import('@/pages/error/NotFound'));
 const ServerError = lazy(() => import('@/pages/error/ServerError'));
-const TestModal = lazy(() => import('@/pages/test/Modal.example'));
 
 // 路由配置
 export const routes = [
@@ -81,10 +79,6 @@ export const routes = [
   {
     path: '/contact',
     element: <Contact />,
-  },
-  {
-    path: '/test-modal',
-    element: <TestModal />,
   },
   {
     path: '/500',

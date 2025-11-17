@@ -137,7 +137,7 @@ const WorkflowManagement: React.FC = () => {
         <div>
           <h2 className="text-2xl font-bold text-gray-900">工作流API配置</h2>
         </div>
-        <div className="flex items-center space-x-3">
+        <div className="flex flex-col sm:flex-row gap-2">
           <Button
             onClick={handleBackupOpen}
             variant="text"
