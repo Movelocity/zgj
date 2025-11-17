@@ -206,7 +206,7 @@ export default function ResumeEditorV2({
     return (
       <div className="space-y-2">
         {block.data.map((item, itemIndex) => (
-          <div key={item.id} className="relative group pl-4">
+          <div key={item.id} className="relative group pl-3">
             {/* 小板块操作 - 左侧面板 */}
             <div className="absolute -left-2 top-0 flex flex-col space-y-1 opacity-0 group-hover:opacity-100 transition-opacity">
               <Button
@@ -441,7 +441,7 @@ export default function ResumeEditorV2({
 
   return (
     <div className="h-full bg-white">
-      <div className="p-8 max-w-4xl mx-auto" data-resume-editor>
+      <div className="py-8 px-6 max-w-4xl mx-auto" data-resume-editor>
         {/* Blocks Section */}
         <div className="space-y-3">
           {personalInfoBlock && personalInfoBlockIndex >= 0 && (
@@ -457,7 +457,7 @@ export default function ResumeEditorV2({
               <div key={originalIndex} className="p-4 -m-4 rounded-lg relative">
                 {/* Block Header with left border */}
                 <div className="relative">
-                  <h3 className={`text-gray-800 border-l-4 border-blue-600 pl-3 inline-block font-semibold ${fontSizeClasses.title}`}>
+                  <h3 className={`text-gray-800 border-l-4 border-blue-600 pl-2 inline-block font-semibold ${fontSizeClasses.title}`}>
                     <EditableText
                       editorState={editorState}
                       fieldId={`block${originalIndex}--title`}

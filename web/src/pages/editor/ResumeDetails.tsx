@@ -6,7 +6,8 @@ import Button from "@/components/ui/Button";
 import { useGlobalStore } from '@/store';
 import ChatPanel, { type Message } from './components/ChatPanel';
 import ResumeEditorV2 from './components/ResumeEditor';
-import FontSettingsPanel, { type FontSettings } from './components/FontSettingsPanel';
+import FontSettingsDropdown from './components/FontSettingsDropdown';
+import { type FontSettings } from './components/FontSettingsPanel';
 import LoadingIndicator, { type LoadingStage } from '@/components/LoadingIndicator';
 import type { ResumeV2Data } from '@/types/resumeV2';
 import { defaultResumeV2Data } from '@/types/resumeV2';
@@ -55,7 +56,6 @@ export default function ResumeDetails() {
   const progressUpdaterRef = useRef<TimeBasedProgressUpdater | null>(null);
   const [isChatOpen, setIsChatOpen] = useState(true);
   const [isSaving, setSaving] = useState(false);
-  const [isFontSettingsOpen, setIsFontSettingsOpen] = useState(false);
   const [fontSettings, setFontSettings] = useState<FontSettings>({
     titleSize: 'medium',
     labelSize: 'medium',
@@ -478,13 +478,10 @@ export default function ResumeDetails() {
               AI对话
             </Button>
 
-            <Button
-              onClick={() => setIsFontSettingsOpen(true)}
-              variant="outline"
-              title="显示字体调节的面板"
-            >
-              页面
-            </Button>
+            <FontSettingsDropdown
+              fontSettings={fontSettings}
+              onFontSettingsChange={setFontSettings}
+            />
             
             <Button
               onClick={handleExportPDF}
@@ -540,14 +537,6 @@ export default function ResumeDetails() {
               />
             </div>
           )}
-
-          {/* Font Settings Panel */}
-          <FontSettingsPanel
-            isOpen={isFontSettingsOpen}
-            onClose={() => setIsFontSettingsOpen(false)}
-            fontSettings={fontSettings}
-            onFontSettingsChange={setFontSettings}
-          />
           </>
           )}
       </div>
