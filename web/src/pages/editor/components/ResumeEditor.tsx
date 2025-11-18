@@ -1,15 +1,15 @@
-import { ChevronUp, ChevronDown, Trash2, Upload, Mail, Phone, MapPin, UserRound, Plus } from 'lucide-react';
+import { ChevronUp, ChevronDown, Trash2, Mail, Phone, MapPin, Plus } from 'lucide-react';
 import Button from "@/components/ui/Button";
 import type { ResumeBlock, ResumeBlockListItem, ResumeV2Data } from '@/types/resumeV2';
 import { isListBlock, isTextBlock, isObjectBlock, createEmptyListItem } from '@/types/resumeV2';
-import { fileAPI } from '@/api/file';
-import { showSuccess, showError } from '@/utils/toast';
+import { showSuccess } from '@/utils/toast';
 import { EditableText } from './EditableText';
 import { useEditing } from './useEditing';
 import { type FontSettings, getFontSizeClasses } from './FontSettingsPanel';
 import { buildBlockMatchMap, findNewBlocks } from './utils';
 import { useMemo, useState } from 'react';
 import cn from 'classnames';
+import PortraitImageEditor from './PortraitImageEditor';
 
 interface ResumeEditorV2Props {
   resumeData: ResumeV2Data;
@@ -85,55 +85,22 @@ export default function ResumeEditorV2({
     showSuccess(`已拒绝板块: ${blockToReject.title || '(无标题)'}`);
   };
 
-  // Handle portrait image upload for personal info block
-  const handlePortraitUpload = async (e: React.ChangeEvent<HTMLInputElement>, blockIndex: number) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
+  // Handle portrait image change for personal info block
+  const handlePortraitChange = (blockIndex: number, photoUrl: string) => {
     const block = resumeData.blocks[blockIndex];
     if (!isObjectBlock(block)) return;
 
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      showError('请上传图片文件');
-      return;
-    }
-
-    // Validate file size (max 5MB)
-    const maxSize = 5 * 1024 * 1024;
-    if (file.size > maxSize) {
-      showError('图片大小不能超过 5MB');
-      return;
-    }
-
-    try {
-      // Upload file to server
-      const response = await fileAPI.uploadFile(file);
-      
-      if (response.code === 0) {
-        const fileId = response.data.id;
-        const photoUrl = fileAPI.previewFile(fileId);
-        
-        // Update resume data with photo URL
-        const newData = { ...resumeData };
-        const updatedBlock: ResumeBlock = {
-          ...block,
-          data: {
-            ...(block.data as any),
-            photo: photoUrl
-          }
-        };
-        newData.blocks[blockIndex] = updatedBlock;
-        onResumeDataChange(newData);
-        
-        showSuccess('证件照上传成功');
-      } else {
-        showError(response.msg || '上传失败');
+    // Update resume data with photo URL
+    const newData = { ...resumeData };
+    const updatedBlock: ResumeBlock = {
+      ...block,
+      data: {
+        ...(block.data as any),
+        photo: photoUrl
       }
-    } catch (error) {
-      console.error('Upload error:', error);
-      showError(error instanceof Error ? error.message : '上传失败');
-    }
+    };
+    newData.blocks[blockIndex] = updatedBlock;
+    onResumeDataChange(newData);
   };
 
  
@@ -381,7 +348,7 @@ export default function ResumeEditorV2({
         <div className="flex items-end justify-between gap-6">
           {/* Left side - Personal Info */}
           <div className="flex-1">
-            <h1 className="text-3xl text-gray-800 mb-2">
+            <h1 className="text-4xl text-gray-800 mb-2">
               <EditableText
                 editorState={editorState}
                 fieldId={`block${blockIndex}--name`}
@@ -439,34 +406,13 @@ export default function ResumeEditorV2({
           </div>
 
           {/* Right side - Portrait Photo */}
-          <div className="flex-shrink-0 relative">
-            {photo ? (
-              <img 
-                src={photo} 
-                alt="证件照" 
-                className="w-[120px] h-[160px] object-cover rounded border-2 border-gray-300"
-              />
-            ) : (
-              <div className="w-32 h-40 bg-gray-50 rounded border-2 border-dashed border-gray-300 flex flex-col items-center justify-center">
-                <UserRound className="w-10 h-10 text-gray-300" />
-              </div>
-            )}
-            <label
-              htmlFor={`portrait-upload-${blockIndex}`}
-              className="absolute top-0 left-0 w-full h-full bg-gray-500/50 opacity-0 hover:opacity-100 flex flex-col items-center justify-center gap-1 text-white cursor-pointer transition-colors"
-              title="上传证件照"
-            >
-              <Upload className="w-8 h-8" />
-              <span className="text-sm ">上传证件照</span>
-            </label>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(e) => handlePortraitUpload(e, blockIndex)}
-              className="hidden"
-              id={`portrait-upload-${blockIndex}`}
-            />
-          </div>
+          <PortraitImageEditor
+            currentImageUrl={photo}
+            onImageChange={(imageUrl) => handlePortraitChange(blockIndex, imageUrl)}
+            imageSize={{ width: 120, height: 160 }}
+            aspect={3 / 4}
+            id={`portrait-${blockIndex}`}
+          />
         </div>
       </div>
     );

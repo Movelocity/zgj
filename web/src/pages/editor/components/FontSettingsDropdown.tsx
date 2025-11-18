@@ -106,17 +106,13 @@ export default function FontSettingsDropdown({
               </div>
               <div className="grid grid-cols-3 gap-2">
                 {(Object.keys(TITLE_SIZE_PRESETS) as Array<keyof typeof TITLE_SIZE_PRESETS>).map((key) => (
-                  <button
+                  <Button
                     key={key}
                     onClick={() => handleTitleSizeChange(key)}
-                    className={`py-1 rounded-lg border transition-all ${
-                      fontSettings.titleSize === key
-                        ? 'border-blue-500 bg-blue-50 text-blue-700 font-medium'
-                        : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50'
-                    }`}
+                    variant={fontSettings.titleSize === key? "primary": "outline"}
                   >
                     {TITLE_SIZE_PRESETS[key].label}
-                  </button>
+                  </Button>
                 ))}
               </div>
             </div>
@@ -130,17 +126,13 @@ export default function FontSettingsDropdown({
               </div>
               <div className="grid grid-cols-3 gap-2">
                 {(Object.keys(LABEL_SIZE_PRESETS) as Array<keyof typeof LABEL_SIZE_PRESETS>).map((key) => (
-                  <button
+                  <Button
                     key={key}
                     onClick={() => handleLabelSizeChange(key)}
-                    className={`px-2 py-1 rounded-lg border transition-all ${
-                      fontSettings.labelSize === key
-                        ? 'border-blue-500 bg-blue-50 text-blue-700 font-medium'
-                        : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50'
-                    }`}
+                    variant={fontSettings.labelSize === key? "primary": "outline"}
                   >
                     {LABEL_SIZE_PRESETS[key].label}
-                  </button>
+                  </Button>
                 ))}
               </div>
             </div>
@@ -154,17 +146,13 @@ export default function FontSettingsDropdown({
               </div>
               <div className="grid grid-cols-3 gap-2">
                 {(Object.keys(CONTENT_SIZE_PRESETS) as Array<keyof typeof CONTENT_SIZE_PRESETS>).map((key) => (
-                  <button
+                  <Button
                     key={key}
                     onClick={() => handleContentSizeChange(key)}
-                    className={`px-2 py-1 rounded-lg border transition-all ${
-                      fontSettings.contentSize === key
-                        ? 'border-blue-500 bg-blue-50 text-blue-700 font-medium'
-                        : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50'
-                    }`}
+                    variant={fontSettings.contentSize === key? "primary": "outline"}
                   >
                     {CONTENT_SIZE_PRESETS[key].label}
-                  </button>
+                  </Button>
                 ))}
               </div>
             </div>

@@ -119,39 +119,6 @@ export const EditableText = ({
             onBlur={handleBlur}
           />
         )}
-        {/* <div className="absolute top-full right-0 bg-white border border-gray-200 rounded-md shadow-lg whitespace-nowrap z-20 flex items-center p-1 gap-1 mt-1">
-          <Button 
-            size="xs2" 
-            variant="none"
-            className="bg-green-100 hover:bg-green-200 rounded text-green-700"
-            onMouseDown={() => {
-              ignoreBlurRef.current = true;
-            }}
-            onClick={() => {
-              const element = multiline ? textareaRef.current : inputRef.current;
-              if (element) {
-                saveEdit(fieldId, element);
-              }
-              ignoreBlurRef.current = false;
-            }}
-          >
-            确定
-          </Button>
-          <Button 
-            size="xs2" 
-            variant="none" 
-            className="bg-red-100 hover:bg-red-200 rounded text-red-700"
-            onMouseDown={() => {
-              ignoreBlurRef.current = true;
-            }}
-            onClick={() => {
-              cancelEdit();
-              ignoreBlurRef.current = false;
-            }}
-          >
-            取消
-          </Button>
-        </div> */}
       </div>
     );
   }
