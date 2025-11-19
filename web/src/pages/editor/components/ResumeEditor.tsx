@@ -199,9 +199,9 @@ export default function ResumeEditorV2({
     return (
       <div className="">
         {block.data.map((item, itemIndex) => (
-          <div key={item.id} className="relative group pl-3">
+          <div key={item.id} className="relative group pl-4 break-inside-avoid">
             {/* 小板块操作 - 左侧面板 */}
-            <div className="absolute -left-2 top-0 flex flex-col space-y-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            <div className="absolute -left-6 top-0 flex flex-col space-y-1 opacity-0 group-hover:opacity-100 transition-opacity">
               <Button
                 size="zero"
                 variant="outline"
@@ -301,21 +301,6 @@ export default function ResumeEditorV2({
         {block.data.length === 0 && (
           <p className="text-gray-500 italic">暂无内容，请从左侧菜单添加...</p>
         )}
-        
-        {/* <div className="relative group pt-2">
-          <div className="text-gray-400 text-sm italic border-l-2 border-dashed border-gray-300 pl-4">
-            添加列表项...
-          </div>
-          <Button
-            size="zero"
-            variant="outline"
-            onClick={() => addListItem(blockIndex)}
-            className="absolute -left-12 top-2 w-6 h-6 p-0 bg-white shadow-sm opacity-0 group-hover:opacity-100 transition-opacity hover:bg-green-50 hover:text-green-600"
-            title="添加列表项"
-          >
-            <Plus size={14} />
-          </Button>
-        </div> */}
       </div>
     );
   };
@@ -427,7 +412,7 @@ export default function ResumeEditorV2({
         {/* Blocks Section */}
         <div className="">
           {personalInfoBlock && personalInfoBlockIndex >= 0 && (
-            <div key={personalInfoBlock.title} className="p-4 -m-4 rounded-lg relative group">
+            <div key={personalInfoBlock.title} className="mb-3 rounded-lg relative group">
               {renderPersonalInfoBlock(personalInfoBlock, personalInfoBlockIndex)}
             </div>
           )}
@@ -436,7 +421,7 @@ export default function ResumeEditorV2({
             if (block.type === 'object') return null;
             
             return (
-              <div key={originalIndex} className="p-3 -m-4 rounded-lg relative">
+              <div key={originalIndex} className="relative">
                 {/* Block Header with left border */}
                 <div className="relative">
                   <h3 className={`text-gray-800 border-l-4 border-blue-600 pl-2 inline-block font-semibold ${fontSizeClasses.title}`}>

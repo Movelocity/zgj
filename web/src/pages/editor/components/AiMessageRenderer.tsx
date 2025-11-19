@@ -267,7 +267,7 @@ export default function AiMessageRenderer({
             key={`block-${index}`}
             className="my-3 px-4 animate-in fade-in-0 slide-in-from-bottom-2 duration-300"
           >
-            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg px-4 py-3 shadow-sm">
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-1 border-blue-100 rounded-lg px-4 py-3 shadow-sm">
               <div className="flex items-center space-x-3">
                 <div className="relative">
                   {block.status === 'completed' ? (
@@ -288,7 +288,7 @@ export default function AiMessageRenderer({
                     {block.status === 'parsing' 
                       ? '解析中' 
                       : block.status === 'formatting' 
-                        ? '正在格式化...' 
+                        ? '正在应用...' 
                         : '已应用到编辑区'}
                   </h4>
                 </div>

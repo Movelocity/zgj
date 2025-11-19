@@ -64,18 +64,19 @@ function injectPrintStyles(): HTMLStyleElement {
       .pdf-print-content .hide-when-print {
         display: none !important;
       }
-      
-      /* 确保打印时颜色正常显示 */
-      * {
-        -webkit-print-color-adjust: exact !important;
-        print-color-adjust: exact !important;
-        color-adjust: exact !important;
-      }
     }
   `;
   document.head.appendChild(style);
   return style;
 }
+
+/* 确保打印时颜色正常显示 
+* {
+-webkit-print-color-adjust: exact !important;
+print-color-adjust: exact !important;
+color-adjust: exact !important;
+}
+*/
 
 /**
  * 移除打印样式
