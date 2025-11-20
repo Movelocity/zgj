@@ -228,8 +228,8 @@ export async function exportElementToPDFViaCanvas(
     
     // 1. 使用html-to-image渲染DOM为Canvas
     // html-to-image支持现代CSS特性，包括oklch颜色函数
-    const dataUrl = await htmlToImage.toPng(element, {
-      quality: 0.92,
+    const dataUrl = await htmlToImage.toJpeg(element, {
+      quality: 1.0,
       pixelRatio: SCALE,
       backgroundColor: '#ffffff',
       cacheBust: true,
@@ -292,12 +292,12 @@ export async function exportElementToPDFViaCanvas(
           imgWidth, pageCanvas.height // 目标canvas尺寸
         );
         
-        const pageImgData = pageCanvas.toDataURL('image/png');
+        const pageImgData = pageCanvas.toDataURL('image/jpeg', 1.0);
         
         // 添加图片到PDF页面，保持边距
         pdf.addImage(
           pageImgData,
-          'PNG',
+          'JPEG',
           MARGIN,
           MARGIN,
           pdfContentWidth,
