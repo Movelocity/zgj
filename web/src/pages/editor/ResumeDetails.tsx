@@ -7,6 +7,7 @@ import { useGlobalStore } from '@/store';
 import ChatPanel, { type Message } from './components/ChatPanel';
 import ResumeEditorV2 from './components/ResumeEditor';
 import FontSettingsDropdown from './components/FontSettingsDropdown';
+import ExportSplitButton from './components/ExportSplitButton';
 import { type FontSettings } from './components/FontSettingsPanel';
 import LoadingIndicator, { type LoadingStage } from '@/components/LoadingIndicator';
 import type { ResumeV2Data } from '@/types/resumeV2';
@@ -14,7 +15,7 @@ import { defaultResumeV2Data } from '@/types/resumeV2';
 import { resumeAPI } from '@/api/resume';
 import { showError, showSuccess } from '@/utils/toast';
 import { isV1Format, isV2Format, convertV1ToV2 } from '@/utils/resumeConverter';
-import { exportResumeToPDF } from '@/utils/pdfExport';
+import { exportResumeToPDF, exportResumeToPDFViaCanvas } from '@/utils/pdfExport';
 import { workflowAPI } from '@/api/workflow';
 import type { ProcessingStage, StepResult } from './types';
 import { TimeBasedProgressUpdater, RESUME_PROCESSING_STEPS } from '@/utils/progress';
@@ -56,6 +57,7 @@ export default function ResumeDetails() {
   const progressUpdaterRef = useRef<TimeBasedProgressUpdater | null>(null);
   const [isChatOpen, setIsChatOpen] = useState(true);
   const [isSaving, setSaving] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   const [fontSettings, setFontSettings] = useState<FontSettings>({
     titleSize: 'medium',
     labelSize: 'medium',
@@ -402,16 +404,34 @@ export default function ResumeDetails() {
     }
   };
 
-  // 导出PDF
-  const handleExportPDF = async () => {
+  // 导出文字PDF（浏览器打印）
+  const handleTextPdfExport = async () => {
     try {
-      console.log('正在生成PDF，请稍候...');
+      setIsExporting(true);
+      console.log('正在生成文字PDF，请稍候...');
       await exportResumeToPDF(resumeName || '简历');
-      console.log('PDF导出成功');
+      console.log('文字PDF导出成功');
     } catch (error) {
       showError(error instanceof Error ? error.message : '导出PDF失败');
+    } finally {
+      setIsExporting(false);
     }
-  }
+  };
+
+  // 导出图片PDF（Canvas方式）
+  const handleImagePdfExport = async () => {
+    try {
+      setIsExporting(true);
+      console.log('正在生成图片PDF，请稍候...');
+      await exportResumeToPDFViaCanvas(resumeName || '简历');
+      console.log('图片PDF导出成功');
+      showSuccess('PDF导出成功');
+    } catch (error) {
+      showError(error instanceof Error ? error.message : '导出PDF失败，请尝试使用文字PDF打印');
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   // Go back
   const handleGoBack = () => {
@@ -483,12 +503,11 @@ export default function ResumeDetails() {
               onFontSettingsChange={setFontSettings}
             />
             
-            <Button
-              onClick={handleExportPDF}
-              variant="outline"
-            >
-              导出PDF
-            </Button>
+            <ExportSplitButton
+              onTextPdfExport={handleTextPdfExport}
+              onImagePdfExport={handleImagePdfExport}
+              isExporting={isExporting}
+            />
 
             <Button
               onClick={handleSaveResume}

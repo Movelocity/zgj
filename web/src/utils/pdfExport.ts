@@ -12,16 +12,18 @@
  * - A4宽度：210mm ≈ 8.27英寸 ≈ 1654像素 (200 DPI)
  * - A4高度：297mm ≈ 11.69英寸 ≈ 2338像素 (200 DPI)
  * 
- * 内容区域（padding=200px）：
- * - 内容宽度：1654 - 400 = 1254像素
- * - 内容高度：2338 - 400 = 1938像素
- * 使用浏览器原生打印功能导出PDF，避免html2canvas的兼容性问题
- * 优势：
- * - 支持所有现代CSS特性（包括oklch等颜色函数）
- * - 更好的打印质量
- * - 更可靠的分页控制
- * - 无需额外的canvas转换
+ * 内容区域（padding=2rem约32px）：
+ * - 边距：上下左右各2rem
+ * - 可用内容高度：297mm - 4rem
+ * 
+ * 导出方式：
+ * 1. 浏览器打印：使用原生打印功能，支持所有CSS特性
+ * 2. Canvas图片PDF：使用html-to-image渲染为图片后生成PDF，确保色彩一致性
+ *    - html-to-image支持现代CSS特性（包括oklch等颜色函数）
  */
+
+import * as htmlToImage from 'html-to-image';
+import jsPDF from 'jspdf';
 
 /**
  * 注入打印样式到页面
@@ -64,19 +66,17 @@ function injectPrintStyles(): HTMLStyleElement {
       .pdf-print-content .hide-when-print {
         display: none !important;
       }
+
+      * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        color-adjust: exact !important;
+      }
     }
   `;
   document.head.appendChild(style);
   return style;
 }
-
-/* 确保打印时颜色正常显示 
-* {
--webkit-print-color-adjust: exact !important;
-print-color-adjust: exact !important;
-color-adjust: exact !important;
-}
-*/
 
 /**
  * 移除打印样式
@@ -198,5 +198,141 @@ export function printCurrentPage(filename: string = 'document.pdf'): void {
   document.title = filename.replace('.pdf', '');
   window.print();
   document.title = originalTitle;
+}
+
+/**
+ * 使用Canvas将DOM元素导出为PDF（图片PDF方式）
+ * 适用于需要确保色彩完全一致的场景
+ * 
+ * @param element 要导出的DOM元素
+ * @param filename PDF文件名
+ */
+export async function exportElementToPDFViaCanvas(
+  element: HTMLElement,
+  filename: string = 'resume.pdf'
+): Promise<void> {
+  try {
+    // A4纸张尺寸（单位：mm）
+    const A4_WIDTH = 210;
+    const A4_HEIGHT = 297;
+    
+    // 边距（单位：mm，2rem ≈ 32px ≈ 8.5mm）
+    const MARGIN = 8.5;
+    
+    // 可用内容区域
+    const CONTENT_WIDTH = A4_WIDTH - (MARGIN * 2);
+    const CONTENT_HEIGHT = A4_HEIGHT - (MARGIN * 2);
+    
+    // DPI设置：用于canvas渲染
+    const SCALE = 2; // 提高渲染质量
+    
+    // 1. 使用html-to-image渲染DOM为Canvas
+    // html-to-image支持现代CSS特性，包括oklch颜色函数
+    const dataUrl = await htmlToImage.toPng(element, {
+      quality: 0.92,
+      pixelRatio: SCALE,
+      backgroundColor: '#ffffff',
+      cacheBust: true,
+    });
+    
+    // 创建临时图片以获取尺寸
+    const img = new Image();
+    await new Promise((resolve, reject) => {
+      img.onload = resolve;
+      img.onerror = reject;
+      img.src = dataUrl;
+    });
+    
+    const imgWidth = img.width;
+    const imgHeight = img.height;
+    
+    // 2. 创建PDF文档
+    const pdf = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a4',
+    });
+    
+    // 3. 计算缩放比例，确保内容适配页面宽度
+    const pdfContentWidth = CONTENT_WIDTH;
+    const scaleFactor = pdfContentWidth / (imgWidth / SCALE);
+    const scaledImgHeight = (imgHeight / SCALE) * scaleFactor;
+    
+    // 4. 智能分页
+    const pageContentHeight = CONTENT_HEIGHT;
+    let remainingHeight = scaledImgHeight;
+    let yPosition = 0;
+    let pageNumber = 0;
+    
+    while (remainingHeight > 0) {
+      if (pageNumber > 0) {
+        pdf.addPage();
+      }
+      
+      // 计算当前页要显示的内容高度
+      const currentPageHeight = Math.min(pageContentHeight, remainingHeight);
+      
+      // 计算源图像中的裁剪位置
+      const sourceY = (yPosition / scaleFactor) * SCALE;
+      const sourceHeight = (currentPageHeight / scaleFactor) * SCALE;
+      
+      // 创建临时canvas用于裁剪当前页的内容
+      const pageCanvas = document.createElement('canvas');
+      pageCanvas.width = imgWidth;
+      pageCanvas.height = Math.min(sourceHeight, imgHeight - sourceY);
+      
+      const pageCtx = pageCanvas.getContext('2d');
+      if (pageCtx) {
+        // 绘制当前页的内容
+        pageCtx.drawImage(
+          img,
+          0, sourceY, // 源图像起始位置
+          imgWidth, pageCanvas.height, // 源图像尺寸
+          0, 0, // 目标canvas起始位置
+          imgWidth, pageCanvas.height // 目标canvas尺寸
+        );
+        
+        const pageImgData = pageCanvas.toDataURL('image/png');
+        
+        // 添加图片到PDF页面，保持边距
+        pdf.addImage(
+          pageImgData,
+          'PNG',
+          MARGIN,
+          MARGIN,
+          pdfContentWidth,
+          currentPageHeight
+        );
+      }
+      
+      // 更新位置和剩余高度
+      yPosition += currentPageHeight;
+      remainingHeight -= currentPageHeight;
+      pageNumber++;
+    }
+    
+    // 5. 保存PDF
+    pdf.save(filename);
+    
+  } catch (error) {
+    console.error('Canvas PDF导出失败:', error);
+    throw new Error('PDF导出失败，请尝试使用文字PDF打印');
+  }
+}
+
+/**
+ * 从简历数据导出PDF（Canvas图片方式）
+ * @param resumeName 简历名称
+ */
+export async function exportResumeToPDFViaCanvas(resumeName: string = '简历'): Promise<void> {
+  // 查找简历编辑器元素
+  const editorElement = document.querySelector('[data-resume-editor]') as HTMLElement;
+  
+  if (!editorElement) {
+    throw new Error('未找到简历编辑器元素');
+  }
+  
+  const filename = `${resumeName}_${new Date().toISOString().slice(0, 10)}.pdf`;
+  await exportElementToPDFViaCanvas(editorElement, filename);
 }
 
