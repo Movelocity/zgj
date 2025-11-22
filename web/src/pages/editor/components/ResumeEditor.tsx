@@ -201,13 +201,13 @@ export default function ResumeEditorV2({
         {block.data.map((item, itemIndex) => (
           <div key={item.id} className="relative group pl-4 break-inside-avoid">
             {/* 小板块操作 - 左侧面板 */}
-            <div className="absolute -left-6 top-0 flex flex-col space-y-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            <div className="absolute -left-2 top-0 flex flex-col opacity-0 group-hover:opacity-100 transition-opacity">
               <Button
                 size="zero"
                 variant="outline"
                 disabled={itemIndex === 0}
                 onClick={() => moveListItem(blockIndex, item.id, 'up')}
-                className="w-6 h-6 p-0 bg-white shadow-sm hover:bg-gray-50"
+                className="w-6 h-6 p-0 bg-white shadow-sm hover:bg-gray-50 rounded-none"
                 title="上移"
               >
                 <ChevronUp size={14} />
@@ -218,7 +218,7 @@ export default function ResumeEditorV2({
                 variant="outline"
                 onClick={() => moveListItem(blockIndex, item.id, 'down')}
                 disabled={itemIndex === block.data.length - 1}
-                className="w-6 h-6 p-0 bg-white shadow-sm hover:bg-gray-50"
+                className="w-6 h-6 p-0 bg-white shadow-sm hover:bg-gray-50 rounded-none"
                 title="下移"
               >
                 <ChevronDown size={14} />
@@ -228,7 +228,7 @@ export default function ResumeEditorV2({
                 size="zero"
                 variant="outline"
                 onClick={() => removeListItem(blockIndex, item.id)}
-                className="w-6 h-6 p-0 bg-white shadow-sm hover:bg-red-50 hover:text-red-600"
+                className="w-6 h-6 p-0 bg-white shadow-sm hover:bg-red-50 hover:text-red-600 rounded-none"
                 title="删除"
               >
                 <Trash2 size={14} />
@@ -436,13 +436,13 @@ export default function ResumeEditorV2({
                   </h3>
                   
                   {/* 大板块操作 - 左侧面板 */}
-                  <div className="absolute -left-7 top-0 flex flex-col space-y-1 opacity-0 hover:opacity-100 transition-opacity">
+                  <div className="absolute -left-7 top-0 flex flex-col opacity-0 hover:opacity-100 transition-opacity">
                     <Button
                       size="zero"
                       variant="outline"
                       onClick={() => moveBlock(originalIndex, 'up')}
                       disabled={originalIndex === 0}
-                      className="w-6 h-6 p-0 bg-white shadow-sm hover:bg-gray-50"
+                      className="w-6 h-6 p-0 bg-white shadow-sm hover:bg-gray-50 rounded-none"
                       title="上移板块"
                     >
                       <ChevronUp size={14} />
@@ -452,7 +452,7 @@ export default function ResumeEditorV2({
                       variant="outline"
                       onClick={() => moveBlock(originalIndex, 'down')}
                       disabled={originalIndex === resumeData.blocks.length - 1}
-                      className="w-6 h-6 p-0 bg-white shadow-sm hover:bg-gray-50"
+                      className="w-6 h-6 p-0 bg-white shadow-sm hover:bg-gray-50 rounded-none"
                       title="下移板块"
                     >
                       <ChevronDown size={14} />
@@ -462,7 +462,7 @@ export default function ResumeEditorV2({
                         size="zero"
                         variant="outline"
                         onClick={() => addListItem(originalIndex)}
-                        className="w-6 h-6 p-0 bg-white shadow-sm hover:bg-green-50 hover:text-green-600"
+                        className="w-6 h-6 p-0 bg-white shadow-sm hover:bg-green-50 hover:text-green-600 rounded-none"
                         title="添加列表项"
                       >
                         <Plus size={14} />
@@ -472,7 +472,7 @@ export default function ResumeEditorV2({
                       size="zero"
                       variant="outline"
                       onClick={() => removeBlock(originalIndex)}
-                      className="w-6 h-6 p-0 bg-white shadow-sm hover:bg-red-50 hover:text-red-600"
+                      className="w-6 h-6 p-0 bg-white shadow-sm hover:bg-red-50 hover:text-red-600 rounded-none"
                       title="删除板块"
                     >
                       <Trash2 size={14} />

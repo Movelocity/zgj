@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
-import { FiMessageSquare, FiSave } from 'react-icons/fi';
+import { FiSave } from 'react-icons/fi';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Sparkles, ArrowLeftIcon } from 'lucide-react';
 import Button from "@/components/ui/Button";
@@ -55,7 +55,6 @@ export default function ResumeDetails() {
   const [progressText, setProgressText] = useState('');
   const [showCompleted, setShowCompleted] = useState(false);
   const progressUpdaterRef = useRef<TimeBasedProgressUpdater | null>(null);
-  const [isChatOpen, setIsChatOpen] = useState(true);
   const [isSaving, setSaving] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [fontSettings, setFontSettings] = useState<FontSettings>({
@@ -462,9 +461,9 @@ export default function ResumeDetails() {
   }, []);
 
   return (
-    <div className="h-screen flex flex-col bg-gray-50">
+    <div className="fixed top-0 left-0 h-screen w-screen flex flex-col bg-gray-50">
       {/* Header */}
-      <header className="fixed top-0 left-0 right-0 bg-white border-b border-gray-200 z-40">
+      <header className="bg-white/50 border-b border-gray-200 z-40">
         <div className="px-4 h-12 flex items-center justify-between">
           <div className="flex items-center">
             <Button
@@ -490,14 +489,6 @@ export default function ResumeDetails() {
           </div>
 
           <div className="flex items-center space-x-2">
-            <Button
-              onClick={() => setIsChatOpen(!isChatOpen)}
-              variant="ghost"
-              icon={<FiMessageSquare className="w-4 h-4 mr-2" />}
-            >
-              AI对话
-            </Button>
-
             <FontSettingsDropdown
               fontSettings={fontSettings}
               onFontSettingsChange={setFontSettings}
@@ -533,31 +524,27 @@ export default function ResumeDetails() {
           />
         ) : (
           <>
-          {/* Editor Panel */}
-          <div className="w-full flex-1 border-r border-gray-200 bg-white h-screen overflow-auto py-16">
-            <ResumeEditorV2
-              resumeData={resumeData}
-              newResumeData={newResumeData}
-              onNewResumeDataChange={setNewResumeData}
-              onResumeDataChange={(data) => {handleResumeDataChange(data, false)}}
-              fontSettings={fontSettings}
-            />
-          </div>
-
-          {/* Chat Panel */}
-          {isChatOpen && (
-            <div className="hidden md:block w-[30%] bg-gray-50 h-screen overflow-auto pt-14">
-              <ChatPanel
-                initialMessages={chatMessages}
-                onMessagesChange={setChatMessages}
+            {/* Editor Panel */}
+            <div className="w-full md:flex-1 border-r border-gray-200 bg-white overflow-auto" style={{ height: 'calc(100vh - 48px)' }}>
+              <ResumeEditorV2
                 resumeData={resumeData}
-                onResumeDataChange={(data, require_commit) => handleResumeDataChange(data as ResumeV2Data, require_commit)}
-                isJD={isJD}
+                newResumeData={newResumeData}
+                onNewResumeDataChange={setNewResumeData}
+                onResumeDataChange={(data) => {handleResumeDataChange(data, false)}}
+                fontSettings={fontSettings}
               />
             </div>
-          )}
+
+            {/* Chat Panel - 始终渲染，内部控制显示/隐藏 */}
+            <ChatPanel
+              initialMessages={chatMessages}
+              onMessagesChange={setChatMessages}
+              resumeData={resumeData}
+              onResumeDataChange={(data, require_commit) => handleResumeDataChange(data as ResumeV2Data, require_commit)}
+              isJD={isJD}
+            />
           </>
-          )}
+        )}
       </div>
     </div>
   );

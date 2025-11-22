@@ -1,14 +1,14 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import Button from '@/components/ui/Button';
 import AiMessageRenderer from './AiMessageRenderer';
-import { Send, Bot, Lightbulb, Sparkles } from 'lucide-react';
+import { Send, Bot, Lightbulb, Sparkles, X } from 'lucide-react';
 import { FiMessageSquare, FiFileText } from 'react-icons/fi';
-// import type { ResumeData } from '@/types/resume';
 import type { ResumeV2Data } from '@/types/resumeV2';
 import { workflowAPI } from '@/api/workflow';
 import { parseAndFixResumeJson } from '@/utils/helpers';
 import { generateAIResponse, generateSuggestions, truncate } from './utils';
 import Modal from '@/components/ui/Modal';
+import cn from 'classnames';
 
 interface Message {
   id: string;
@@ -68,10 +68,43 @@ export default function ChatPanel({
   // 用于去重的哈希表，存储已处理的 blockId
   const processedBlocksRef = useRef<Set<string>>(new Set());
   
+  // 内部管理打开/关闭状态
+  const [isOpen, setIsOpen] = useState(true);
+  const [isNarrowScreen, setIsNarrowScreen] = useState(false);
+  const hasAutoCollapsedRef = useRef(false); // 记录是否已经自动折叠过
+  
   // 监听 messages 变化并通知父组件
   useEffect(() => {
     onMessagesChange?.(messages);
   }, [messages, onMessagesChange]);
+
+  // 监听屏幕宽度变化
+  useEffect(() => {
+    const checkScreenWidth = () => {
+      const isNarrow = window.innerWidth < 768; // md breakpoint
+      const wasWide = !isNarrowScreen;
+      
+      setIsNarrowScreen(isNarrow);
+      
+      // 宽屏变窄屏时自动折叠一次
+      if (isNarrow && wasWide && !hasAutoCollapsedRef.current) {
+        setIsOpen(false);
+        hasAutoCollapsedRef.current = true;
+      }
+      
+      // 窄屏变宽屏时重置标记
+      if (!isNarrow && isNarrowScreen) {
+        hasAutoCollapsedRef.current = false;
+      }
+    };
+    
+    checkScreenWidth();
+    window.addEventListener('resize', checkScreenWidth);
+    
+    return () => {
+      window.removeEventListener('resize', checkScreenWidth);
+    };
+  }, [isNarrowScreen]);
 
   // 自动调整 textarea 高度，最大3行
   const adjustTextareaHeight = useCallback(() => {
@@ -470,201 +503,236 @@ export default function ChatPanel({
   }, []);
 
   return (
-    <div className="bg-white h-full flex flex-col">
-      <div className="px-4 py-2 border-b border-gray-200 flex items-center gap-1">
-        <div className="flex gap-1 items-center text-lg font-medium">
-          <Bot className="w-5 h-5 text-blue-600" />
-          简历专家
-        </div>
-      </div>
-
-      <div className="flex-1 relative">
-        <div ref={scrollGradientBottomRef} className="from-white to-transparent absolute z-10 transition-opacity pointer-events-none opacity-100 bg-linear-to-t bottom-0 left-0 w-full"></div>
-        <div ref={scrollGradientTopRef} className="from-white to-transparent absolute z-10 transition-opacity pointer-events-none opacity-100 bg-linear-to-b top-0 left-0 w-full"></div>
-
-        <div 
-          className="absolute p-5 space-y-4 top-0 left-0 w-full h-full overflow-y-auto"
-          onScroll={handleScroll}
-          ref={scrollRef}
+    <>
+      {/* 浮动开启按钮 - 关闭时显示 */}
+      {!isOpen && (
+        <button
+          onClick={() => setIsOpen(true)}
+          className="fixed top-16 right-4 z-50 bg-blue-600 text-white p-3 rounded-full shadow-lg hover:bg-blue-700 transition-all hover:scale-105 cursor-pointer"
+          title="打开AI对话"
         >
-          {messages.map((message) => (
-            <div key={message.id} className="space-y-2">
-              {message.type === 'user' ? (
-                // 用户消息保持气泡样式
-                <div className="flex justify-end">
-                  <div className="max-w-[90%] rounded-lg px-3 py-1.5 bg-blue-600 text-white">
-                    <p className="text-sm leading-relaxed">{message.content}</p>
+          <FiMessageSquare className="w-5 h-5" />
+        </button>
+      )}
+
+      {/* ChatPanel 主体 */}
+      {isOpen && (
+        <div 
+          // className={`
+          //   bg-white flex flex-col
+          //   ${isNarrowScreen 
+          //     ? 'fixed top-14 right-0 w-[85%] max-w-md z-40 shadow-2xl' 
+          //     : 'w-[30%] border-l border-gray-200'
+          //   }
+          // `}
+          className={cn('bg-white flex flex-col', isNarrowScreen ? 'fixed top-14 right-0 w-[85%] max-w-md z-40 shadow-2xl' : 'w-[30%] border-l border-gray-200', 'h-full')}
+          style={{ height: 'calc(100vh - 48px)' }}
+        >
+          <div className="px-4 py-2 border-b border-gray-200 flex items-center justify-between gap-1">
+            <div className="flex gap-1 items-center text-lg font-medium">
+              <Bot className="w-5 h-5 text-blue-600" />
+              简历专家
+            </div>
+            <div className="flex gap-1 items-center">
+              <button
+                onClick={() => setIsOpen(false)}
+                className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+                title="关闭"
+              >
+                <X className="w-5 h-5 text-gray-600" />
+              </button>
+            </div>
+          </div>
+
+          <div className="flex-1 relative">
+            <div ref={scrollGradientBottomRef} className="from-white to-transparent absolute z-10 transition-opacity pointer-events-none opacity-100 bg-linear-to-t bottom-0 left-0 w-full"></div>
+            <div ref={scrollGradientTopRef} className="from-white to-transparent absolute z-10 transition-opacity pointer-events-none opacity-100 bg-linear-to-b top-0 left-0 w-full"></div>
+
+            <div 
+              className="absolute p-5 space-y-4 top-0 left-0 w-full h-full overflow-y-auto"
+              onScroll={handleScroll}
+              ref={scrollRef}
+            >
+              {messages.map((message) => (
+                <div key={message.id} className="space-y-2">
+                  {message.type === 'user' ? (
+                    // 用户消息保持气泡样式
+                    <div className="flex justify-end">
+                      <div className="max-w-[90%] rounded-lg px-3 py-1.5 bg-blue-600 text-white">
+                        <p className="text-sm leading-relaxed">{message.content}</p>
+                      </div>
+                    </div>
+                  ) : (
+                    // Bot消息使用 AiMessageRenderer 处理特殊的 resume-update 块
+                    <AiMessageRenderer 
+                      content={message.content} 
+                      messageId={message.id}
+                      className="text-sm leading-relaxed text-gray-800"
+                      resumeData={resumeData}
+                    />
+                  )}
+                </div>
+              ))}
+
+              {isFormatting && (
+                <div className="w-full px-4 animate-in fade-in-0 slide-in-from-bottom-2 duration-300">
+                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow duration-200">
+                    <div className="flex items-center space-x-3 mb-3">
+                      <div className="relative">
+                        <FiFileText className="w-5 h-5 text-blue-600 animate-pulse" />
+                        <div className="absolute -top-1 -right-1 w-2 h-2 bg-blue-500 rounded-full animate-ping"></div>
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="text-sm font-medium text-blue-900 mb-1">将内容更新到编辑区</h4>
+                      </div>
+                      <div className="text-xs text-blue-500 font-mono bg-blue-100 px-2 py-1 rounded">
+                        AI
+                      </div>
+                    </div>
+                    
+                    {/* 进度条动画 */}
+                    <div className="w-full bg-blue-100 rounded-full h-2 overflow-hidden mb-3">
+                      <div className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full animate-pulse relative">
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer"></div>
+                      </div>
+                    </div>
+                    
                   </div>
                 </div>
-              ) : (
-                // Bot消息使用 AiMessageRenderer 处理特殊的 resume-update 块
-                <AiMessageRenderer 
-                  content={message.content} 
-                  messageId={message.id}
-                  className="text-sm leading-relaxed text-gray-800"
-                  resumeData={resumeData}
-                />
+              )}
+
+              {/* 打字指示器，在首字响应前显示 */}
+              {isTyping && (
+                <div className="w-full py-2">
+                  <div className="flex items-center space-x-2">
+                    <FiMessageSquare className="w-4 h-4 text-blue-600" />
+                    <div className="flex space-x-1">
+                      <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce"></div>
+                      <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                      <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                    </div>
+                  </div>
+                </div>
               )}
             </div>
-          ))}
-
-          {isFormatting && (
-            <div className="w-full px-4 animate-in fade-in-0 slide-in-from-bottom-2 duration-300">
-              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow duration-200">
-                <div className="flex items-center space-x-3 mb-3">
-                  <div className="relative">
-                    <FiFileText className="w-5 h-5 text-blue-600 animate-pulse" />
-                    <div className="absolute -top-1 -right-1 w-2 h-2 bg-blue-500 rounded-full animate-ping"></div>
-                  </div>
-                  <div className="flex-1">
-                    <h4 className="text-sm font-medium text-blue-900 mb-1">将内容更新到编辑区</h4>
-                  </div>
-                  <div className="text-xs text-blue-500 font-mono bg-blue-100 px-2 py-1 rounded">
-                    AI
-                  </div>
-                </div>
-                
-                {/* 进度条动画 */}
-                <div className="w-full bg-blue-100 rounded-full h-2 overflow-hidden mb-3">
-                  <div className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full animate-pulse relative">
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer"></div>
-                  </div>
-                </div>
-                
+          </div>
+          
+          <div className="px-2 py-1 border-gray-200 w-full">
+            {/* 快捷建议 */}
+            {suggestions && suggestions.length > 0 && (
+              <div className="flex gap-2 max-w-screen overflow-hidden overflow-x-auto p-2">
+                {suggestions.map((suggestion, index) => {
+                  let text = suggestion;
+                  let highlight = false;
+                  if (suggestion.includes("[highlight]")) {
+                    text = suggestion.replace("[highlight]", "");
+                    highlight = true;
+                  }
+                  return (
+                    <Button
+                      key={index}
+                      icon={highlight ? <Sparkles className="w-3 h-3 mr-1" /> : <Lightbulb className="w-3 h-3 mr-1" />}
+                      variant={highlight ? 'primary' : 'outline'}
+                      size="xs"
+                      className="px-2"
+                      onClick={() => {
+                        if (highlight) {
+                          handleSendMessage(text);
+                        } else {
+                          setInputValue(text);
+                        }
+                      }}
+                    >
+                      <span className="text-nowrap">{truncate(text, 16)}</span>
+                    </Button>
+                    )
+                })}
               </div>
-            </div>
-          )}
+            )}
+          </div>
 
-          {/* 打字指示器，在首字响应前显示 */}
-          {isTyping && (
-            <div className="w-full py-2">
-              <div className="flex items-center space-x-2">
-                <FiMessageSquare className="w-4 h-4 text-blue-600" />
-                <div className="flex space-x-1">
-                  <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce"></div>
-                  <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
-                  <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
-                </div>
+          <div className="px-4 py-2 border-t border-gray-200">
+            <div className="flex gap-2 items-end">
+              <textarea
+                ref={textareaRef}
+                rows={1}
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                onCompositionStart={() => {
+                  isComposingRef.current = true;
+                }}
+                onCompositionEnd={() => {
+                  isComposingRef.current = false;
+                }}
+                onKeyDown={(e) => {
+                  // 如果正在使用输入法合成（如中文输入），忽略Enter键
+                  if (isComposingRef.current) {
+                    return;
+                  }
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSendMessage();
+                  }
+                }}
+                placeholder="输入您的问题或需求..."
+                className="flex-1 px-3 py-2 bg-gray-50 rounded-lg focus:outline-none focus:bg-gray-100 transition-colors resize-none border border-gray-300 text-sm overflow-y-auto"
+                style={{ minHeight: '40px' }}
+              />
+              <button 
+                onClick={() => handleSendMessage()}
+                disabled={!inputValue.trim() || isTyping || isResponding}
+                className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              >
+                <Send className="w-4 h-6" />
+              </button>
+            </div>
+            
+            <div className="mt-3 flex flex-wrap gap-2">
+              <button 
+                className="text-xs px-2 py-1 text-gray-600 hover:bg-gray-100 rounded transition-colors"
+                onClick={() => setInputValue("请帮我整体检查简历")}
+              >
+                整体检查
+              </button>
+              <button 
+                className="text-xs px-2 py-1 text-gray-600 hover:bg-gray-100 rounded transition-colors"
+                onClick={() => setInputValue("突出我的核心竞争力")}
+              >
+                突出优势
+              </button>
+              <button 
+                className="text-xs px-2 py-1 text-gray-600 hover:bg-gray-100 rounded transition-colors"
+                onClick={() => setInputValue("针对特定岗位优化")}
+              >
+                岗位匹配
+              </button>
+            </div>
+          </div>
+
+          <Modal 
+            open={debugModalOpen} 
+            onClose={() => setDebugModalOpen(false)}
+            title={debugType === 'current_data' ? '当前简历数据' : '最后一条AI消息'}
+            footer={
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setDebugModalOpen(false)}>关闭</Button>
+                { debugType === 'current_data' && (<>
+                  <Button variant="outline" onClick={() => onResumeDataChange(JSON.parse(debugData), true)}>更新到编辑区</Button>
+                  <Button variant="outline" onClick={() => onResumeDataChange(JSON.parse(debugData), false)}>覆盖到编辑区</Button>
+                </>)}
               </div>
-            </div>
-          )}
+            }
+          >
+            { debugType === 'current_data' ? (
+              <div className="p-2">
+                <textarea rows={20} value={debugData} onChange={(e) => setDebugData(e.target.value)} className="w-full p-2 text-sm border border-gray-300 rounded-md outline-none"></textarea>
+              </div>
+            ) : (
+              <pre className="text-sm text-gray-600 p-4 whitespace-pre-wrap">{debugData}</pre>
+            )}
+          </Modal>
         </div>
-      </div>
-      
-      <div className="px-2 py-1 border-gray-200 w-full">
-        {/* 快捷建议 */}
-        {suggestions && suggestions.length > 0 && (
-          <div className="flex gap-2 max-w-screen overflow-hidden overflow-x-auto p-2">
-            {suggestions.map((suggestion, index) => {
-              let text = suggestion;
-              let highlight = false;
-              if (suggestion.includes("[highlight]")) {
-                text = suggestion.replace("[highlight]", "");
-                highlight = true;
-              }
-              return (
-                <Button
-                  key={index}
-                  icon={highlight ? <Sparkles className="w-3 h-3 mr-1" /> : <Lightbulb className="w-3 h-3 mr-1" />}
-                  variant={highlight ? 'primary' : 'outline'}
-                  size="xs"
-                  className="px-2"
-                  onClick={() => {
-                    if (highlight) {
-                      handleSendMessage(text);
-                    } else {
-                      setInputValue(text);
-                    }
-                  }}
-                >
-                  <span className="text-nowrap">{truncate(text, 16)}</span>
-                </Button>
-                )
-            })}
-          </div>
-        )}
-      </div>
-
-      <div className="px-4 py-2 border-t border-gray-200">
-        <div className="flex gap-2 items-end">
-          <textarea
-            ref={textareaRef}
-            rows={1}
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            onCompositionStart={() => {
-              isComposingRef.current = true;
-            }}
-            onCompositionEnd={() => {
-              isComposingRef.current = false;
-            }}
-            onKeyDown={(e) => {
-              // 如果正在使用输入法合成（如中文输入），忽略Enter键
-              if (isComposingRef.current) {
-                return;
-              }
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                handleSendMessage();
-              }
-            }}
-            placeholder="输入您的问题或需求..."
-            className="flex-1 px-3 py-2 bg-gray-50 rounded-lg focus:outline-none focus:bg-gray-100 transition-colors resize-none border border-gray-300 text-sm overflow-y-auto"
-            style={{ minHeight: '40px' }}
-          />
-          <button 
-            onClick={() => handleSendMessage()}
-            disabled={!inputValue.trim() || isTyping || isResponding}
-            className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-          >
-            <Send className="w-4 h-6" />
-          </button>
-        </div>
-        
-        <div className="mt-3 flex flex-wrap gap-2">
-          <button 
-            className="text-xs px-2 py-1 text-gray-600 hover:bg-gray-100 rounded transition-colors"
-            onClick={() => setInputValue("请帮我整体检查简历")}
-          >
-            整体检查
-          </button>
-          <button 
-            className="text-xs px-2 py-1 text-gray-600 hover:bg-gray-100 rounded transition-colors"
-            onClick={() => setInputValue("突出我的核心竞争力")}
-          >
-            突出优势
-          </button>
-          <button 
-            className="text-xs px-2 py-1 text-gray-600 hover:bg-gray-100 rounded transition-colors"
-            onClick={() => setInputValue("针对特定岗位优化")}
-          >
-            岗位匹配
-          </button>
-        </div>
-      </div>
-
-      <Modal 
-        open={debugModalOpen} 
-        onClose={() => setDebugModalOpen(false)}
-        title={debugType === 'current_data' ? '当前简历数据' : '最后一条AI消息'}
-        footer={
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setDebugModalOpen(false)}>关闭</Button>
-            { debugType === 'current_data' && (<>
-              <Button variant="outline" onClick={() => onResumeDataChange(JSON.parse(debugData), true)}>更新到编辑区</Button>
-              <Button variant="outline" onClick={() => onResumeDataChange(JSON.parse(debugData), false)}>覆盖到编辑区</Button>
-            </>)}
-          </div>
-        }
-      >
-        { debugType === 'current_data' ? (
-          <div className="p-2">
-            <textarea rows={20} value={debugData} onChange={(e) => setDebugData(e.target.value)} className="w-full p-2 text-sm border border-gray-300 rounded-md outline-none"></textarea>
-          </div>
-        ) : (
-          <pre className="text-sm text-gray-600 p-4 whitespace-pre-wrap">{debugData}</pre>
-        )}
-      </Modal>
-    </div>
+      )}
+    </>
   );
 }
