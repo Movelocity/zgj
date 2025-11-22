@@ -508,7 +508,7 @@ export default function ChatPanel({
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="fixed top-16 right-4 z-50 bg-blue-600 text-white p-3 rounded-full shadow-lg hover:bg-blue-700 transition-all hover:scale-105 cursor-pointer"
+          className="fixed top-16 right-4 z-50 bg-blue-600/80 text-white p-3 rounded-full shadow-lg hover:bg-blue-600 transition-all hover:scale-105 cursor-pointer"
           title="打开AI对话"
         >
           <FiMessageSquare className="w-5 h-5" />
@@ -518,14 +518,10 @@ export default function ChatPanel({
       {/* ChatPanel 主体 */}
       {isOpen && (
         <div 
-          // className={`
-          //   bg-white flex flex-col
-          //   ${isNarrowScreen 
-          //     ? 'fixed top-14 right-0 w-[85%] max-w-md z-40 shadow-2xl' 
-          //     : 'w-[30%] border-l border-gray-200'
-          //   }
-          // `}
-          className={cn('bg-white flex flex-col', isNarrowScreen ? 'fixed top-14 right-0 w-[85%] max-w-md z-40 shadow-2xl' : 'w-[30%] border-l border-gray-200', 'h-full')}
+          className={cn(
+            'bg-white flex flex-col', 
+            isNarrowScreen ? 'fixed top-14 right-0 w-[85%] max-w-md z-40 shadow-2xl' : 'w-[30%] border-l border-gray-200'
+          )}
           style={{ height: 'calc(100vh - 48px)' }}
         >
           <div className="px-4 py-2 border-b border-gray-200 flex items-center justify-between gap-1">

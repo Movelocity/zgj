@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { FiSave } from 'react-icons/fi';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Sparkles, ArrowLeftIcon } from 'lucide-react';
+import { ChevronLeft } from 'lucide-react';
 import Button from "@/components/ui/Button";
 import { useGlobalStore } from '@/store';
 import ChatPanel, { type Message } from './components/ChatPanel';
@@ -463,7 +463,7 @@ export default function ResumeDetails() {
   return (
     <div className="fixed top-0 left-0 h-screen w-screen flex flex-col bg-gray-50">
       {/* Header */}
-      <header className="bg-white/50 border-b border-gray-200 z-40">
+      <header className="bg-white border-b border-gray-200 z-40">
         <div className="px-4 h-12 flex items-center justify-between">
           <div className="flex items-center">
             <Button
@@ -471,12 +471,10 @@ export default function ResumeDetails() {
               variant="ghost"
               className="py-2 px-0 hover:bg-gray-100 rounded-lg transition-colors"
               title="返回"
-              icon={<ArrowLeftIcon className="w-5 h-5" />}
-            >
-            </Button>
+              icon={<ChevronLeft className="w-5 h-5" />}
+            />
             <div className="hidden sm:flex items-center space-x-2 mr-4">
-              <Sparkles className="w-5 h-5 text-blue-600" />
-              <h1 className="text-lg font-semibold">简历编辑</h1>
+              <h1 className="text-lg font-semibold">📝 简历编辑</h1>
             </div>
             <input
               id="resumeName"
@@ -525,7 +523,7 @@ export default function ResumeDetails() {
         ) : (
           <>
             {/* Editor Panel */}
-            <div className="w-full md:flex-1 border-r border-gray-200 bg-white overflow-auto" style={{ height: 'calc(100vh - 48px)' }}>
+            <div className="w-full md:flex-1 border-gray-200 bg-white overflow-auto" style={{ height: 'calc(100vh - 48px)' }}>
               <ResumeEditorV2
                 resumeData={resumeData}
                 newResumeData={newResumeData}

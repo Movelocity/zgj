@@ -21,6 +21,7 @@ const LABEL_SIZE_PRESETS = {
 } as const;
 
 const CONTENT_SIZE_PRESETS = {
+  tiny: { label: '极小', value: 'text-xs' },
   small: { label: '小', value: 'text-sm' },
   medium: { label: '中', value: 'text-base' },
   large: { label: '大', value: 'text-lg' },
@@ -56,7 +57,7 @@ export default function FontSettingsDropdown({
     onFontSettingsChange({ ...fontSettings, labelSize: size });
   };
 
-  const handleContentSizeChange = (size: 'small' | 'medium' | 'large') => {
+  const handleContentSizeChange = (size: 'tiny' | 'small' | 'medium' | 'large') => {
     onFontSettingsChange({ ...fontSettings, contentSize: size });
   };
 
@@ -78,13 +79,13 @@ export default function FontSettingsDropdown({
           onMouseEnter={handleOpen}
           onMouseLeave={handleClose}
         >
-          页面
+          页面设置
         </Button>
       </Popover.Trigger>
 
       <Popover.Portal>
         <Popover.Content
-          className="w-96 bg-white rounded-lg shadow-lg border border-gray-200 p-4 z-50 max-h-[80vh] overflow-y-auto"
+          className="bg-white rounded-lg shadow-lg border border-gray-200 p-4 z-50 max-h-[80vh] overflow-y-auto"
           sideOffset={5}
           align="end"
           side="bottom"
@@ -92,22 +93,17 @@ export default function FontSettingsDropdown({
           onMouseLeave={handleClose}
         >
           <div className="space-y-2">
-            {/* 标题 */}
-            <div className="pb-2 border-b border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-800">页面设置</h3>
-            </div>
 
             {/* 板块标题字体大小 */}
             <div>
-              <div className="mb-2 p-3 bg-gray-50 rounded-lg">
-                <p className={`${TITLE_SIZE_PRESETS[fontSettings.titleSize].value} font-semibold text-gray-800`}>
-                  板块标题字体大小
-                </p>
+              <div className="mb-2">
+                板块标题尺寸
               </div>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="flex flex-wrap gap-2">
                 {(Object.keys(TITLE_SIZE_PRESETS) as Array<keyof typeof TITLE_SIZE_PRESETS>).map((key) => (
                   <Button
                     key={key}
+                    size="sm"
                     onClick={() => handleTitleSizeChange(key)}
                     variant={fontSettings.titleSize === key? "primary": "outline"}
                   >
@@ -119,15 +115,14 @@ export default function FontSettingsDropdown({
 
             {/* 分类标题字体大小 */}
             <div>
-              <div className="mb-2 p-3 bg-gray-50 rounded-lg">
-                <p className={`${LABEL_SIZE_PRESETS[fontSettings.labelSize].value} font-medium text-gray-800`}>
-                  分类标题预览（如：XX公司）
-                </p>
+              <div className="mb-2">
+                分类标题尺寸
               </div>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="flex flex-wrap gap-2">
                 {(Object.keys(LABEL_SIZE_PRESETS) as Array<keyof typeof LABEL_SIZE_PRESETS>).map((key) => (
                   <Button
                     key={key}
+                    size="sm"
                     onClick={() => handleLabelSizeChange(key)}
                     variant={fontSettings.labelSize === key? "primary": "outline"}
                   >
@@ -139,15 +134,14 @@ export default function FontSettingsDropdown({
 
             {/* 内容字体大小 */}
             <div>
-              <div className="mb-2 p-3 bg-gray-50 rounded-lg">
-                <p className={`${CONTENT_SIZE_PRESETS[fontSettings.contentSize].value} text-gray-700`}>
-                  这是内容文字的预览示例，您可以查看不同字体大小的效果。
-                </p>
+              <div className="mb-2">
+                内容文字尺寸
               </div>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="flex flex-wrap gap-2">
                 {(Object.keys(CONTENT_SIZE_PRESETS) as Array<keyof typeof CONTENT_SIZE_PRESETS>).map((key) => (
                   <Button
                     key={key}
+                    size="sm"
                     onClick={() => handleContentSizeChange(key)}
                     variant={fontSettings.contentSize === key? "primary": "outline"}
                   >
@@ -155,16 +149,6 @@ export default function FontSettingsDropdown({
                   </Button>
                 ))}
               </div>
-            </div>
-
-            {/* 使用说明 */}
-            <div className="pt-2 border-t border-gray-200">
-              <ul className="text-xs text-gray-600 space-y-1.5">
-                <li>• 板块标题：用于简历大板块标题（如：工作经历、教育背景）</li>
-                <li>• 分类标题：用于每个板块内的小标题（如：公司名、学校名）</li>
-                <li>• 内容字体：用于简历正文内容</li>
-                <li>• 设置会立即应用到简历预览</li>
-              </ul>
             </div>
           </div>
         </Popover.Content>

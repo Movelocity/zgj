@@ -4,7 +4,7 @@ import Button from '@/components/ui/Button';
 export interface FontSettings {
   titleSize: 'small' | 'medium' | 'large';
   labelSize: 'small' | 'medium' | 'large';
-  contentSize: 'small' | 'medium' | 'large';
+  contentSize: 'tiny' | 'small' | 'medium' | 'large';
 }
 
 interface FontSettingsPanelProps {
@@ -27,6 +27,7 @@ const LABEL_SIZE_PRESETS = {
 } as const;
 
 const CONTENT_SIZE_PRESETS = {
+  tiny: { label: '极小', value: 'text-xs' },
   small: { label: '小', value: 'text-sm' },
   medium: { label: '中', value: 'text-base' },
   large: { label: '大', value: 'text-lg' },
@@ -48,7 +49,7 @@ export default function FontSettingsPanel({
     onFontSettingsChange({ ...fontSettings, labelSize: size });
   };
 
-  const handleContentSizeChange = (size: 'small' | 'medium' | 'large') => {
+  const handleContentSizeChange = (size: 'tiny' | 'small' | 'medium' | 'large') => {
     onFontSettingsChange({ ...fontSettings, contentSize: size });
   };
 

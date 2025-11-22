@@ -1,4 +1,4 @@
-import { ChevronUp, ChevronDown, Trash2, Mail, Phone, MapPin, Plus } from 'lucide-react';
+import { ChevronUp, ChevronDown, Trash2, Mail, Phone, MapPin, Plus, MoreVertical } from 'lucide-react';
 import Button from "@/components/ui/Button";
 import type { ResumeBlock, ResumeBlockListItem, ResumeV2Data } from '@/types/resumeV2';
 import { isListBlock, isTextBlock, isObjectBlock, createEmptyListItem } from '@/types/resumeV2';
@@ -10,6 +10,7 @@ import { buildBlockMatchMap, findNewBlocks } from './utils';
 import { useMemo, useState } from 'react';
 import cn from 'classnames';
 import PortraitImageEditor from './PortraitImageEditor';
+import HoverOperationPanel from './HoverOperationPanel';
 
 interface ResumeEditorV2Props {
   resumeData: ResumeV2Data;
@@ -198,105 +199,114 @@ export default function ResumeEditorV2({
   const renderListBlock = (block: ResumeBlock & { data: ResumeBlockListItem[] }, blockIndex: number) => {
     return (
       <div className="">
-        {block.data.map((item, itemIndex) => (
-          <div key={item.id} className="relative group pl-4 break-inside-avoid">
-            {/* 小板块操作 - 左侧面板 */}
-            <div className="absolute -left-2 top-0 flex flex-col opacity-0 group-hover:opacity-100 transition-opacity">
-              <Button
-                size="zero"
-                variant="outline"
-                disabled={itemIndex === 0}
-                onClick={() => moveListItem(blockIndex, item.id, 'up')}
-                className="w-6 h-6 p-0 bg-white shadow-sm hover:bg-gray-50 rounded-none"
-                title="上移"
-              >
-                <ChevronUp size={14} />
-              </Button>
+        {block.data.map((item, itemIndex) => {
+          return (
+            <div key={item.id} className="relative pl-4 break-inside-avoid group/item">
+              <div className="flex justify-between items-start">
+                <div className="flex-1">
+                  <h4 className={`text-gray-800 font-medium ${fontSizeClasses.label} inline-flex items-center gap-2`}>
+                    <EditableText
+                      editorState={editorState}
+                      fieldId={`block${blockIndex}-${item.id}-name`}
+                      value={item.name}
+                      placeholder="如：XX大学、XX公司"
+                      blockIndex={blockIndex}
+                      itemId={item.id}
+                      field="name"
+                    />
+                    {/* 小板块操作 */}
+                    <HoverOperationPanel
+                      trigger={
+                        <span className="text-gray-400 hover:text-gray-600 cursor-pointer opacity-0 group-hover/item:opacity-100 transition-opacity">
+                          <MoreVertical size={14} />
+                        </span>
+                      }
+                      triggerClassName="inline-block"
+                      panelClassName="absolute left-full top-0 ml-2 flex gap-1 bg-white shadow-lg border border-gray-200 rounded p-1 z-10"
+                    >
+                      <Button
+                        size="zero"
+                        variant="outline"
+                        disabled={itemIndex === 0}
+                        onClick={() => moveListItem(blockIndex, item.id, 'up')}
+                        className="w-6 h-6 p-0 bg-white hover:bg-gray-50 border-0"
+                        title="上移"
+                      >
+                        <ChevronUp size={14} />
+                      </Button>
 
-              <Button
-                size="zero"
-                variant="outline"
-                onClick={() => moveListItem(blockIndex, item.id, 'down')}
-                disabled={itemIndex === block.data.length - 1}
-                className="w-6 h-6 p-0 bg-white shadow-sm hover:bg-gray-50 rounded-none"
-                title="下移"
-              >
-                <ChevronDown size={14} />
-              </Button>
+                      <Button
+                        size="zero"
+                        variant="outline"
+                        onClick={() => moveListItem(blockIndex, item.id, 'down')}
+                        disabled={itemIndex === block.data.length - 1}
+                        className="w-6 h-6 p-0 bg-white hover:bg-gray-50 border-0"
+                        title="下移"
+                      >
+                        <ChevronDown size={14} />
+                      </Button>
 
-              <Button
-                size="zero"
-                variant="outline"
-                onClick={() => removeListItem(blockIndex, item.id)}
-                className="w-6 h-6 p-0 bg-white shadow-sm hover:bg-red-50 hover:text-red-600 rounded-none"
-                title="删除"
-              >
-                <Trash2 size={14} />
-              </Button>
-            </div>
-
-            <div className="flex justify-between items-start">
-              <div className="flex-1">
-                <h4 className={`text-gray-800 font-medium ${fontSizeClasses.label}`}>
+                      <Button
+                        size="zero"
+                        variant="outline"
+                        onClick={() => removeListItem(blockIndex, item.id)}
+                        className="w-6 h-6 p-0 bg-white hover:bg-red-50 hover:text-red-600 border-0"
+                        title="删除"
+                      >
+                        <Trash2 size={14} />
+                      </Button>
+                    </HoverOperationPanel>
+                  </h4>
+                  {/* <div className={`text-blue-600 ${fontSizeClasses.content}`}>
+                    <EditableText
+                      className={item.highlight ? '' : 'hide-when-print'}
+                      editorState={editorState}
+                      fieldId={`block${blockIndex}-${item.id}-highlight`}
+                      value={item.highlight}
+                      placeholder="亮点/专业/职位"
+                      blockIndex={blockIndex}
+                      itemId={item.id}
+                      field="highlight"
+                    />
+                  </div> */}
+                </div>
+                <span 
+                  className={cn(
+                    'text-gray-500 ml-4', 
+                    fontSizeClasses.content, 
+                    item.time ? '' : 'hide-when-print'
+                  )}
+                >
                   <EditableText
                     editorState={editorState}
-                    fieldId={`block${blockIndex}-${item.id}-name`}
-                    value={item.name}
-                    placeholder="如：XX大学、XX公司"
+                    fieldId={`block${blockIndex}-${item.id}-time`}
+                    value={item.time}
+                    placeholder="时间"
                     blockIndex={blockIndex}
                     itemId={item.id}
-                    field="name"
+                    field="time"
                   />
-                </h4>
-                {/* <div className={`text-blue-600 ${fontSizeClasses.content}`}>
-                  <EditableText
-                    className={item.highlight ? '' : 'hide-when-print'}
-                    editorState={editorState}
-                    fieldId={`block${blockIndex}-${item.id}-highlight`}
-                    value={item.highlight}
-                    placeholder="亮点/专业/职位"
-                    blockIndex={blockIndex}
-                    itemId={item.id}
-                    field="highlight"
-                  />
-                </div> */}
+                </span>
               </div>
-              <span 
-                className={cn(
-                  'text-gray-500 ml-4', 
-                  fontSizeClasses.content, 
-                  item.time ? '' : 'hide-when-print'
-                )}
-              >
+              <div className={cn(
+                'text-gray-700 leading-relaxed whitespace-pre-line', 
+                fontSizeClasses.content,
+                item.description ? '' : 'hide-when-print'
+              )}>
                 <EditableText
                   editorState={editorState}
-                  fieldId={`block${blockIndex}-${item.id}-time`}
-                  value={item.time}
-                  placeholder="时间"
+                  fieldId={`block${blockIndex}-${item.id}-description`}
+                  value={item.description}
+                  placeholder="点击添加详细描述..."
+                  multiline={true}
                   blockIndex={blockIndex}
                   itemId={item.id}
-                  field="time"
+                  field="description"
                 />
-              </span>
+              </div>
             </div>
-            <div className={cn(
-              'text-gray-700 leading-relaxed whitespace-pre-line', 
-              fontSizeClasses.content,
-              item.description ? '' : 'hide-when-print'
-            )}>
-              <EditableText
-                editorState={editorState}
-                fieldId={`block${blockIndex}-${item.id}-description`}
-                value={item.description}
-                placeholder="点击添加详细描述..."
-                multiline={true}
-                blockIndex={blockIndex}
-                itemId={item.id}
-                field="description"
-              />
-            </div>
-          </div>
-        ))}
+          );
+        })}
         
         {block.data.length === 0 && (
           <p className="text-gray-500 italic">暂无内容，请从左侧菜单添加...</p>
@@ -421,10 +431,10 @@ export default function ResumeEditorV2({
             if (block.type === 'object') return null;
             
             return (
-              <div key={originalIndex} className="relative">
+              <div key={originalIndex} className="relative group/block">
                 {/* Block Header with left border */}
                 <div className="relative">
-                  <h3 className={`text-gray-800 border-l-4 border-blue-600 pl-2 inline-block font-semibold ${fontSizeClasses.title}`}>
+                  <h3 className={`text-gray-800 border-l-4 border-blue-600 pl-2 inline-flex items-center gap-2 font-semibold ${fontSizeClasses.title}`}>
                     <EditableText
                       editorState={editorState}
                       fieldId={`block${originalIndex}--title`}
@@ -433,58 +443,59 @@ export default function ResumeEditorV2({
                       blockIndex={originalIndex}
                       field="title"
                     />
-                  </h3>
-                  
-                  {/* 大板块操作 - 左侧面板 */}
-                  <div className="absolute -left-7 top-0 flex flex-col opacity-0 hover:opacity-100 transition-opacity">
-                    <Button
-                      size="zero"
-                      variant="outline"
-                      onClick={() => moveBlock(originalIndex, 'up')}
-                      disabled={originalIndex === 0}
-                      className="w-6 h-6 p-0 bg-white shadow-sm hover:bg-gray-50 rounded-none"
-                      title="上移板块"
+                    
+                    {/* 大板块操作 */}
+                    <HoverOperationPanel
+                      trigger={
+                        <span className="text-gray-400 hover:text-gray-600 cursor-pointer opacity-0 group-hover/block:opacity-100 transition-opacity">
+                          <MoreVertical size={16} />
+                        </span>
+                      }
+                      triggerClassName="inline-block"
+                      panelClassName="absolute left-full top-0 ml-2 flex gap-1 bg-white shadow-lg border border-gray-200 rounded p-1 z-10"
                     >
-                      <ChevronUp size={14} />
-                    </Button>
-                    <Button
-                      size="zero"
-                      variant="outline"
-                      onClick={() => moveBlock(originalIndex, 'down')}
-                      disabled={originalIndex === resumeData.blocks.length - 1}
-                      className="w-6 h-6 p-0 bg-white shadow-sm hover:bg-gray-50 rounded-none"
-                      title="下移板块"
-                    >
-                      <ChevronDown size={14} />
-                    </Button>
-                    {isListBlock(block) && (
                       <Button
                         size="zero"
                         variant="outline"
-                        onClick={() => addListItem(originalIndex)}
-                        className="w-6 h-6 p-0 bg-white shadow-sm hover:bg-green-50 hover:text-green-600 rounded-none"
-                        title="添加列表项"
+                        onClick={() => moveBlock(originalIndex, 'up')}
+                        disabled={originalIndex === 0}
+                        className="w-6 h-6 p-0 bg-white hover:bg-gray-50 border-0"
+                        title="上移板块"
                       >
-                        <Plus size={14} />
+                        <ChevronUp size={14} />
                       </Button>
-                    )}
-                    <Button
-                      size="zero"
-                      variant="outline"
-                      onClick={() => removeBlock(originalIndex)}
-                      className="w-6 h-6 p-0 bg-white shadow-sm hover:bg-red-50 hover:text-red-600 rounded-none"
-                      title="删除板块"
-                    >
-                      <Trash2 size={14} />
-                    </Button>
-                    {/*<button
-                      onClick={() => toggleBlockType(originalIndex)}
-                      className="w-6 h-6 p-0 text-xs bg-white border border-gray-300 rounded hover:bg-blue-50 hover:border-blue-300 transition-colors shadow-sm flex items-center justify-center"
-                      title={`切换为${block.type === 'list' ? '文本' : '列表'}类型`}
-                    >
-                      {block.type === 'list' ? 'L' : 'T'}
-                    </button> */}
-                  </div>
+                      <Button
+                        size="zero"
+                        variant="outline"
+                        onClick={() => moveBlock(originalIndex, 'down')}
+                        disabled={originalIndex === resumeData.blocks.length - 1}
+                        className="w-6 h-6 p-0 bg-white hover:bg-gray-50 border-0"
+                        title="下移板块"
+                      >
+                        <ChevronDown size={14} />
+                      </Button>
+                      {isListBlock(block) && (
+                        <Button
+                          size="zero"
+                          variant="outline"
+                          onClick={() => addListItem(originalIndex)}
+                          className="w-6 h-6 p-0 bg-white hover:bg-green-50 hover:text-green-600 border-0"
+                          title="添加项目/经历"
+                        >
+                          <Plus size={14} />
+                        </Button>
+                      )}
+                      <Button
+                        size="zero"
+                        variant="outline"
+                        onClick={() => removeBlock(originalIndex)}
+                        className="w-6 h-6 p-0 bg-white hover:bg-red-50 hover:text-red-600 border-0"
+                        title="删除板块"
+                      >
+                        <Trash2 size={14} />
+                      </Button>
+                    </HoverOperationPanel>
+                  </h3>
                 </div>
 
                 {/* Block Content */}

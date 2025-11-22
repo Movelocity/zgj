@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useAuthStore } from '@/store';
 import { ROUTES, ADMIN_ROLE } from '@/utils/constants';
 import Button from '@/components/ui/Button';
@@ -7,9 +7,49 @@ import {
   FaUser as UserIcon, 
   FaCog as SettingsIcon
 } from 'react-icons/fa';
+import cn from 'classnames';
+
+// 导航菜单配置
+interface NavItem {
+  path: string;
+  label: string;
+}
+
+const NAV_ITEMS: NavItem[] = [
+  {
+    path: ROUTES.HOME,
+    label: '首页',
+  },
+  {
+    path: ROUTES.SIMPLE_RESUME,
+    label: '简历优化',
+  },
+  {
+    path: ROUTES.JOB_RESUME,
+    label: '职位匹配',
+  },
+  {
+    path: '/resumes',
+    label: '我的简历',
+  },
+];
 
 const Header: React.FC = () => {
   const { isAuthenticated, user } = useAuthStore();
+  const location = useLocation();
+
+  /**
+   * 判断菜单项是否为当前激活项
+   * 根据一级路由进行匹配
+   */
+  const isActiveNav = (navPath: string): boolean => {
+    // 获取当前路径的一级路由
+    const currentFirstLevelPath = '/' + location.pathname.split('/')[1];
+    // 获取导航路径的一级路由
+    const navFirstLevelPath = '/' + navPath.split('/')[1];
+    
+    return currentFirstLevelPath === navFirstLevelPath;
+  };
 
   return (
     <header className="fixed top-0 w-full bg-white z-[1000]">
@@ -26,26 +66,21 @@ const Header: React.FC = () => {
 
           {/* Navigation */}
           <nav className="hidden md:flex items-center space-x-8">
-
-            <Link
-              to={ROUTES.SIMPLE_RESUME}
-              className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium"
-            >
-              简历优化
-            </Link>
-            <Link
-              to={ROUTES.JOB_RESUME}
-              className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium"
-            >
-              职位匹配
-            </Link>
-            <Link
-              to="/resumes"
-              className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium"
-            >
-              我的简历
-            </Link>
-
+            {NAV_ITEMS.map((item) => {
+              const isActive = isActiveNav(item.path);
+              return (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  className={cn(
+                    'px-3 py-2 rounded-md text-sm font-medium transition-colors hover:bg-gray-50 hover:text-blue-600', 
+                    isActive? 'text-blue-600' : 'text-gray-700'
+                  )}
+                >
+                  {item.label}
+                </Link>
+              );
+            })}
           </nav>
 
           {/* User Menu */}
