@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { FiSettings, FiUsers, FiFolder, FiGift, FiDatabase, FiMenu, FiX } from 'react-icons/fi';
-import { WorkflowManagement, UserManagement, FileManagement, InvitationManagement, SiteVariableManagement } from './components';
+import { FiSettings, FiUsers, FiFolder, FiGift, FiDatabase, FiMenu, FiX, FiActivity } from 'react-icons/fi';
+import { WorkflowManagement, UserManagement, FileManagement, InvitationManagement, SiteVariableManagement, EventLogManagement } from './components';
 
-type TabType = 'workflows' | 'users' | 'files' | 'invitations' | 'variables';
+type TabType = 'workflows' | 'users' | 'files' | 'invitations' | 'variables' | 'eventlogs';
 
 const Administrator: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabType>('users');
@@ -14,6 +14,7 @@ const Administrator: React.FC = () => {
     { id: 'workflows' as TabType, name: '工作流管理', icon: FiSettings },
     { id: 'files' as TabType, name: '文件管理', icon: FiFolder },
     { id: 'variables' as TabType, name: '网站变量', icon: FiDatabase },
+    { id: 'eventlogs' as TabType, name: '事件日志', icon: FiActivity },
   ];
 
   const renderContent = () => {
@@ -28,6 +29,8 @@ const Administrator: React.FC = () => {
         return <InvitationManagement />;
       case 'variables':
         return <SiteVariableManagement />;
+      case 'eventlogs':
+        return <EventLogManagement />;
       default:
         return null;
     }
