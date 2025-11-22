@@ -1,0 +1,5 @@
+---
+alwaysApply: true
+---
+
+We should not create sql file if the modification is gorm capable

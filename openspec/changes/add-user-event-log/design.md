@@ -149,51 +149,132 @@ const (
 
 ### 4. 服务层设计
 
-**服务接口**:
+**核心接口** (保持简洁，易扩展):
 ```go
-type EventLogService interface {
-    // 记录事件
-    Log(ctx context.Context, event *EventLog) error
-    
-    // 查询日志（管理员）
-    Query(ctx context.Context, req *QueryRequest) (*QueryResponse, error)
-    
-    // 统计事件（管理员）
-    Stats(ctx context.Context, req *StatsRequest) (*StatsResponse, error)
+// EventLogServiceInterface 事件日志服务核心接口
+// 使用统一的 Log 方法记录事件，通过预定义的事件类型常量和 JSON 字段实现灵活扩展
+type EventLogServiceInterface interface {
+    // Log 记录事件日志（核心方法）
+    // 通过构造 EventLog 对象传入事件类型、分类、详情等信息
+    // Details 字段支持存储任意 JSON 结构的自定义数据
+    Log(ctx context.Context, event *model.EventLog) error
 }
 ```
 
-**便捷函数**:
+**完整服务类型** (包含便捷方法):
 ```go
-// 快捷记录函数
-func LogUserLogin(userID, ip, userAgent string) {
-    eventLogService.Log(context.Background(), &EventLog{
-        UserID:        userID,
-        EventType:     EventUserLogin,
-        EventCategory: "auth",
-        IPAddress:     ip,
-        UserAgent:     userAgent,
-        Status:        "success",
-    })
-}
-
-func LogLoginFailed(phone, ip, reason string) {
-    eventLogService.Log(context.Background(), &EventLog{
-        UserID:        "",  // 登录失败时可能还没有userID
-        EventType:     EventLoginFailed,
-        EventCategory: "auth",
-        IPAddress:     ip,
-        ErrorMessage:  reason,
-        Status:        "failed",
-        Details:       map[string]interface{}{"phone": phone},
-    })
+// EventLogServiceType 事件日志服务类型（包含核心接口和辅助方法）
+type EventLogServiceType interface {
+    EventLogServiceInterface
+    // 以下为便捷辅助方法，封装常见的事件记录操作
+    LogUserLogin(userID, ip, userAgent string)
+    LogLoginFailed(phone, ip, userAgent, reason string)
+    LogUserRegister(userID, phone, ip, userAgent string)
+    LogSMSSent(phone, ip, userAgent string, success bool)
+    // ... 其他便捷方法
 }
 ```
+
+**使用示例**:
+
+1. **使用核心 Log 方法**（灵活方式）:
+```go
+import "encoding/json"
+
+// 记录带自定义数据的事件
+details, _ := json.Marshal(map[string]interface{}{
+    "phone":     phone,
+    "reason":    "invalid_code",
+    "attempts":  3,
+    "ip_region": "Beijing",
+})
+
+global.EventLogService.Log(ctx, &model.EventLog{
+    UserID:        "",
+    EventType:     eventlog.EventLoginFailed,
+    EventCategory: eventlog.CategoryAuth,
+    IPAddress:     ip,
+    UserAgent:     userAgent,
+    ErrorMessage:  "验证码错误",
+    Status:        eventlog.StatusFailed,
+    Details:       details,
+})
+```
+
+2. **使用便捷方法**（常见场景）:
+```go
+// 记录用户登录
+global.EventLogService.LogUserLogin(userID, ip, userAgent)
+
+// 记录登录失败
+global.EventLogService.LogLoginFailed(phone, ip, userAgent, "密码错误")
+```
+
+**设计理念**:
+- **核心接口最小化**: `EventLogServiceInterface` 只包含 `Log` 方法，保持简洁
+- **事件类型枚举化**: 通过常量定义事件类型（如 `EventUserLogin`），避免硬编码
+- **Details 字段灵活化**: 使用 JSONB 存储任意结构的事件详情
+- **便捷方法辅助化**: 快捷方法封装常见操作，但不是核心契约的一部分
+- **扩展性强**: 新增事件类型只需：
+  1. 添加事件类型常量（如 `EventTwoFactorAuth = "two_factor_auth"`）
+  2. 调用 `Log` 方法记录，无需修改接口
 
 **理由**:
-- 统一接口，便于维护
-- 快捷函数降低使用门槛
-- context传递超时控制
+- 统一的 Log 接口，避免每个事件都定义一个方法
+- 通过枚举常量和 JSON 字段实现灵活扩展
+- 便捷方法降低使用门槛，但保持接口简洁
+- Context 传递超时控制和取消信号
+
+**扩展示例** - 添加新事件类型（无需修改接口）:
+
+假设未来需要添加"二次认证"功能，只需三步：
+
+1. 在 `types.go` 添加事件类型常量:
+```go
+const (
+    EventTwoFactorAuth   = "two_factor_auth"    // 二次认证
+    EventTwoFactorFailed = "two_factor_failed"  // 二次认证失败
+)
+```
+
+2. 在业务代码中直接使用 Log 方法:
+```go
+details, _ := json.Marshal(map[string]interface{}{
+    "method":      "totp",  // 认证方式
+    "device_id":   deviceID,
+    "trust_level": "high",
+})
+
+global.EventLogService.Log(ctx, &model.EventLog{
+    UserID:        userID,
+    EventType:     eventlog.EventTwoFactorAuth,
+    EventCategory: eventlog.CategoryAuth,
+    IPAddress:     ip,
+    UserAgent:     userAgent,
+    Status:        eventlog.StatusSuccess,
+    Details:       details,
+})
+```
+
+3. （可选）添加便捷方法到具体实现:
+```go
+func (s *eventLogService) LogTwoFactorAuth(userID, method, ip, userAgent string) {
+    details, _ := json.Marshal(map[string]interface{}{"method": method})
+    s.Log(context.Background(), &model.EventLog{
+        UserID:        userID,
+        EventType:     EventTwoFactorAuth,
+        EventCategory: CategoryAuth,
+        IPAddress:     ip,
+        UserAgent:     userAgent,
+        Status:        StatusSuccess,
+        Details:       details,
+    })
+}
+```
+
+**对比旧设计**:
+- ❌ 旧设计：需要在接口中添加 `LogTwoFactorAuth` 方法，修改接口定义
+- ✅ 新设计：只需添加常量，直接使用 Log 方法，接口无需改动
 
 ### 5. 查询接口设计
 
@@ -339,7 +420,21 @@ GET /api/admin/event-logs?page=1&page_size=50&user_id=xxx&event_type=user_login&
    - 可先通过直接查询数据库实现
 
 4. **details字段存储什么？**
-   - 规范：仅存储必要信息，不存储敏感数据（如密码）
-   - 示例：登录失败可存储{phone, reason}
-   - 原则：可序列化为JSON的map
+   - **规范**：仅存储必要信息，不存储敏感数据（如密码、完整验证码）
+   - **示例**：
+     ```go
+     // 登录失败 - 记录尝试信息
+     {"phone": "138****1234", "reason": "invalid_password", "attempts": 3}
+     
+     // 简历优化 - 记录优化参数
+     {"model": "gpt-4", "tokens": 1523, "duration_ms": 2341, "sections": ["education", "experience"]}
+     
+     // 支付成功 - 记录交易信息
+     {"order_id": "ORD123", "amount": 99.00, "currency": "CNY", "payment_method": "alipay"}
+     ```
+   - **原则**：
+     - 可序列化为 JSON 的结构（map、数组等）
+     - 存储对排查问题、数据分析有价值的信息
+     - 脱敏处理：手机号显示为 `138****1234`，IP 可存储完整
+     - 避免存储大量数据（建议 < 1KB），大数据存到关联表
 

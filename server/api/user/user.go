@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"server/global"
+	"server/model"
 	"server/service"
 	fileService "server/service/file"
 	userService "server/service/user"
@@ -36,9 +37,14 @@ func Register(c *gin.Context) {
 	// 调用服务层注册（邀请码选填）
 	token, userInfo, message, err := service.UserService.RegisterWithInvitation(req.Phone, req.Name, req.InvitationCode, ipAddress, userAgent)
 	if err != nil {
+		// 记录注册失败事件
+		global.EventLogService.LogLoginFailed(req.Phone, ipAddress, userAgent, "注册失败: "+err.Error())
 		utils.FailWithMessage(err.Error(), c)
 		return
 	}
+
+	// 记录注册成功事件
+	global.EventLogService.LogUserRegister(userInfo.ID, req.Phone, ipAddress, userAgent)
 
 	response := userService.LoginResponse{
 		Token:     token,
@@ -58,12 +64,21 @@ func Login(c *gin.Context) {
 		return
 	}
 
+	// 获取IP和UserAgent
+	ipAddress := c.ClientIP()
+	userAgent := c.GetHeader("User-Agent")
+
 	// 调用服务层
 	token, userInfo, err := service.UserService.Login(req.Phone, req.Password)
 	if err != nil {
+		// 记录登录失败事件
+		global.EventLogService.LogLoginFailed(req.Phone, ipAddress, userAgent, err.Error())
 		utils.FailWithMessage(err.Error(), c)
 		return
 	}
+
+	// 记录登录成功事件
+	global.EventLogService.LogUserLogin(userInfo.ID, ipAddress, userAgent)
 
 	response := userService.LoginResponse{
 		Token:     token,
@@ -82,14 +97,24 @@ func SendSMS(c *gin.Context) {
 		return
 	}
 
+	// 获取IP和UserAgent
+	ipAddress := c.ClientIP()
+	userAgent := c.GetHeader("User-Agent")
+
 	// 生成验证码
 	code := utils.GenerateSMSCode()
 
 	// 发送短信
-	if err := utils.SendSMS(req.Phone, code); err != nil {
+	retryCount, err := utils.SendSMS(req.Phone, code)
+	if err != nil {
+		// 记录发送失败事件（包含验证码和重试次数）
+		global.EventLogService.LogSMSSent(req.Phone, code, ipAddress, userAgent, false, retryCount)
 		utils.FailWithMessage("短信发送失败", c)
 		return
 	}
+
+	// 记录发送成功事件（包含验证码和重试次数）
+	global.EventLogService.LogSMSSent(req.Phone, code, ipAddress, userAgent, true, retryCount)
 
 	utils.OkWithMessage("验证码发送成功", c)
 }
@@ -123,10 +148,20 @@ func ResetPassword(c *gin.Context) {
 		return
 	}
 
+	// 获取IP和UserAgent
+	ipAddress := c.ClientIP()
+	userAgent := c.GetHeader("User-Agent")
+
 	// 调用服务层
 	if err := service.UserService.ResetPassword(req.Phone, req.NewPassword); err != nil {
 		utils.FailWithMessage(err.Error(), c)
 		return
+	}
+
+	// 获取用户ID记录事件（需要查询用户）
+	var user model.User
+	if err := global.DB.Where("phone = ?", req.Phone).First(&user).Error; err == nil {
+		global.EventLogService.LogPasswordReset(user.ID, ipAddress, userAgent)
 	}
 
 	utils.OkWithMessage("密码重置成功", c)
@@ -155,11 +190,18 @@ func UpdateUserProfile(c *gin.Context) {
 		return
 	}
 
+	// 获取IP和UserAgent
+	ipAddress := c.ClientIP()
+	userAgent := c.GetHeader("User-Agent")
+
 	// 调用服务层
 	if err := service.UserService.UpdateUserProfile(userID, req); err != nil {
 		utils.FailWithMessage(err.Error(), c)
 		return
 	}
+
+	// 记录资料更新事件
+	global.EventLogService.LogProfileUpdate(userID, ipAddress, userAgent)
 
 	utils.OkWithMessage("更新成功", c)
 }
@@ -173,11 +215,18 @@ func ChangePassword(c *gin.Context) {
 		return
 	}
 
+	// 获取IP和UserAgent
+	ipAddress := c.ClientIP()
+	userAgent := c.GetHeader("User-Agent")
+
 	// 调用服务层
 	if err := service.UserService.ChangePassword(userID, req); err != nil {
 		utils.FailWithMessage(err.Error(), c)
 		return
 	}
+
+	// 记录密码修改事件
+	global.EventLogService.LogPasswordChange(userID, ipAddress, userAgent)
 
 	utils.OkWithMessage("密码修改成功", c)
 }
@@ -196,11 +245,22 @@ func UnifiedAuth(c *gin.Context) {
 		return
 	}
 
+	// 获取IP和UserAgent
+	ipAddress := c.ClientIP()
+	userAgent := c.GetHeader("User-Agent")
+
 	// 调用统一认证服务
 	token, userInfo, isNewUser, err := service.UserService.LoginOrRegister(req.Phone, req.Name)
 	if err != nil {
 		utils.FailWithMessage(err.Error(), c)
 		return
+	}
+
+	// 记录认证事件
+	if isNewUser {
+		global.EventLogService.LogUserRegister(userInfo.ID, req.Phone, ipAddress, userAgent)
+	} else {
+		global.EventLogService.LogUserLogin(userInfo.ID, ipAddress, userAgent)
 	}
 
 	response := userService.UnifiedAuthResponse{
@@ -215,6 +275,16 @@ func UnifiedAuth(c *gin.Context) {
 
 // Logout 用户登出
 func Logout(c *gin.Context) {
+	// 获取用户ID和请求信息
+	userID := c.GetString("userID")
+	ipAddress := c.ClientIP()
+	userAgent := c.GetHeader("User-Agent")
+
+	// 记录登出事件
+	if userID != "" {
+		global.EventLogService.LogUserLogout(userID, ipAddress, userAgent)
+	}
+
 	// 这里可以将token加入黑名单，或者删除相关缓存
 	utils.OkWithMessage("登出成功", c)
 }
@@ -246,6 +316,11 @@ func UploadAvatar(c *gin.Context) {
 		utils.FailWithMessage(err.Error(), c)
 		return
 	}
+
+	// 获取IP和UserAgent，记录头像上传事件
+	ipAddress := c.ClientIP()
+	userAgent := c.GetHeader("User-Agent")
+	global.EventLogService.LogAvatarUpload(userID, ipAddress, userAgent)
 
 	response := userService.UploadResponse{
 		URL:      fmt.Sprintf("/api/files/%s/preview", uploadedFile.ID), // 使用文件预览API

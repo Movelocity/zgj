@@ -2,6 +2,7 @@ package service
 
 import (
 	"server/service/app"
+	"server/service/eventlog"
 	"server/service/file"
 	"server/service/invitation"
 	"server/service/resume"
@@ -19,4 +20,5 @@ var (
 	FileService         = file.FileService
 	InvitationService   = invitation.InvitationService
 	SiteVariableService = sitevariable.SiteVariableService
+	EventLogService     = eventlog.EventLogService
 )

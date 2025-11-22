@@ -25,11 +25,12 @@ func GenerateSMSCode() string {
 }
 
 // SendSMS 发送短信验证码（带重试机制）
-func SendSMS(phone string, code string) error {
+// 返回值：实际尝试次数, error
+func SendSMS(phone string, code string) (int, error) {
 	if global.CONFIG.SpugSMS.Token == "" {
 		// global.LOG.Error("后台短信配置未设置")
 		fmt.Println("后台短信配置未设置")
-		return fmt.Errorf("后台短信配置未设置")
+		return 0, fmt.Errorf("后台短信配置未设置")
 	}
 
 	// 将验证码存储到缓存中，有效期5分钟
@@ -39,7 +40,7 @@ func SendSMS(phone string, code string) error {
 	// 跳过模式：用于开发测试
 	if global.CONFIG.SpugSMS.Token == "skip" {
 		fmt.Println("跳过短信发送，请查看验证码：", code)
-		return nil
+		return 1, nil
 	}
 
 	validMinutes := 15
@@ -125,12 +126,12 @@ func SendSMS(phone string, code string) error {
 
 		// 发送成功
 		fmt.Printf("[SMS] 发送成功！request_id: %s, 手机号: %s\n", smsResp.RequestID, phone)
-		return nil
+		return attempt, nil
 	}
 
 	// 所有重试都失败
 	fmt.Printf("[SMS] 发送失败，已重试 %d 次，最后错误: %v\n", maxRetries, lastErr)
-	return fmt.Errorf("短信发送失败（已重试%d次）: %w", maxRetries, lastErr)
+	return maxRetries, fmt.Errorf("短信发送失败（已重试%d次）: %w", maxRetries, lastErr)
 }
 
 // VerifySMSCode 验证短信验证码

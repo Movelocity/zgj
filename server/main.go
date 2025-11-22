@@ -15,12 +15,16 @@ func main() {
 
 	// 初始化日志
 	utils.InitLogger()
+	global.LOG = utils.Logger
 
 	// 初始化缓存
 	initialize.InitCache()
 
 	// 初始化数据库
 	initialize.InitDB()
+
+	// 初始化全局服务
+	initialize.InitServices()
 
 	// 初始化路由
 	r := initialize.InitRouter()
