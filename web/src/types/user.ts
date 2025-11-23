@@ -12,7 +12,7 @@
 export interface UserProfile {
   id: string;
   user_id: string;
-  real_name?: string;
+  name?: string;
   email?: string;
   company?: string;
   position?: string;

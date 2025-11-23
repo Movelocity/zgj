@@ -141,7 +141,7 @@ const ProfileInfo: React.FC<ProfileInfoProps> = ({ loading, setLoading }) => {
     // 提交更新
     try {
       setLoading(true);
-      const response = await userAPI.updateProfile({ real_name: trimmedName });
+      const response = await userAPI.updateProfile({ name: trimmedName });
       if (response.code === 0) {
         showSuccess('用户名更新成功');
         setProfileForm({ ...profileForm, name: trimmedName });

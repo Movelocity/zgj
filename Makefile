@@ -61,7 +61,7 @@ run: ## Start unified server (production mode)
 	@echo "启动服务器..."
 	@echo "后端 API 服务地址: http://localhost:8888/api"
 	@echo "后端 SPA 服务地址: http://localhost:8888/"
-	cd server && ./resume-polisher
+	cd server && ./server
 
 dev: ## Start frontend dev server + backend server (development mode)
 	@echo "启动开发服务器..."

@@ -228,7 +228,7 @@ const EventLogManagement: React.FC = () => {
         <div className="bg-gray-50 rounded-lg p-4 mb-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {/* Time Range Filter - Primary Feature */}
-            <div className="col-span-full">
+            <div className="col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 时间范围
               </label>
@@ -267,6 +267,25 @@ const EventLogManagement: React.FC = () => {
                   清除
                 </Button>
               </div>
+            </div>
+
+            {/* Status Filter */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                状态
+              </label>
+              <select
+                value={status}
+                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setStatus(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">全部状态</option>
+                {Object.values(EventStatus).map(st => (
+                  <option key={st} value={st}>
+                    {StatusDisplayNames[st] || st}
+                  </option>
+                ))}
+              </select>
             </div>
 
             {/* User ID Filter */}
@@ -321,24 +340,7 @@ const EventLogManagement: React.FC = () => {
               </select>
             </div>
 
-            {/* Status Filter */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                状态
-              </label>
-              <select
-                value={status}
-                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setStatus(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">全部状态</option>
-                {Object.values(EventStatus).map(st => (
-                  <option key={st} value={st}>
-                    {StatusDisplayNames[st] || st}
-                  </option>
-                ))}
-              </select>
-            </div>
+            
           </div>
 
           {/* Action Buttons */}

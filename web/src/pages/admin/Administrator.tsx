@@ -39,7 +39,7 @@ const Administrator: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* 宽屏布局：flex */}
-      <div className="hidden lg:flex h-[calc(100vh-5rem)]">
+      <div className="hidden lg:flex h-screen">
         {/* 右侧内容区域 */}
         <div className="flex-1 overflow-y-auto" style={{ width: 'calc(100vw - 16rem)' }}>
           {/* 左侧菜单 */}
@@ -71,9 +71,9 @@ const Administrator: React.FC = () => {
       </div>
 
       {/* 窄屏布局：fixed可折叠 */}
-      <div className="lg:hidden">
+      <div className="lg:hidden mt-16">
         {/**顶部可滚动菜单 */}
-        <div className="p-4 w-screen overflow-x-auto flex flex-nowrap gap-2">
+        <div className="py-2 px-4 w-screen overflow-x-auto flex flex-nowrap gap-2 bg-gray-100">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             return (

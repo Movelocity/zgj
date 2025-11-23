@@ -8,6 +8,5 @@ import (
 // InitServices 初始化全局服务
 func InitServices() {
 	// 初始化事件日志服务
-	global.EventLogService = eventlog.EventLogService
+	global.EventLog = eventlog.EventLogService
 }
-

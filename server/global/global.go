@@ -37,9 +37,9 @@ type EventLogServiceType interface {
 }
 
 var (
-	CONFIG          *config.Config
-	DB              *gorm.DB
-	Cache           *MemoryCache
-	LOG             *zap.Logger
-	EventLogService EventLogServiceType
+	CONFIG   *config.Config
+	DB       *gorm.DB
+	Cache    *MemoryCache
+	LOG      *zap.Logger
+	EventLog EventLogServiceType
 )
