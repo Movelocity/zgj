@@ -69,9 +69,9 @@ func (s *userService) createUnlimitedInvitationForUser(tx *gorm.DB, userID strin
 	return nil
 }
 
-// RegisterWithInvitation 使用邀请码注册用户（邀请码选填）
+// RegisterWithInvitation 使用邀请码注册用户（邀请码选填，密码可选）
 // 如果用户已存在，则直接登录；如果不存在，则注册新用户
-func (s *userService) RegisterWithInvitation(phone, name, invitationCode, ipAddress, userAgent string) (string, *UserInfo, string, error) {
+func (s *userService) RegisterWithInvitation(phone, name, invitationCode, password, ipAddress, userAgent string) (string, *UserInfo, string, error) {
 	// 检查手机号是否已存在
 	var existUser model.User
 	err := global.DB.Where("phone = ?", phone).First(&existUser).Error
@@ -194,13 +194,22 @@ func (s *userService) RegisterWithInvitation(phone, name, invitationCode, ipAddr
 		name = "用户" + phone[len(phone)-4:]
 	}
 
-	// 创建用户（设置默认密码）
-	hashedDefaultPassword, _ := utils.HashPassword("123456")
+	// 处理密码：如果提供了自定义密码则使用，否则使用默认密码
+	var hashedPassword string
+	if password != "" {
+		// 用户提供了自定义密码
+		hashedPassword, _ = utils.HashPassword(password)
+	} else {
+		// 使用默认密码
+		hashedPassword, _ = utils.HashPassword("123456")
+	}
+
+	// 创建用户
 	newUser := model.User{
 		ID:       utils.GenerateTLID(),
 		Name:     name,
 		Phone:    phone,
-		Password: hashedDefaultPassword,
+		Password: hashedPassword,
 		Active:   true,
 		Role:     userRole,
 	}
@@ -804,4 +813,87 @@ func (s *userService) AdminChangePassword(userID string, newPassword string) err
 	}
 
 	return nil
+}
+
+// LoginFailInfo 登录失败信息（用于黑名单机制）
+type LoginFailInfo struct {
+	Count        int       // 失败次数
+	FirstAttempt time.Time // 首次失败时间
+	LockedUntil  time.Time // 锁定到期时间
+}
+
+// CheckLoginBlacklist 检查IP是否在登录黑名单中
+// 返回: (是否被锁定, 剩余锁定时间(分钟))
+func (s *userService) CheckLoginBlacklist(ip string) (bool, int) {
+	key := fmt.Sprintf("login_fail:%s", ip)
+
+	// 从缓存获取失败信息
+	value, exists := global.Cache.Get(key)
+	if !exists {
+		return false, 0
+	}
+
+	// 解析失败信息
+	failInfo, ok := value.(LoginFailInfo)
+	if !ok {
+		// 类型断言失败，删除无效缓存
+		global.Cache.Delete(key)
+		return false, 0
+	}
+
+	// 检查是否被锁定
+	if failInfo.LockedUntil.After(time.Now()) {
+		// 仍在锁定期
+		remainingMinutes := int(time.Until(failInfo.LockedUntil).Minutes()) + 1
+		return true, remainingMinutes
+	}
+
+	return false, 0
+}
+
+// RecordLoginFailure 记录登录失败
+func (s *userService) RecordLoginFailure(ip string) {
+	key := fmt.Sprintf("login_fail:%s", ip)
+
+	var failInfo LoginFailInfo
+	value, exists := global.Cache.Get(key)
+
+	if exists {
+		// 已有记录，增加计数
+		if existing, ok := value.(LoginFailInfo); ok {
+			failInfo = existing
+			failInfo.Count++
+		} else {
+			// 类型断言失败，重新初始化
+			failInfo = LoginFailInfo{
+				Count:        1,
+				FirstAttempt: time.Now(),
+			}
+		}
+	} else {
+		// 首次失败
+		failInfo = LoginFailInfo{
+			Count:        1,
+			FirstAttempt: time.Now(),
+		}
+	}
+
+	// 检查是否达到阈值
+	if failInfo.Count >= 5 {
+		// 锁定15分钟
+		failInfo.LockedUntil = time.Now().Add(15 * time.Minute)
+
+		// 记录警告日志
+		fmt.Printf("[WARN] IP %s 登录失败达到5次，锁定至 %s\n",
+			ip, failInfo.LockedUntil.Format("2006-01-02 15:04:05"))
+	}
+
+	// 保存到缓存，15分钟TTL
+	global.Cache.Set(key, failInfo, 15*time.Minute)
+}
+
+// ClearLoginFailures 清除登录失败记录（登录成功后调用）
+func (s *userService) ClearLoginFailures(ip string) {
+	key := fmt.Sprintf("login_fail:%s", ip)
+	global.Cache.Delete(key)
 }

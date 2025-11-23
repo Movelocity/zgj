@@ -30,12 +30,31 @@ func Register(c *gin.Context) {
 		return
 	}
 
+	// 密码验证（如果提供了密码）
+	if req.Password != "" {
+		// 如果提供了密码，必须提供确认密码
+		if req.ConfirmPassword == "" {
+			utils.FailWithMessage("请输入确认密码", c)
+			return
+		}
+		// 两次密码必须一致
+		if req.Password != req.ConfirmPassword {
+			utils.FailWithMessage("两次密码输入不一致", c)
+			return
+		}
+		// 密码长度验证
+		if len(req.Password) < 6 {
+			utils.FailWithMessage("密码长度至少为6位", c)
+			return
+		}
+	}
+
 	// 获取IP和UserAgent
 	ipAddress := c.ClientIP()
 	userAgent := c.GetHeader("User-Agent")
 
-	// 调用服务层注册（邀请码选填）
-	token, userInfo, message, err := service.UserService.RegisterWithInvitation(req.Phone, req.Name, req.InvitationCode, ipAddress, userAgent)
+	// 调用服务层注册（邀请码选填，密码可选）
+	token, userInfo, message, err := service.UserService.RegisterWithInvitation(req.Phone, req.Name, req.InvitationCode, req.Password, ipAddress, userAgent)
 	if err != nil {
 		// 记录注册失败事件
 		global.EventLogService.LogLoginFailed(req.Phone, ipAddress, userAgent, "注册失败: "+err.Error())
@@ -68,15 +87,25 @@ func Login(c *gin.Context) {
 	ipAddress := c.ClientIP()
 	userAgent := c.GetHeader("User-Agent")
 
+	// 检查黑名单
+	if blocked, remainingTime := service.UserService.CheckLoginBlacklist(ipAddress); blocked {
+		utils.Result(utils.TOO_MANY_REQUESTS, nil, fmt.Sprintf("登录失败次数过多，请%d分钟后再试", remainingTime), c)
+		return
+	}
+
 	// 调用服务层
 	token, userInfo, err := service.UserService.Login(req.Phone, req.Password)
 	if err != nil {
+		// 记录登录失败
+		service.UserService.RecordLoginFailure(ipAddress)
 		// 记录登录失败事件
 		global.EventLogService.LogLoginFailed(req.Phone, ipAddress, userAgent, err.Error())
 		utils.FailWithMessage(err.Error(), c)
 		return
 	}
 
+	// 清除失败记录
+	service.UserService.ClearLoginFailures(ipAddress)
 	// 记录登录成功事件
 	global.EventLogService.LogUserLogin(userInfo.ID, ipAddress, userAgent)
 

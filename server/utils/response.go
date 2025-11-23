@@ -14,11 +14,12 @@ type Response struct {
 }
 
 const (
-	SUCCESS      = 0
-	ERROR        = 500
-	UNAUTHORIZED = 401
-	FORBIDDEN    = 403
-	NOT_FOUND    = 404
+	SUCCESS           = 0
+	ERROR             = 500
+	UNAUTHORIZED      = 401
+	FORBIDDEN         = 403
+	NOT_FOUND         = 404
+	TOO_MANY_REQUESTS = 429
 )
 
 // Result 统一返回结果

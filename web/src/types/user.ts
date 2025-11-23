@@ -26,8 +26,7 @@ export interface UserProfile {
 
 export interface LoginCredentials {
   phone: string;
-  password?: string;
-  sms_code?: string;
+  password: string;
 }
 
 export interface AuthData {
@@ -41,6 +40,8 @@ export interface RegisterData {
   sms_code: string;
   invitation_code?: string; // 邀请码选填
   name?: string; // 可选，用户名
+  password?: string; // 可选，密码
+  confirm_password?: string; // 可选，确认密码
 }
 
 export interface User {

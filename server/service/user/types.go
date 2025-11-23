@@ -4,10 +4,12 @@ import "time"
 
 // RegisterRequest 用户注册请求
 type RegisterRequest struct {
-	Phone          string `json:"phone" binding:"required"`
-	SmsCode        string `json:"sms_code" binding:"required"`
-	InvitationCode string `json:"invitation_code"` // 邀请码选填
-	Name           string `json:"name"`            // 可选，用户名
+	Phone           string `json:"phone" binding:"required"`
+	SmsCode         string `json:"sms_code" binding:"required"`
+	InvitationCode  string `json:"invitation_code"`  // 邀请码选填
+	Name            string `json:"name"`             // 可选，用户名
+	Password        string `json:"password"`         // 可选，密码
+	ConfirmPassword string `json:"confirm_password"` // 可选，确认密码
 }
 
 // LoginRequest 用户登录请求
