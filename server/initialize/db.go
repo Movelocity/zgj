@@ -67,6 +67,9 @@ func InitDB() {
 		&model.InvitationUse{},
 		&model.SiteVariable{},
 		&model.EventLog{},
+		&model.BillingActionPrice{},
+		&model.BillingPackage{},
+		&model.UserBillingPackage{},
 	); err != nil {
 		panic(fmt.Errorf("failed to migrate database: %s", err))
 	}

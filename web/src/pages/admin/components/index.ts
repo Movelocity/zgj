@@ -5,3 +5,5 @@ export { default as FileManagement } from './FileManagement';
 export { default as InvitationManagement } from './InvitationManagement';
 export { default as SiteVariableManagement } from './SiteVariableManagement';
 export { default as EventLogManagement } from './EventLogManagement';
+export { default as BillingPackageManagement } from './BillingPackageManagement';
+export { default as UserBillingPackageList } from './UserBillingPackageList';

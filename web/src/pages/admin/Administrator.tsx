@@ -1,12 +1,32 @@
-import React, { useState } from 'react';
-import { FiSettings, FiUsers, FiFolder, FiGift, FiDatabase, FiActivity } from 'react-icons/fi';
-import { WorkflowManagement, UserManagement, FileManagement, InvitationManagement, SiteVariableManagement, EventLogManagement } from './components';
+import React, { useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { FiSettings, FiUsers, FiFolder, FiGift, FiDatabase, FiActivity, FiPackage } from 'react-icons/fi';
+import { 
+  WorkflowManagement, 
+  UserManagement, 
+  FileManagement, 
+  InvitationManagement, 
+  SiteVariableManagement, 
+  EventLogManagement,
+  BillingPackageManagement,
+  UserBillingPackageList
+} from './components';
 import { Button } from '@/components/ui/Button';
 
-type TabType = 'workflows' | 'users' | 'files' | 'invitations' | 'variables' | 'eventlogs';
+type TabType = 'workflows' | 'users' | 'files' | 'invitations' | 'variables' | 'eventlogs' | 'billing' | 'user-billing-packages';
 
 const Administrator: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<TabType>('users');
+  const location = useLocation();
+  const navigate = useNavigate();
+  
+  // 从 URL hash 中获取初始 tab，如果没有则默认为 'users'
+  const getInitialTab = (): TabType => {
+    const hash = location.hash.replace('#', '');
+    const validTabs: TabType[] = ['workflows', 'users', 'files', 'invitations', 'variables', 'eventlogs', 'billing'];
+    return validTabs.includes(hash as TabType) ? (hash as TabType) : 'users';
+  };
+
+  const [activeTab, setActiveTab] = useState<TabType>(getInitialTab());
 
   const tabs = [
     { id: 'users' as TabType, name: '用户管理', icon: FiUsers },
@@ -15,7 +35,24 @@ const Administrator: React.FC = () => {
     { id: 'files' as TabType, name: '文件管理', icon: FiFolder },
     { id: 'variables' as TabType, name: '网站变量', icon: FiDatabase },
     { id: 'eventlogs' as TabType, name: '事件日志', icon: FiActivity },
+    { id: 'billing' as TabType, name: '套餐管理', icon: FiPackage },
+    { id: 'user-billing-packages' as TabType, name: '用户套餐管理', icon: FiPackage },
   ];
+
+  // 监听 URL hash 变化
+  useEffect(() => {
+    const hash = location.hash.replace('#', '');
+    const validTabs: TabType[] = ['workflows', 'users', 'files', 'invitations', 'variables', 'eventlogs', 'billing'];
+    if (hash && validTabs.includes(hash as TabType)) {
+      setActiveTab(hash as TabType);
+    }
+  }, [location.hash]);
+
+  // 切换 tab 时更新 URL hash
+  const handleTabChange = (tabId: TabType) => {
+    setActiveTab(tabId);
+    navigate(`#${tabId}`, { replace: true });
+  };
 
   const renderContent = () => {
     switch (activeTab) {
@@ -31,6 +68,10 @@ const Administrator: React.FC = () => {
         return <SiteVariableManagement />;
       case 'eventlogs':
         return <EventLogManagement />;
+      case 'billing':
+        return <BillingPackageManagement />;
+      case 'user-billing-packages':
+        return <UserBillingPackageList />;
       default:
         return null;
     }
@@ -50,7 +91,7 @@ const Administrator: React.FC = () => {
                 return (
                   <button
                     key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
+                    onClick={() => handleTabChange(tab.id)}
                     className={`w-full flex items-center py-3 px-4 font-medium text-sm transition-colors cursor-pointer ${
                       activeTab === tab.id
                         ? 'bg-blue-50 text-blue-600'
@@ -82,7 +123,7 @@ const Administrator: React.FC = () => {
                 // variant="ghost" 
                 variant={activeTab === tab.id ? 'primary' : 'ghost'}
                 size="sm" 
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => handleTabChange(tab.id)}
               >
                 <Icon className="h-5 w-5" />
                 {tab.name}

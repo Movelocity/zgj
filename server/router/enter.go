@@ -29,4 +29,5 @@ func InitRoutes(r *gin.Engine) {
 	InitInvitationRouter(PrivateGroup, PublicGroup, AdminGroup)
 	InitSiteVariableRouter(PrivateGroup, PublicGroup, AdminGroup)
 	InitEventLogRouter(AdminGroup)
+	InitBillingRouter(PrivateGroup, PublicGroup, AdminGroup)
 }
