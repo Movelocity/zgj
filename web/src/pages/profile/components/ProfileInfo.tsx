@@ -2,13 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { userAPI } from '@/api/user';
 import { invitationAPI } from '@/api/invitation';
 import { useAuthStore } from '@/store/authStore';
-import {Button} from '@/components/ui/Button';
-import Input from '@/components/ui/Input';
+import { Button, Input } from '@/components/ui';
+import { RiEditLine } from 'react-icons/ri';
 import { showSuccess, showError } from '@/utils/toast';
 import UserChangePasswordModal from '@/components/modals/UserChangePasswordModal';
 import type { UserInvitationUseResponse, InvitationCode } from '@/types/invitation';
-// import type { UserProfileResponse } from '@/types/user';
-// import { CopyIcon } from 'lucide-react';
 
 interface ProfileInfoProps {
   loading: boolean;
@@ -200,11 +198,11 @@ const ProfileInfo: React.FC<ProfileInfoProps> = ({ loading, setLoading }) => {
   }, []);
 
   return (
-    <div className="space-y-6">
+    <div className="rounded-lg bg-white shadow-sm p-6">
       
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+      <div className="flex flex-col gap-4">
+        <div className="flex items-center gap-2">
+          <label className="block text-sm font-medium text-gray-700 w-20">
             用户名
           </label>
           {isEditingName ? (
@@ -226,7 +224,7 @@ const ProfileInfo: React.FC<ProfileInfoProps> = ({ loading, setLoading }) => {
             />
           ) : (
             <div className="flex items-center gap-2">
-              <div className="bg-gray-50 px-3 py-2 rounded-md text-sm text-gray-900 flex-1">
+              <div className="text-sm">
                 {profileForm.name || '未设置'}
               </div>
               <Button
@@ -234,110 +232,112 @@ const ProfileInfo: React.FC<ProfileInfoProps> = ({ loading, setLoading }) => {
                 onClick={handleStartEditName}
                 disabled={loading}
               >
-                编辑
+                <RiEditLine className="w-4 h-4" />
               </Button>
             </div>
           )}
         </div>
+
         
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+        <div className="flex items-center gap-2">
+          <label className="block text-sm font-medium text-gray-700 w-20">
             手机号
           </label>
-          <div className="bg-gray-50 px-3 py-2 rounded-md text-sm text-gray-500">
+          <div className="text-sm">
             {user?.phone || ''}
           </div>
         </div>
         
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+        <div className="flex items-center gap-2">
+          <label className="block text-sm font-medium text-gray-700 w-20">
             邮箱
           </label>
-          <div className="bg-gray-50 px-3 py-2 rounded-md text-sm text-gray-500">
+          <div className="text-sm">
             {profileForm.email || '未设置'}
           </div>
         </div>
         
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+        <div className="flex items-center gap-2">
+          <label className="block text-sm font-medium text-gray-700 w-20">
             注册时间
           </label>
-          <div className="bg-gray-50 px-3 py-2 rounded-md text-sm text-gray-500">
+          <div className="text-sm">
             {user?.created_at ? new Date(user.created_at).toLocaleDateString() : ''}
           </div>
         </div>
+
+        {/* 邀请码部分 */}
+        {invitationUseInfo && !invitationUseInfo.has_used && (
+          <div className="flex items-center gap-2">
+            <label className="block text-sm font-medium text-gray-700 w-20">
+              邀请码
+            </label>
+            <div className="flex gap-3">
+              <Input
+                type="text"
+                value={invitationCode}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setInvitationCode(e.target.value)}
+                placeholder="填写以获得额外权益"
+                disabled={submittingInvitation}
+                onKeyDown={(e: React.KeyboardEvent) => {
+                  if (e.key === 'Enter' && !submittingInvitation) {
+                    handleSubmitInvitation();
+                  }
+                }}
+              />
+              <Button
+                onClick={handleSubmitInvitation}
+                disabled={submittingInvitation || !invitationCode.trim()}
+                variant={invitationCode.trim() ? "primary" : "outline"}
+                className="min-w-16"
+              >
+                {submittingInvitation ? '提交中...' : '提交'}
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* 已使用邀请码的提示 */}
+        {invitationUseInfo && invitationUseInfo.has_used && (
+          <div className="flex items-center gap-2">
+            <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+            </svg>
+            <span className="text-sm font-medium text-green-800">已填写邀请码</span>
+          </div>
+        )}
+
+
+        {/* 我的邀请码部分 - 显示普通邀请码 */}
+        {myNormalInvitation && (
+          <div className="flex items-center gap-3">
+            <h3 className="text-sm font-medium text-gray-700 w-20">我的邀请码</h3>
+            {/* <div className="text-xs text-gray-500">
+              已邀请 {myNormalInvitation.used_count} 人
+            </div> */}
+
+            <div>
+              <code className="text-base font-mono font-semibold text-gray-900 bg-gray-50 px-3 py-1.5 rounded">
+                {myNormalInvitation.code}
+              </code>
+              <Button
+                variant="link"
+                onClick={() => handleCopyCode(myNormalInvitation.code)}
+                className=""
+                title="复制邀请码"
+                // icon={<CopyIcon className="w-4 h-4 mr-1" />}
+              >
+                复制邀请链接
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* 邀请码部分 */}
-      {invitationUseInfo && !invitationUseInfo.has_used && (
-        <div className="max-w-sm">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            邀请码
-          </label>
-          <div className="flex gap-3">
-            <Input
-              type="text"
-              value={invitationCode}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setInvitationCode(e.target.value)}
-              placeholder="请输入邀请码"
-              disabled={submittingInvitation}
-              onKeyDown={(e: React.KeyboardEvent) => {
-                if (e.key === 'Enter' && !submittingInvitation) {
-                  handleSubmitInvitation();
-                }
-              }}
-            />
-            <Button
-              onClick={handleSubmitInvitation}
-              disabled={submittingInvitation || !invitationCode.trim()}
-              variant={invitationCode.trim() ? "default" : "outline"}
-              className="min-w-16"
-            >
-              {submittingInvitation ? '提交中...' : '提交'}
-            </Button>
-          </div>
-          <p className="mt-2 text-xs text-gray-500">
-            如果您有收到邀请码，请在此处填写以获得额外权益
-          </p>
-        </div>
-      )}
 
-      {/* 已使用邀请码的提示 */}
-      {invitationUseInfo && invitationUseInfo.has_used && (
-        <div className="flex items-center gap-2">
-          <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-          </svg>
-          <span className="text-sm font-medium text-green-800">已填写邀请码</span>
-        </div>
-      )}
+      
 
-      {/* 我的邀请码部分 - 显示普通邀请码 */}
-      {myNormalInvitation && (
-        <div className="">
-          <div className="flex items-center gap-3">
-            <h3 className="text-sm font-medium text-gray-700">我的邀请码</h3>
-            <div className="text-xs text-gray-500">
-              已邀请 {myNormalInvitation.used_count} 人
-            </div>
-            
-          </div>
-          <div>
-            <code className="text-base font-mono font-semibold text-gray-900 bg-gray-50 px-3 py-1.5 rounded">
-              {myNormalInvitation.code}
-            </code>
-            <Button
-              variant="link"
-              onClick={() => handleCopyCode(myNormalInvitation.code)}
-              className=""
-              title="复制邀请码"
-              // icon={<CopyIcon className="w-4 h-4 mr-1" />}
-            >
-              复制邀请链接
-            </Button>
-          </div>
-        </div>
-      )}
+      
 
       <div className="flex justify-end gap-3">
         <Button variant="outline" onClick={() => setIsPasswordModalOpen(true)}>

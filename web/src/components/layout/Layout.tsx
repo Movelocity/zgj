@@ -9,7 +9,7 @@ const Layout: React.FC = () => {
     <div className="flex flex-col">
       {/* 导航栏 */}
       {showBanner && (
-        <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-lg border-b border-slate-200">
+        <nav className="fixed w-full top-0 z-50 bg-white/80 backdrop-blur-lg border-b border-slate-200">
           <Header2 />
         </nav>
       )}

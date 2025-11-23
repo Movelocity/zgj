@@ -22,24 +22,33 @@ const Home2: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-emerald-50">
+    <div className="min-h-screen">
       {/* 导航栏 */}
       {/* <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-lg border-b border-slate-200">
         <Header2 />
       </nav> */}
 
       {/* 主视觉区 */}
-      <section className="relative py-10 px-4 sm:px-6 lg:px-8">
+      <section className="relative pt-24 pb-10 px-4 sm:px-6 lg:px-8">
+        {/* 背景图片 */}
+        <div 
+          className="absolute inset-0 -z-10 bg-cover bg-left md:bg-center h-screen"
+          style={{ 
+            backgroundImage: 'url(/images/background.jpg)',
+            backgroundSize: 'cover',
+            backgroundPosition: 'left center',
+          }}
+        />
         <div className="max-w-7xl mx-auto">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <div className="text-center lg:text-left">
+            <div className="text-center lg:text-left bg-white/80 backdrop-blur-sm p-8 rounded-2xl">
               <Badge className="mb-4 bg-blue-100 text-blue-700 hover:bg-blue-100">
                 <Star className="w-4 h-4 mr-1" />
                 AI 智能简历分析
               </Badge>
               <h1 className="text-4xl md:text-6xl font-bold text-slate-900 leading-tight mb-6 flex items-center gap-2 justify-center lg:flex-col lg:items-start">
                 用 AI 打造
-                <span className="bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent block">
+                <span className="bg-gradient-to-r from-blue-900 to-cyan-400 bg-clip-text text-transparent block">
                   完美简历
                 </span>
               </h1>
@@ -50,7 +59,7 @@ const Home2: React.FC = () => {
                 <Button 
                   onClick={handleGetStarted}
                   size="lg" 
-                  className="bg-gradient-to-r from-blue-700 to-blue-600 hover:from-blue-600 hover:to-blue-500 text-lg px-8 py-6 rounded-xl"
+                  className="bg-blue-600 hover:bg-blue-700 text-lg px-8 py-6 rounded-xl"
                 >
                   免费试用
                   <ChevronRight className="w-5 h-5 ml-2" />
@@ -514,7 +523,7 @@ const Home2: React.FC = () => {
       {/* 页脚 */}
       <footer className="bg-slate-900 text-slate-300 py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
-          <div className="grid md:grid-cols-4 gap-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             <div>
               <div className="flex items-center space-x-2 mb-4">
                 <img src="/favicon.ico" alt="职管加" className="h-8 w-8" />

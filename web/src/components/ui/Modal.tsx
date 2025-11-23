@@ -63,7 +63,7 @@ const Modal: React.FC<ModalProps> = ({
   onCancel,
   // confirmLoading = false,
   confirmDisabled = false,
-  confirmVariant = 'default',
+  confirmVariant = 'primary',
   maskClosable = true,
   escClosable = true,
   className = '',

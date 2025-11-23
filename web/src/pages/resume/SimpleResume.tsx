@@ -325,7 +325,7 @@ const SimpleResume: React.FC = () => {
           backgroundPosition: 'left center',
         }}
       />
-      <div className="mx-auto py-8 px-4 mt-12 bg-white/80 rounded-lg w-[calc(100%-2rem)] lg:w-[calc(100%-8rem)]" >
+      <div className="mx-auto mt-24 py-8 px-4 bg-white/80 rounded-lg w-[calc(100%-2rem)] lg:w-[calc(100%-8rem)]" >
         <div className="text-center">
           <div className="flex items-center justify-center mb-2">
             <h1 className="text-3xl font-semibold bg-gradient-to-r from-blue-700 to-blue-500 bg-clip-text text-transparent">

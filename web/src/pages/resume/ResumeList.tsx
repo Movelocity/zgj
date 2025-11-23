@@ -224,7 +224,7 @@ const ResumeList: React.FC = () => {
           backgroundPosition: 'left center',
         }}
       />
-      <div className="max-w-6xl mx-auto p-4 lg:p-8">
+      <div className="max-w-6xl mx-auto p-4 lg:p-8 mt-24">
         {/* 页面标题和操作按钮 */}
         {/* <div className="flex justify-between items-center mb-8">
           <div className="flex items-center space-x-3">

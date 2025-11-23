@@ -17,7 +17,7 @@ const ToastContainer: React.FC = () => {
 
   return (
     <div
-      className="fixed bottom-4 right-4 z-50 space-y-2"
+      className="fixed top-4 right-4 z-50 space-y-2"
       aria-live="polite"
       aria-label="通知区域"
     >
