@@ -345,9 +345,9 @@ const ProfileInfo: React.FC<ProfileInfoProps> = ({ loading, setLoading }) => {
       })()}
 
       <div className="flex justify-end gap-3">
-        {/* <Button variant="outline" onClick={() => setIsPasswordModalOpen(true)}>
+        <Button variant="outline" onClick={() => setIsPasswordModalOpen(true)}>
           修改密码
-        </Button> */}
+        </Button>
         <Button variant="outline" onClick={handleLogout}>
           退出登录
         </Button>

@@ -21,7 +21,6 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     newPassword: '',
-    confirmPassword: '',
   });
   const [errors, setErrors] = useState<{[key: string]: string}>({});
 
@@ -32,12 +31,6 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
       newErrors.newPassword = '请输入新密码';
     } else if (formData.newPassword.length < 6) {
       newErrors.newPassword = '密码长度至少6位';
-    }
-    
-    if (!formData.confirmPassword) {
-      newErrors.confirmPassword = '请确认新密码';
-    } else if (formData.newPassword !== formData.confirmPassword) {
-      newErrors.confirmPassword = '两次输入的密码不一致';
     }
     
     setErrors(newErrors);
@@ -57,7 +50,7 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
         onSuccess();
         onClose();
         // 重置表单
-        setFormData({ newPassword: '', confirmPassword: '' });
+        setFormData({ newPassword: '' });
         setErrors({});
       } else {
         showError(response.msg || '密码修改失败');
@@ -86,7 +79,7 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
   };
 
   const handleClose = () => {
-    setFormData({ newPassword: '', confirmPassword: '' });
+    setFormData({ newPassword: ''});
     setErrors({});
     onClose();
   };
@@ -127,7 +120,7 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
 
           <div>
             <Input
-              type="password"
+              type="new-password"
               value={formData.newPassword}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => 
                 handleInputChange('newPassword', e.target.value)
@@ -138,22 +131,6 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
             />
             {errors.newPassword && (
               <p className="mt-1 text-sm text-red-600">{errors.newPassword}</p>
-            )}
-          </div>
-
-          <div>
-            <Input
-              type="password"
-              value={formData.confirmPassword}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => 
-                handleInputChange('confirmPassword', e.target.value)
-              }
-              placeholder="再次确认新密码"
-              disabled={loading}
-              error={errors.confirmPassword}
-            />
-            {errors.confirmPassword && (
-              <p className="mt-1 text-sm text-red-600">{errors.confirmPassword}</p>
             )}
           </div>
       

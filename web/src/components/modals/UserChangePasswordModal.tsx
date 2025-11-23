@@ -161,6 +161,7 @@ const UserChangePasswordModal: React.FC<UserChangePasswordModalProps> = ({
             }
             placeholder="请输入当前密码"
             disabled={loading}
+            autoComplete="off"
             rightIcon={
               <EyeIcon
                 visible={passwordVisibility.current_password}
@@ -186,6 +187,7 @@ const UserChangePasswordModal: React.FC<UserChangePasswordModalProps> = ({
             }
             placeholder="请输入新密码（至少6位）"
             disabled={loading}
+            autoComplete="new-password"
             rightIcon={
               <EyeIcon
                 visible={passwordVisibility.new_password}
@@ -211,6 +213,7 @@ const UserChangePasswordModal: React.FC<UserChangePasswordModalProps> = ({
             }
             placeholder="请再次输入新密码"
             disabled={loading}
+            autoComplete="new-password"
             rightIcon={
               <EyeIcon
                 visible={passwordVisibility.confirm_password}
