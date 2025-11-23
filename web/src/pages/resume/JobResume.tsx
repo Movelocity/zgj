@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FiUpload, FiFileText, FiX, FiFolder } from 'react-icons/fi';
 import { Button, Modal } from "@/components/ui";
 import type { ResumeUploadData, ResumeInfo } from '@/types/resume';
@@ -182,6 +182,11 @@ const JobResume: React.FC = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | ResumeInfo | null>(null);
   const [jobDescription, setJobDescription] = useState<string>('');
+
+  useEffect(() => {
+    // 滚动到顶部
+    window.scrollTo(0, 0);
+  }, []);
 
   const handleStartOptimization = async () => {
     if (!selectedFile || !jobDescription.trim()) {

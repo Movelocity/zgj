@@ -37,13 +37,13 @@ const Home2: React.FC = () => {
                 <Star className="w-4 h-4 mr-1" />
                 AI 智能简历分析
               </Badge>
-              <h1 className="text-4xl md:text-6xl font-bold text-slate-900 leading-tight mb-6">
+              <h1 className="text-4xl md:text-6xl font-bold text-slate-900 leading-tight mb-6 flex items-center gap-2 justify-center lg:flex-col lg:items-start">
                 用 AI 打造
                 <span className="bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent block">
                   完美简历
                 </span>
               </h1>
-              <p className="text-xl text-slate-600 mb-8 leading-relaxed">
+              <p className="text-lg lg:text-xl text-slate-600 mb-8 leading-relaxed">
                 获取即时、可视化的简历反馈。AI 智能分析，色彩标注优化建议，公司研究洞察，个性化求职信生成，让你的简历在众多候选人中脱颖而出。
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
@@ -143,7 +143,7 @@ const Home2: React.FC = () => {
             <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">
               一站式简历优化解决方案
             </h2>
-            <p className="text-xl text-slate-600 max-w-3xl mx-auto">
+            <p className="text-lg lg:text-xl text-slate-600 max-w-3xl mx-auto">
               我们的 AI 平台提供全面的简历分析，配合可视化反馈，让优化过程直观高效。
             </p>
           </div>
@@ -152,10 +152,10 @@ const Home2: React.FC = () => {
             <Card className="group hover:shadow-lg transition-all duration-300 border-0 bg-white/80 backdrop-blur-sm">
               <CardHeader>
                 <div className="flex items-center justify-between">
-                  <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                  <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center mb-4 group-hover:scale-105 transition-transform">
                     <Target className="w-6 h-6 text-white" />
                   </div>
-                  <Link to="/simple-resume" className=" text-blue-600">立即体验 →</Link>
+                  <Link to="/simple-resume" className="text-blue-600 group-hover:scale-105 transition-transform">立即体验 →</Link>
                 </div>
                 <CardTitle className="text-xl">AI 简历分析</CardTitle>
                 <CardDescription>利用先进的自然语言处理技术，智能解析简历内容，精准匹配职位描述。</CardDescription>
@@ -165,10 +165,10 @@ const Home2: React.FC = () => {
             <Card className="group hover:shadow-lg transition-all duration-300 border-0 bg-white/80 backdrop-blur-sm">
               <CardHeader>
                 <div className="flex items-center justify-between">
-                  <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                  <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl flex items-center justify-center mb-4 group-hover:scale-105 transition-transform">
                     <FileText className="w-6 h-6 text-white" />
                   </div>
-                  <Link to="/job-resume" className=" text-emerald-600">立即体验 →</Link>
+                  <Link to="/job-resume" className="text-emerald-600 group-hover:scale-105 transition-transform">立即体验 →</Link>
                 </div>
                 <CardTitle className="text-xl">简历-职位匹配</CardTitle>
                 <CardDescription>根据职位描述，智能分析简历与职位的匹配度，给出优化建议。</CardDescription>
@@ -178,10 +178,10 @@ const Home2: React.FC = () => {
             <Card className="group hover:shadow-lg transition-all duration-300 border-0 bg-white/80 backdrop-blur-sm">
               <CardHeader>
                 <div className="flex items-center justify-between">
-                  <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                  <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl flex items-center justify-center mb-4 group-hover:scale-105 transition-transform">
                     <Briefcase className="w-6 h-6 text-white" />
                   </div>
-                  <Link to="/contact" className=" text-purple-600">查看二维码 →</Link>
+                  <Link to="/contact" className="text-purple-600 group-hover:scale-105 transition-transform">查看二维码 →</Link>
                 </div>
 
                 <CardTitle className="text-xl">内推机会</CardTitle>
@@ -282,14 +282,14 @@ const Home2: React.FC = () => {
           
           <div className="grid md:grid-cols-3 gap-8">
             <Card className="bg-white border-0 shadow-lg">
-              <CardContent className="pt-6">
+              <CardContent className="flex flex-col h-full">
                 <div className="flex items-center mb-4">
                   {[...Array(5)].map((_, i) => (
                     <Star key={i} className="w-5 h-5 fill-yellow-400 text-yellow-400" />
                   ))}
                 </div>
                 <blockquote className="text-slate-700 mb-6">
-                  "可视化标注改变了游戏规则。我能清楚地看到招聘人员在寻找什么，并相应地改进了简历。第一周就获得了 3 次面试！"
+                  "职管加的职位匹配功能改变了游戏规则。我能清楚地借助AI分析职位描述，针对性改进简历。第一周就获得了 3 次面试！"
                 </blockquote>
                 <div className="flex items-center">
                   <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-emerald-500 rounded-full flex items-center justify-center text-white font-bold mr-4">
@@ -304,14 +304,14 @@ const Home2: React.FC = () => {
             </Card>
             
             <Card className="bg-white border-0 shadow-lg">
-              <CardContent className="pt-6">
+              <CardContent className="flex flex-col h-full">
                 <div className="flex items-center mb-4">
                   {[...Array(5)].map((_, i) => (
                     <Star key={i} className="w-5 h-5 fill-yellow-400 text-yellow-400" />
                   ))}
                 </div>
-                <blockquote className="text-slate-700 mb-6">
-                  "公司研究功能帮助我完美定制申请。我终于明白如何用他们的语言表达并展示文化契合度。"
+                <blockquote className="text-slate-700 mb-6 flex-1">
+                  "简历优化功能帮助我完美定制申请。我学到了如何用他们的语言表达并展示文化契合度。"
                 </blockquote>
                 <div className="flex items-center">
                   <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-bold mr-4">
@@ -326,14 +326,14 @@ const Home2: React.FC = () => {
             </Card>
             
             <Card className="bg-white border-0 shadow-lg">
-              <CardContent className="pt-6">
+              <CardContent className="flex flex-col h-full">
                 <div className="flex items-center mb-4">
                   {[...Array(5)].map((_, i) => (
                     <Star key={i} className="w-5 h-5 fill-yellow-400 text-yellow-400" />
                   ))}
                 </div>
-                <blockquote className="text-slate-700 mb-6">
-                  "终于有一个工具能准确告诉我简历需要改进什么。色彩编码的反馈让一切都变得清晰且可操作。"
+                <blockquote className="text-slate-700 mb-6 flex-1">
+                  "终于有一个工具能实现交互式编辑，点击内容修改简历非常直观。这是其他家产品所没有的，很看好职管加。"
                 </blockquote>
                 <div className="flex items-center">
                   <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-full flex items-center justify-center text-white font-bold mr-4">
@@ -480,9 +480,9 @@ const Home2: React.FC = () => {
             
             <Card className="bg-white border-0 shadow-sm">
               <CardContent className="pt-6">
-                <h3 className="text-xl font-semibold mb-3">我可以同时申请多个工作吗？</h3>
+                <h3 className="text-xl font-semibold mb-3">我可以同时改多份不同岗位的简历吗？</h3>
                 <p className="text-slate-600">
-                  当然可以！您可以针对多个职位描述分析简历，并为每个职位获得定制反馈。这有助于您针对不同的角色和行业优化简历。
+                  当然可以！您可以针对多个职位描述分析简历，并为每个职位获得定制反馈。我们的职位匹配功能就是为此而生的。
                 </p>
               </CardContent>
             </Card>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FiUpload, FiFileText, FiX, FiFolder } from 'react-icons/fi';
 import { FaBook } from 'react-icons/fa';
 import { Button, Modal } from "@/components/ui"
@@ -112,6 +112,11 @@ const ResumeSelector: React.FC<{
 }> = ({ selectedFile, onSelect }) => {
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+
+  useEffect(() => {
+    // 滚动到顶部
+    window.scrollTo(0, 0);
+  }, []);
 
   // 验证文件类型和大小
   const validateFile = (file: File): boolean => {

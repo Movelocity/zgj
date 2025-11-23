@@ -57,11 +57,11 @@ build: ## Build backend binary and frontend SPA
 	@echo "  - 后端二进制文件: server/server"
 	@echo "  - 前端 SPA: web/dist/"
 
-run: build ## Start unified server (production mode)
-	@echo "启动统一服务器..."
-	@echo "后端 API 服务地址: http://localhost:8080/api"
-	@echo "后端 SPA 服务地址: http://localhost:8080/"
-	cd server && ./server
+run: ## Start unified server (production mode)
+	@echo "启动服务器..."
+	@echo "后端 API 服务地址: http://localhost:8888/api"
+	@echo "后端 SPA 服务地址: http://localhost:8888/"
+	cd server && ./resume-polisher
 
 dev: ## Start frontend dev server + backend server (development mode)
 	@echo "启动开发服务器..."
