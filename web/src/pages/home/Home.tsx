@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuthStore } from '@/store';
 import { ROUTES } from '@/utils/constants';
-import Button from '@/components/ui/Button';
+import {Button} from '@/components/ui';
 import { 
   FaFileAlt as DocumentTextIcon, 
   FaStar as SparklesIcon, 

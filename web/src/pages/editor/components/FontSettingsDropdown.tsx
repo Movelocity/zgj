@@ -1,6 +1,6 @@
 import * as Popover from '@radix-ui/react-popover';
 import { useState, useRef, useEffect } from 'react';
-import Button from '@/components/ui/Button';
+import {Button} from '@/components/ui';
 import type { FontSettings } from './FontSettingsPanel';
 
 interface FontSettingsDropdownProps {
@@ -105,7 +105,7 @@ export default function FontSettingsDropdown({
                     key={key}
                     size="sm"
                     onClick={() => handleTitleSizeChange(key)}
-                    variant={fontSettings.titleSize === key? "primary": "outline"}
+                    variant={fontSettings.titleSize === key? "default": "outline"}
                   >
                     {TITLE_SIZE_PRESETS[key].label}
                   </Button>
@@ -124,7 +124,7 @@ export default function FontSettingsDropdown({
                     key={key}
                     size="sm"
                     onClick={() => handleLabelSizeChange(key)}
-                    variant={fontSettings.labelSize === key? "primary": "outline"}
+                    variant={fontSettings.labelSize === key? "default": "outline"}
                   >
                     {LABEL_SIZE_PRESETS[key].label}
                   </Button>
@@ -143,7 +143,7 @@ export default function FontSettingsDropdown({
                     key={key}
                     size="sm"
                     onClick={() => handleContentSizeChange(key)}
-                    variant={fontSettings.contentSize === key? "primary": "outline"}
+                    variant={fontSettings.contentSize === key? "default": "outline"}
                   >
                     {CONTENT_SIZE_PRESETS[key].label}
                   </Button>

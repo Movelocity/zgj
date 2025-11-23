@@ -34,7 +34,7 @@ export interface ModalProps {
   /** 确认按钮是否禁用 */
   confirmDisabled?: boolean;
   /** 确认按钮变体 */
-  confirmVariant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger' | 'text';
+  confirmVariant?: 'default' | 'secondary' | 'outline' | 'ghost' | 'destructive' | 'link';
   /** 是否可以通过点击遮罩关闭 */
   maskClosable?: boolean;
   /** 是否可以通过ESC键关闭 */
@@ -61,9 +61,9 @@ const Modal: React.FC<ModalProps> = ({
   cancelText = '取消',
   onConfirm,
   onCancel,
-  confirmLoading = false,
+  // confirmLoading = false,
   confirmDisabled = false,
-  confirmVariant = 'primary',
+  confirmVariant = 'default',
   maskClosable = true,
   escClosable = true,
   className = '',
@@ -180,7 +180,7 @@ const Modal: React.FC<ModalProps> = ({
                   <Button
                     variant={confirmVariant}
                     onClick={handleConfirm}
-                    loading={confirmLoading}
+                    // loading={confirmLoading}
                     disabled={confirmDisabled}
                     className="inline-flex items-center px-4 py-2 text-sm font-medium"
                   >

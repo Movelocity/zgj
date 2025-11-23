@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { userAPI } from '@/api/user';
-import Button from '@/components/ui/Button';
+import { Button } from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import { showSuccess, showError } from '@/utils/toast';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';

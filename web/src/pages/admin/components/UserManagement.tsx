@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { adminAPI } from '@/api/admin';
-import Button from '@/components/ui/Button';
-import Input from '@/components/ui/Input';
+import {Button, Input} from '@/components/ui';
 import { showSuccess, showError } from '@/utils/toast';
 import type { User } from '@/types/user';
 import { EditUserModal, ChangeRoleModal, ChangePasswordModal } from '@/components/modals';
@@ -292,7 +291,7 @@ const UserManagement: React.FC = () => {
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <div className="flex justify-end">
                           <Button
-                            variant="text"
+                            variant="link"
                             size="sm"
                             onClick={() => handleEditUser(user)}
                             disabled={loading}
@@ -300,7 +299,7 @@ const UserManagement: React.FC = () => {
                             编辑
                           </Button>
                           <Button
-                            variant="text"
+                            variant="link"
                             size="sm"
                             onClick={() => handleChangeRole(user)}
                             disabled={loading}
@@ -308,7 +307,7 @@ const UserManagement: React.FC = () => {
                             权限
                           </Button>
                           <Button
-                            variant="text"
+                            variant="link"
                             size="sm"
                             onClick={() => handleChangePassword(user)}
                             disabled={loading}
@@ -316,7 +315,7 @@ const UserManagement: React.FC = () => {
                             重置密码
                           </Button>
                           <Button
-                            variant="text"
+                            variant="link"
                             size="sm"
                             onClick={() => handleToggleUserStatus(user.id, user.active)}
                             disabled={loading}
@@ -324,7 +323,7 @@ const UserManagement: React.FC = () => {
                             {user.active ? '禁用' : '激活'}
                           </Button>
                           <Button
-                            variant="text"
+                            variant="link"
                             size="sm"
                             onClick={() => handleDeleteUser(user.id, user.name || user.phone)}
                             disabled={loading}

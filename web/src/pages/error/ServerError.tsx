@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import Button from '@/components/ui/Button';
+import {Button} from '@/components/ui';
 import { ROUTES } from '@/utils/constants';
 
 const ServerError: React.FC = () => {
@@ -19,7 +19,7 @@ const ServerError: React.FC = () => {
         
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <Button 
-            variant="primary" 
+            variant="default" 
             onClick={() => window.location.reload()}
             className="w-full sm:w-auto"
           >

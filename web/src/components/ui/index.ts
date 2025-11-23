@@ -1,5 +1,7 @@
 // UI组件导出
-export { default as Button } from './Button';
+export { Button } from './Button';
+export { Badge } from './badge';
+export { Label } from './label';
 export { default as Input } from './Input';
 export { default as Loading } from './Loading';
 export { default as Modal } from './Modal';

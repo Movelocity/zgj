@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import MarkdownRenderer from '@/components/ui/MarkdownRenderer';
+import MarkdownRenderer from '@/components/ui/Markdown';
 import { FiFileText, FiCheckSquare } from 'react-icons/fi';
 import { generateHash } from '@/utils/hash';
 import { parseAndFixResumeJson } from '@/utils/helpers';

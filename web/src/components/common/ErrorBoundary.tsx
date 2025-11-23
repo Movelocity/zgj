@@ -1,6 +1,6 @@
 import { Component } from 'react';
 import type { ErrorInfo, ReactNode } from 'react';
-import Button from '@/components/ui/Button';
+import {Button} from '@/components/ui';
 
 interface Props {
   children: ReactNode;
@@ -73,7 +73,7 @@ class ErrorBoundary extends Component<Props, State> {
             )}
             
             <div className="flex space-x-3 justify-center">
-              <Button onClick={this.handleReload} variant="primary">
+              <Button onClick={this.handleReload} variant="default">
                 刷新页面
               </Button>
               <Button onClick={this.handleGoHome} variant="outline">

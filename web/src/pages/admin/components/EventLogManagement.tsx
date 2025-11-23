@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { eventLogAPI } from '@/api/eventlog';
-import Button from '@/components/ui/Button';
+import {Button} from '@/components/ui';
 import Input from '@/components/ui/Input';
 import Modal from '@/components/ui/Modal';
 import { showError } from '@/utils/toast';
@@ -411,7 +411,7 @@ const EventLogManagement: React.FC = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <Button
-                          variant="text"
+                          variant="link"
                           size="sm"
                           onClick={() => handleViewDetail(log)}
                         >

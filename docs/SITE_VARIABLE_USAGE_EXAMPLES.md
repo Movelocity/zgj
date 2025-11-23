@@ -88,7 +88,8 @@ export default Footer;
 ```tsx
 import React from 'react';
 import { useSiteVariable } from '@/hooks/useSiteVariable';
-import Button from '@/components/ui/Button';
+// import Button from '@/components/ui/Button'; // deprecated
+import { Button } from "@/components/ui"
 
 const AnnouncementBanner: React.FC = () => {
   const { value: announcement, loading, refresh } = useSiteVariable('announcement');

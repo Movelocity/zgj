@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { FiSave } from 'react-icons/fi';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ChevronLeft } from 'lucide-react';
-import Button from "@/components/ui/Button";
+import { Button } from "@/components/ui";
 import { useGlobalStore } from '@/store';
 import ChatPanel, { type Message } from './components/ChatPanel';
 import ResumeEditorV2 from './components/ResumeEditor';
@@ -471,8 +471,9 @@ export default function ResumeDetails() {
               variant="ghost"
               className="py-2 px-0 hover:bg-gray-100 rounded-lg transition-colors"
               title="返回"
-              icon={<ChevronLeft className="w-5 h-5" />}
-            />
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </Button>
             <div className="hidden sm:flex items-center space-x-2 mr-4">
               <h1 className="text-lg font-semibold">📝 简历编辑</h1>
             </div>
@@ -501,8 +502,8 @@ export default function ResumeDetails() {
             <Button
               onClick={handleSaveResume}
               disabled={isSaving}
-              icon={<FiSave className="w-4 h-4 mr-2" />}
             >
+              <FiSave className="w-4 h-4 mr-2" />
               保存
             </Button>
           </div>

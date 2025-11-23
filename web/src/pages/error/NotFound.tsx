@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import Button from '@/components/ui/Button';
+import {Button} from '@/components/ui';
 import { ROUTES } from '@/utils/constants';
 
 const NotFound: React.FC = () => {
@@ -19,7 +19,7 @@ const NotFound: React.FC = () => {
         
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <Link to={ROUTES.HOME}>
-            <Button variant="primary" className="w-full sm:w-auto">
+            <Button variant="default" className="w-full sm:w-auto">
               返回首页
             </Button>
           </Link>

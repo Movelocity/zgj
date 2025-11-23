@@ -3,11 +3,20 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '@/store/authStore';
 import PhoneLogin from './components/PhoneLogin';
 import PasswordLogin from './components/PasswordLogin';
+import { useGlobalStore } from '@/store';
 
 const Auth: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { isAuthenticated } = useAuthStore();
+
+  const { setShowBanner } = useGlobalStore();
+  useEffect(() => {
+    setShowBanner(false);
+    return () => {
+      setShowBanner(true);
+    };
+  }, []);
   
   // 根据路由判断是登录还是注册模式
   const isRegisterMode = location.pathname === '/register';

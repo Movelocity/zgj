@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { userAPI } from '@/api/user';
 import { invitationAPI } from '@/api/invitation';
 import { useAuthStore } from '@/store/authStore';
-import Button from '@/components/ui/Button';
+import {Button} from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import { showSuccess, showError } from '@/utils/toast';
 import UserChangePasswordModal from '@/components/modals/UserChangePasswordModal';
@@ -230,7 +230,7 @@ const ProfileInfo: React.FC<ProfileInfoProps> = ({ loading, setLoading }) => {
                 {profileForm.name || '未设置'}
               </div>
               <Button
-                variant="text"
+                variant="link"
                 onClick={handleStartEditName}
                 disabled={loading}
               >
@@ -290,7 +290,7 @@ const ProfileInfo: React.FC<ProfileInfoProps> = ({ loading, setLoading }) => {
             <Button
               onClick={handleSubmitInvitation}
               disabled={submittingInvitation || !invitationCode.trim()}
-              variant={invitationCode.trim() ? "primary" : "ghost"}
+              variant={invitationCode.trim() ? "default" : "outline"}
               className="min-w-16"
             >
               {submittingInvitation ? '提交中...' : '提交'}
@@ -327,7 +327,7 @@ const ProfileInfo: React.FC<ProfileInfoProps> = ({ loading, setLoading }) => {
               {myNormalInvitation.code}
             </code>
             <Button
-              variant="text"
+              variant="link"
               onClick={() => handleCopyCode(myNormalInvitation.code)}
               className=""
               title="复制邀请码"

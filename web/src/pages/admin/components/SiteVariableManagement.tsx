@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { FiPlus, FiEdit2, FiTrash2, FiRefreshCw, FiSearch } from 'react-icons/fi';
 import { siteVariableAPI } from '@/api/siteVariable';
 import { showSuccess, showError } from '@/utils/toast';
-import Button from '@/components/ui/Button';
-import Modal from '@/components/ui/Modal';
+import {Button, Modal} from '@/components/ui';
 import type { 
   SiteVariable, 
   CreateSiteVariableRequest, 
@@ -161,8 +160,8 @@ const SiteVariableManagement: React.FC = () => {
           <Button
             onClick={handleSearch}
             variant="outline"
-            icon={<FiSearch />}
           >
+            <FiSearch className="w-4 h-4" />
             搜索
           </Button>
         </div>
@@ -170,9 +169,9 @@ const SiteVariableManagement: React.FC = () => {
           <Button
             onClick={loadVariables}
             variant="outline"
-            icon={<FiRefreshCw className={loading ? 'animate-spin mr-1' : 'mr-1'} />}
             disabled={loading}
           >
+            <FiRefreshCw className={loading ? 'animate-spin mr-1' : 'mr-1'} />
             刷新
           </Button>
           <Button
@@ -180,8 +179,8 @@ const SiteVariableManagement: React.FC = () => {
               setFormData({ key: '', value: '', description: '' });
               setShowCreateModal(true);
             }}
-            icon={<FiPlus />}
           >
+            <FiPlus />
             新增变量
           </Button>
         </div>
@@ -495,7 +494,7 @@ const SiteVariableManagement: React.FC = () => {
             >
               取消
             </Button>
-            <Button onClick={handleDelete} variant="danger">
+            <Button onClick={handleDelete} variant="destructive">
               删除
             </Button>
           </div>

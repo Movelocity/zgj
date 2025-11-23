@@ -7,8 +7,8 @@ import AdminRoute from '@/components/common/AdminRoute';
 import { lazy } from 'react';
 
 // 懒加载页面组件
-const Home = lazy(() => import('@/pages/home/Home'));
-const Auth = lazy(() => import('@/pages/auth/Auth'));
+const Home = lazy(() => import('@/pages/home/Home2'));
+const Auth = lazy(() => import('@/pages/auth/Auth2'));
 const CodeAuth = lazy(() => import('@/pages/auth/CodeAuth'));
 const SimpleResume = lazy(() => import('@/pages/resume/SimpleResume'));
 const JobResume = lazy(() => import('@/pages/resume/JobResume'));

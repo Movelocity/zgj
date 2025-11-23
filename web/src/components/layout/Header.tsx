@@ -2,12 +2,11 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuthStore } from '@/store';
 import { ROUTES, ADMIN_ROLE } from '@/utils/constants';
-import Button from '@/components/ui/Button';
+import {Button} from '@/components/ui';
 import { 
   FaUser as UserIcon, 
-  FaCog as SettingsIcon
 } from 'react-icons/fa';
-import cn from 'classnames';
+import { cn } from '@/lib/utils';
 
 // 导航菜单配置
 interface NavItem {
@@ -90,21 +89,22 @@ const Header: React.FC = () => {
                 {/* 管理员入口 */}
                 {user?.role === ADMIN_ROLE && (
                   <Link to={ROUTES.ADMINISTRATOR}>
-                    <Button variant="ghost" size="sm" icon={<SettingsIcon className="h-4 w-4" />} className="ring-0 focus:ring-0">
+                    <Button variant="ghost" size="sm">
                       管理后台
                     </Button>
                   </Link>
                 )}
                 {/* 用户菜单 */}
                 <Link to={ROUTES.PROFILE}>
-                  <Button variant="ghost" size="sm" icon={<UserIcon className="h-4 w-4" />} className="ring-0 focus:ring-0">
+                  <Button variant="ghost" size="sm">
+                    <UserIcon className="h-4 w-4" />
                     {user?.name || user?.phone}
                   </Button>
                 </Link>
               </div>
             ) : (
               <Link to={ROUTES.AUTH}>
-                <Button variant="primary" size="sm">
+                <Button variant="default" size="sm">
                   登录/注册
                 </Button>
               </Link>

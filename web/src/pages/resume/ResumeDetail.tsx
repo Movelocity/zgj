@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { FiEdit, FiShare2, FiTrash2, FiFileText, FiCalendar, FiUser } from 'react-icons/fi';
 // import { Sparkles } from 'lucide-react';
-import Button from '@/components/ui/Button';
+import { Button } from '@/components/ui';
 import { resumeAPI } from '@/api/resume';
 import { fileAPI } from '@/api/file';
 import type { ResumeDetail as ResumeDetailType } from '@/types/resume';
@@ -180,7 +180,7 @@ const ResumeDetail: React.FC = () => {
             <FiFileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
             <h2 className="text-2xl font-bold text-gray-900 mb-2">简历不存在</h2>
             <p className="text-gray-600 mb-8">您要查看的简历可能已被删除或不存在</p>
-            <Button onClick={() => navigate('/resumes')} variant="primary">
+            <Button onClick={() => navigate('/resumes')} variant="default">
               返回简历列表
             </Button>
           </div>
@@ -203,16 +203,16 @@ const ResumeDetail: React.FC = () => {
             <Button
               onClick={() => navigate(`/editor/${id}`)}
               variant="outline"
-              icon={<FiEdit className="w-4 h-4" />}
             >
+              <FiEdit className="w-4 h-4" />
               编辑
             </Button>
             {resume.file_id && (
               <Button
                 onClick={() => window.open(fileAPI.previewFile(resume.file_id), '_blank')}
                 variant="outline"
-                icon={<FiShare2 className="w-4 h-4" />}
               >
+                <FiShare2 className="w-4 h-4" />
                 预览源文件
               </Button>
             )}
@@ -220,8 +220,8 @@ const ResumeDetail: React.FC = () => {
               onClick={handleDelete}
               variant="outline"
               className="text-red-600 border-red-600 hover:bg-red-50"
-              icon={<FiTrash2 className="w-4 h-4" />}
             >
+              <FiTrash2 className="w-4 h-4" />
               删除
             </Button>
           </div>
@@ -237,43 +237,33 @@ const ResumeDetail: React.FC = () => {
               {!resume.text_content && resume.file_id && (
                 <Button
                   onClick={handleProcessText}
-                  variant="primary"
+                  variant="default"
                   size="sm"
-                  loading={processingText}
-                  icon={<FiFileText className="w-4 h-4" />}
+                  disabled={processingText}
                 >
+                  <FiFileText className="w-4 h-4" />
                   {processingText ? '处理中...' : '提取文本'}
                 </Button>
               )}
               {resume.text_content && !resume.structured_data && (
                 <Button
                   onClick={handleProcessTextToJSON}
-                  variant="primary"
+                  variant="default"
+                  disabled={processingText}
                   size="sm"
-                  loading={processingText}
-                  icon={<FiFileText className="w-4 h-4" />}
                 >
+                  <FiFileText className="w-4 h-4" />
                   文本结构化
                 </Button>
               )}
             </div>
             
             {resume.text_content ? (
-              // editing ? (
-              //   <textarea
-              //     value={editForm.text_content || ''}
-              //     onChange={(e) => setEditForm({ ...editForm, text_content: e.target.value })}
-              //     rows={24}
-              //     className="w-full border border-gray-300 rounded-md p-3 focus:border-blue-600 focus:outline-none resize-vertical"
-              //     placeholder="简历文本内容..."
-              //   />
-              // ) : (
-                <div className="prose max-w-none">
-                  <pre className="whitespace-pre-wrap text-sm text-gray-700 font-sans leading-relaxed">
-                    {resume.text_content}
-                  </pre>
-                </div>
-              // )
+              <div className="prose max-w-none">
+                <pre className="whitespace-pre-wrap text-sm text-gray-700 font-sans leading-relaxed">
+                  {resume.text_content}
+                </pre>
+              </div>
             ) : (
               <div className="text-center py-8 text-gray-500">
                 {resume.file_id ? (

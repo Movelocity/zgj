@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import Button from '@/components/ui/Button';
+import {Button, Modal} from '@/components/ui';
 import AiMessageRenderer from './AiMessageRenderer';
 import { Send, Bot, Lightbulb, Sparkles, X } from 'lucide-react';
 import { FiMessageSquare, FiFileText } from 'react-icons/fi';
@@ -7,7 +7,6 @@ import type { ResumeV2Data } from '@/types/resumeV2';
 import { workflowAPI } from '@/api/workflow';
 import { parseAndFixResumeJson } from '@/utils/helpers';
 import { generateAIResponse, generateSuggestions, truncate } from './utils';
-import Modal from '@/components/ui/Modal';
 import cn from 'classnames';
 
 interface Message {
@@ -627,9 +626,8 @@ export default function ChatPanel({
                   return (
                     <Button
                       key={index}
-                      icon={highlight ? <Sparkles className="w-3 h-3 mr-1" /> : <Lightbulb className="w-3 h-3 mr-1" />}
-                      variant={highlight ? 'primary' : 'outline'}
-                      size="xs"
+                      variant={highlight ? 'default' : 'outline'}
+                      size="sm"
                       className="px-2"
                       onClick={() => {
                         if (highlight) {
@@ -639,6 +637,7 @@ export default function ChatPanel({
                         }
                       }}
                     >
+                      {highlight ? <Sparkles className="w-3 h-3 mr-1" /> : <Lightbulb className="w-3 h-3 mr-1" />}
                       <span className="text-nowrap">{truncate(text, 16)}</span>
                     </Button>
                     )

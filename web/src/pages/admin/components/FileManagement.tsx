@@ -15,8 +15,7 @@ import {
 } from 'react-icons/fi';
 import { adminAPI } from '@/api/admin';
 import { showSuccess, showError, showInfo } from '@/utils/toast';
-import Button from '@/components/ui/Button';
-import Modal from '@/components/ui/Modal';
+import {Button, Modal} from '@/components/ui';
 import { TOKEN_KEY } from '@/utils/constants';
 
 interface FileInfo {
@@ -329,7 +328,7 @@ const FileManagement: React.FC = () => {
           
           {selectedFiles.length > 0 && (
             <Button
-              variant="danger"
+              variant="destructive"
               onClick={handleBatchDelete}
               className="flex items-center gap-2"
             >
