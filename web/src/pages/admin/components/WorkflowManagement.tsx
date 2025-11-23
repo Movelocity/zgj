@@ -140,7 +140,7 @@ const WorkflowManagement: React.FC = () => {
         <div className="flex flex-col sm:flex-row gap-2">
           <Button
             onClick={handleBackupOpen}
-            variant="text"
+            variant="ghost"
             className="inline-flex items-center px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
           >
             <FiDownload className="mr-2" />
@@ -232,14 +232,14 @@ const WorkflowManagement: React.FC = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <div className="flex">
                         <Button
-                          variant="text"
+                          variant="ghost"
                           onClick={() => handleEdit(workflow)}
                           title="编辑"
                         >
                           编辑
                         </Button>
                         <Button
-                          variant="text"
+                          variant="ghost"
                           onClick={() => handleDebug(workflow)}
                           className="text-green-600 hover:text-green-700"
                           title="调试工作流"
@@ -248,7 +248,7 @@ const WorkflowManagement: React.FC = () => {
                           调试
                         </Button>
                         <Button
-                          variant="text"
+                          variant="ghost"
                           onClick={() => handleToggleEnabled(workflow)}
                           title={workflow.enabled ? '禁用' : '启用'}
                         >
@@ -259,7 +259,7 @@ const WorkflowManagement: React.FC = () => {
                           )}
                         </Button>
                         <Button
-                          variant="text"
+                          variant="ghost"
                           onClick={() => handleDelete(workflow)}
                           className="text-red-600 hover:text-red-900"
                           title="删除"

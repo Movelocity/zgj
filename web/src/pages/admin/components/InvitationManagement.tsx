@@ -635,7 +635,7 @@ const InvitationManagement: React.FC = () => {
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <div className="flex justify-end gap-2">
                           <Button
-                            variant="text"
+                            variant="link"
                             size="sm"
                             onClick={() => handleOpenEdit(invitation)}
                             disabled={loading}
@@ -643,7 +643,7 @@ const InvitationManagement: React.FC = () => {
                             编辑
                           </Button>
                           <Button
-                            variant="text"
+                            variant="link"
                             size="sm"
                             onClick={() => handleToggleStatus(invitation.code, invitation.is_active)}
                             disabled={loading}

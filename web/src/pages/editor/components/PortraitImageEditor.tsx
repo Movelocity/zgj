@@ -241,7 +241,7 @@ export default function PortraitImageEditor({
         confirmDisabled={!croppedAreaPixels || isUploading}
         onCancel={handleCancelCrop}
         cancelText="取消"
-        confirmVariant="primary"
+        confirmVariant="default"
       >
         <div className="relative p-4 w-full h-96 overflow-hidden border border-gray-200 rounded-lg">
           {imageSrc && (

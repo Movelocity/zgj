@@ -341,8 +341,8 @@ const SimpleResume: React.FC = () => {
                   onClick={handleStartOptimization}
                   disabled={!selectedFile || isOptimizing}
                   className="w-full h-12"
-                  icon={<FiStar className="w-4 h-4 mr-2" />}
                 >
+                  <FiStar className="w-4 h-4 mr-2" />
                   {isOptimizing ? '处理中...' : '开始编辑简历'}
                 </Button>
               </>

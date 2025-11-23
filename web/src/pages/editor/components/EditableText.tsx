@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
 import { useHover } from '@/utils/hover';
-import Button from "@/components/ui/Button";
 import cn from 'classnames';
 import type { EditorState } from './useEditing';
 
@@ -153,46 +152,40 @@ export const EditableText = ({
           )}
         >
           {/* Toggle button */}
-          <Button
-            variant="none"
+          <button
             onClick={(e) => {
               e.stopPropagation();
               setShowingOriginal(!showingOriginal);
             }}
-            size="xs2"
             className="bg-gray-100 hover:bg-gray-200 rounded text-gray-700"
             title={showingOriginal ? "查看AI优化版本" : "查看原始版本"}
           >
             {showingOriginal ? "查看新版" : "查看原版"}
-          </Button>
+          </button>
           
           {/* Accept button */}
-          <Button
-            variant="none"
+          <button
             onClick={(e) => {
               e.stopPropagation();
               handleAcceptUpdate();
             }}
-            size="xs2"
             className="bg-green-100 hover:bg-green-200 rounded text-green-700"
             title="接收AI优化版本"
           >
             接收
-          </Button>
+          </button>
           
           {/* Reject button */}
-          <Button
-            variant="none"
+          <button
             onClick={(e) => {
               e.stopPropagation();
               handleRejectUpdate();
             }}
-            size="xs2"
             className="bg-red-100 hover:bg-red-200 rounded text-red-700 transition-colors"
             title="保留原版本"
           >
             拒绝
-          </Button>
+          </button>
         </div>
       </div>
     );

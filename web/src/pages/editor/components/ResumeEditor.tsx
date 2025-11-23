@@ -1,5 +1,5 @@
 import { ChevronUp, ChevronDown, Trash2, Mail, Phone, MapPin, Plus, MoreVertical } from 'lucide-react';
-import Button from "@/components/ui/Button";
+import { Button } from "@/components/ui/Button";
 import type { ResumeBlock, ResumeBlockListItem, ResumeV2Data } from '@/types/resumeV2';
 import { isListBlock, isTextBlock, isObjectBlock, createEmptyListItem } from '@/types/resumeV2';
 import { showSuccess } from '@/utils/toast';
@@ -224,37 +224,31 @@ export default function ResumeEditorV2({
                       triggerClassName="inline-block"
                       panelClassName="absolute left-full top-0 ml-2 flex gap-1 bg-white shadow-lg border border-gray-200 rounded p-1 z-10"
                     >
-                      <Button
-                        size="zero"
-                        variant="outline"
+                      <button
                         disabled={itemIndex === 0}
                         onClick={() => moveListItem(blockIndex, item.id, 'up')}
                         className="w-6 h-6 p-0 bg-white hover:bg-gray-50 border-0"
                         title="上移"
                       >
                         <ChevronUp size={14} />
-                      </Button>
+                      </button>
 
-                      <Button
-                        size="zero"
-                        variant="outline"
+                      <button
                         onClick={() => moveListItem(blockIndex, item.id, 'down')}
                         disabled={itemIndex === block.data.length - 1}
                         className="w-6 h-6 p-0 bg-white hover:bg-gray-50 border-0"
                         title="下移"
                       >
                         <ChevronDown size={14} />
-                      </Button>
+                      </button>
 
-                      <Button
-                        size="zero"
-                        variant="outline"
+                      <button
                         onClick={() => removeListItem(blockIndex, item.id)}
                         className="w-6 h-6 p-0 bg-white hover:bg-red-50 hover:text-red-600 border-0"
                         title="删除"
                       >
                         <Trash2 size={14} />
-                      </Button>
+                      </button>
                     </HoverOperationPanel>
                   </h4>
                   {/* <div className={`text-blue-600 ${fontSizeClasses.content}`}>
@@ -454,46 +448,38 @@ export default function ResumeEditorV2({
                       triggerClassName="inline-block"
                       panelClassName="absolute left-full top-0 ml-2 flex gap-1 bg-white shadow-lg border border-gray-200 rounded p-1 z-10"
                     >
-                      <Button
-                        size="zero"
-                        variant="outline"
+                      <button
                         onClick={() => moveBlock(originalIndex, 'up')}
                         disabled={originalIndex === 0}
                         className="w-6 h-6 p-0 bg-white hover:bg-gray-50 border-0"
                         title="上移板块"
                       >
                         <ChevronUp size={14} />
-                      </Button>
-                      <Button
-                        size="zero"
-                        variant="outline"
+                      </button>
+                      <button
                         onClick={() => moveBlock(originalIndex, 'down')}
                         disabled={originalIndex === resumeData.blocks.length - 1}
                         className="w-6 h-6 p-0 bg-white hover:bg-gray-50 border-0"
                         title="下移板块"
                       >
                         <ChevronDown size={14} />
-                      </Button>
+                      </button>
                       {isListBlock(block) && (
-                        <Button
-                          size="zero"
-                          variant="outline"
+                        <button
                           onClick={() => addListItem(originalIndex)}
                           className="w-6 h-6 p-0 bg-white hover:bg-green-50 hover:text-green-600 border-0"
                           title="添加项目/经历"
                         >
                           <Plus size={14} />
-                        </Button>
+                        </button>
                       )}
-                      <Button
-                        size="zero"
-                        variant="outline"
+                      <button
                         onClick={() => removeBlock(originalIndex)}
                         className="w-6 h-6 p-0 bg-white hover:bg-red-50 hover:text-red-600 border-0"
                         title="删除板块"
                       >
                         <Trash2 size={14} />
-                      </Button>
+                      </button>
                     </HoverOperationPanel>
                   </h3>
                 </div>
@@ -533,7 +519,7 @@ export default function ResumeEditorV2({
                           </Button>
                           <Button
                             size="sm"
-                            variant="primary"
+                            variant="default"
                             onClick={() => addNewBlock(newBlockIdx)}
                           >
                             确认

@@ -146,17 +146,17 @@ const ResumeSelector: React.FC<{
             <Button 
               variant="outline"
               title="支持拖拽上传, 支持PDF、Word等格式, 10MB以内"
-              icon={<FiUpload className="w-4 h-4 mr-2" />}
               onClick={() => document.getElementById('resume-upload-jd')?.click()}
             >
+              <FiUpload className="w-4 h-4 mr-2" />
               点击上传简历
             </Button>
 
             <Button
               onClick={() => setShowHistoryModal(true)}
               variant="ghost"
-              icon={<FiFolder className="w-4 h-4 mr-2" />}
             >
+              <FiFolder className="w-4 h-4 mr-2" />
               历史上传
             </Button>
           </div>
@@ -289,8 +289,8 @@ const JobResume: React.FC = () => {
                 onClick={handleStartOptimization}
                 disabled={!selectedFile || !jobDescription.trim() || isProcessing}
                 className="w-full h-12"
-                icon={<FiStar className="w-4 h-4 mr-2" />}
               >
+                <FiStar className="w-4 h-4 mr-2" />
                 {isProcessing ? '处理中...' : '开始优化简历'}
               </Button>
             </div>

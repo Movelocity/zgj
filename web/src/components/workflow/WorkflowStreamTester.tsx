@@ -193,7 +193,7 @@ export const WorkflowStreamTester: React.FC<WorkflowStreamTesterProps> = ({
           <Button
             onClick={executeWorkflow}
             disabled={isExecuting || !!jsonError || !workflowId}
-            variant={isExecuting ? 'secondary' : 'primary'}
+            variant={isExecuting ? 'secondary' : 'default'}
             className="flex-1"
           >
             {isExecuting ? '执行中...' : '开始执行'}

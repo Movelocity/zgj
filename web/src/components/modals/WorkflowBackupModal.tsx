@@ -204,7 +204,7 @@ const WorkflowBackupModal: React.FC<WorkflowBackupModalProps> = ({
         showHeader={true}
         showFooter={true}
         footer={
-          <Button variant="text" onClick={onClose}>
+          <Button variant="link" onClick={onClose}>
             关闭
           </Button>
         }
@@ -216,7 +216,7 @@ const WorkflowBackupModal: React.FC<WorkflowBackupModalProps> = ({
             <div className="flex items-center space-x-4">
               <Button
                 onClick={handleSelectAll}
-                variant="text"
+                variant="link"  
                 className="text-sm"
               >
                 {selectedWorkflows.size === workflows.length ? '取消全选' : '全选'}

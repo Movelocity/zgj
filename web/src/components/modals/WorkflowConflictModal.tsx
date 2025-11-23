@@ -100,14 +100,14 @@ const WorkflowConflictModal: React.FC<WorkflowConflictModalProps> = ({
           <div className="flex items-center space-x-4">
             <span className="text-sm font-medium text-gray-700">批量操作:</span>
             <Button
-              variant="text"
+              variant="link"
               onClick={() => handleBatchAction('skip')}
               className="text-sm"
             >
               全部跳过
             </Button>
             <Button
-              variant="text"
+              variant="link"
               onClick={() => handleBatchAction('overwrite')}
               className="text-sm"
             >

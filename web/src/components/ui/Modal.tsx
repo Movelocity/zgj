@@ -34,7 +34,7 @@ export interface ModalProps {
   /** 确认按钮是否禁用 */
   confirmDisabled?: boolean;
   /** 确认按钮变体 */
-  confirmVariant?: 'default' | 'secondary' | 'outline' | 'ghost' | 'destructive' | 'link';
+  confirmVariant?: string;
   /** 是否可以通过点击遮罩关闭 */
   maskClosable?: boolean;
   /** 是否可以通过ESC键关闭 */
@@ -178,7 +178,7 @@ const Modal: React.FC<ModalProps> = ({
                 </Button>
                 {onConfirm && (
                   <Button
-                    variant={confirmVariant}
+                    variant={confirmVariant as any}
                     onClick={handleConfirm}
                     // loading={confirmLoading}
                     disabled={confirmDisabled}
