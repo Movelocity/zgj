@@ -117,7 +117,7 @@ export default function LoadingIndicator({
             </div>
             
             {/* 进度条 */}
-            <div className="w-full bg-gray-200 rounded-full h-2 mt-6">
+            <div className="w-full bg-gray-200 rounded-full h-4 mt-6">
               <div 
                 className="bg-blue-600 h-2 rounded-full transition-all duration-500" 
                 style={{ width: `${progress}%` }}

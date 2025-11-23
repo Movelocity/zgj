@@ -157,7 +157,7 @@ export const EditableText = ({
               e.stopPropagation();
               setShowingOriginal(!showingOriginal);
             }}
-            className="bg-gray-100 hover:bg-gray-200 rounded text-gray-700"
+            className="bg-gray-100 hover:bg-gray-200 rounded text-gray-700 text-sm px-1 cursor-pointer"
             title={showingOriginal ? "查看AI优化版本" : "查看原始版本"}
           >
             {showingOriginal ? "查看新版" : "查看原版"}
@@ -169,7 +169,7 @@ export const EditableText = ({
               e.stopPropagation();
               handleAcceptUpdate();
             }}
-            className="bg-green-100 hover:bg-green-200 rounded text-green-700"
+            className="bg-green-100 hover:bg-green-200 rounded text-green-700 text-sm px-1 cursor-pointer"
             title="接收AI优化版本"
           >
             接收
@@ -181,7 +181,7 @@ export const EditableText = ({
               e.stopPropagation();
               handleRejectUpdate();
             }}
-            className="bg-red-100 hover:bg-red-200 rounded text-red-700 transition-colors"
+            className="bg-red-100 hover:bg-red-200 rounded text-red-700 text-sm px-1 transition-colors cursor-pointer"
             title="保留原版本"
           >
             拒绝

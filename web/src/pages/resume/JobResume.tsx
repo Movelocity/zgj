@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FiUpload, FiFileText, FiStar, FiX, FiFolder, FiBriefcase } from 'react-icons/fi';
+import { FiUpload, FiFileText, FiX, FiFolder } from 'react-icons/fi';
 import { Button, Modal } from "@/components/ui";
 import type { ResumeUploadData, ResumeInfo } from '@/types/resume';
 import { resumeAPI } from '@/api/resume';
@@ -224,23 +224,34 @@ const JobResume: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-4">
-      <div className="max-w-7xl mx-auto pt-20">
-        <div className="text-center mb-8">
-          <div className="flex items-center justify-center mb-4">
-            <h1 className="text-3xl">职位简历优化</h1>
+    <div className="min-h-screen">
+      {/* 背景图片 */}
+      <div 
+        className="fixed inset-0 -z-10 bg-cover bg-left md:bg-center h-screen"
+        style={{ 
+          backgroundImage: 'url(/images/background.jpg)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'left center',
+        }}
+      />
+      <div className="mx-auto py-8 px-4 mt-12 bg-white/80 rounded-lg w-[calc(100%-2rem)] lg:w-[calc(100%-8rem)]" >
+        <div className="text-center">
+          <div className="flex items-center justify-center mb-2">
+            <h1 className="text-3xl font-semibold bg-gradient-to-r from-blue-700 to-blue-500 bg-clip-text text-transparent">
+              职位简历优化
+            </h1>
           </div>
-          <p className="text-gray-600">
+          <p className="text-gray-500">
             输入职位描述，让AI帮您定制匹配的简历
           </p>
         </div>
 
-        <div className="bg-white rounded-xl shadow-lg border border-gray-200">
-          <div className="grid grid-cols-2 gap-6 p-6">
+        <div className="p-4 lg:px-6 mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 p-6">
             {/* Left: Job Description */}
             <div className="flex flex-col h-96">
               <div className="flex items-center mb-3">
-                <FiBriefcase className="w-5 h-5 mr-2" />
+                {/* <FiBriefcase className="w-5 h-5 mr-2" /> */}
                 <h2 className="text-lg font-medium">职位描述</h2>
               </div>
               <textarea
@@ -255,7 +266,7 @@ const JobResume: React.FC = () => {
             {/* Right: Resume Upload */}
             <div className="flex flex-col">
               <div className="flex items-center mb-3">
-                <FiFileText className="w-5 h-5 mr-2" />
+                {/* <FiFileText className="w-5 h-5 mr-2" /> */}
                 <h2 className="text-lg font-medium">上传简历</h2>
               </div>
               <div className="flex-1">
@@ -286,11 +297,11 @@ const JobResume: React.FC = () => {
           {!isProcessing && (
             <div className="p-6 pt-0">
               <Button
+                variant="primary"
                 onClick={handleStartOptimization}
                 disabled={!selectedFile || !jobDescription.trim() || isProcessing}
                 className="w-full h-12"
               >
-                <FiStar className="w-4 h-4 mr-2" />
                 {isProcessing ? '处理中...' : '开始优化简历'}
               </Button>
             </div>

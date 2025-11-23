@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { FiUpload, FiFileText, FiStar, FiX, FiFolder } from 'react-icons/fi';
-import { Sparkles } from 'lucide-react';
+import { FiUpload, FiFileText, FiX, FiFolder } from 'react-icons/fi';
+import { FaBook } from 'react-icons/fa';
 import { Button, Modal } from "@/components/ui"
 import type { ResumeUploadData, ResumeInfo } from '@/types/resume';
 import { resumeAPI } from '@/api/resume';
@@ -188,7 +188,7 @@ const ResumeSelector: React.FC<{
         className={`border-2 border-dashed rounded-lg p-8 text-center relative py-24 transition-colors ${
           isDragging 
             ? 'border-blue-500 bg-blue-50' 
-            : 'border-gray-300'
+            : 'border-gray-500'
         }`}
         onDragOver={handleDragOver}
         onDragEnter={handleDragEnter}
@@ -218,17 +218,20 @@ const ResumeSelector: React.FC<{
         
         {selectedFile ? (
           // 已选择文件或简历显示
-          <div className="flex items-center justify-center space-x-3">
-            <FiFileText className="w-8 h-8 text-blue-600" />
-            <span className="text-lg">
-              {selectedFile instanceof File ? selectedFile.name : (selectedFile as ResumeInfo).name}
-            </span>
-            <button
-              onClick={() => onSelect(null)}
-              className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
-            >
-              <FiX className="w-4 h-4" />
-            </button>
+          <div className="flex flex-col items-center gap-2 w-fit mx-auto">
+            <FaBook className="w-20 h-20 text-blue-600" />
+            <div className="flex items-center justify-between">
+              <span className="text-lg text-gray-600">
+                {selectedFile instanceof File ? selectedFile.name : (selectedFile as ResumeInfo).name}
+              </span>
+              <button
+                onClick={() => onSelect(null)}
+                className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
+              >
+                <FiX className="w-4 h-4" />
+              </button>
+            </div>
+            
           </div>
         ) : (
           // 上传提示
@@ -250,8 +253,6 @@ const ResumeSelector: React.FC<{
           </label>
         )}
       </div>
-
-      
 
       {/* 历史简历选择弹窗 */}
       {showHistoryModal && (
@@ -308,28 +309,36 @@ const SimpleResume: React.FC = () => {
     }
   };
 
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-4">
-      <div className="max-w-2xl mx-auto pt-20">
-        <div className="text-center mb-8">
-          <div className="flex items-center justify-center mb-4">
-            <Sparkles className="w-8 h-8 text-blue-600 mr-2" />
-            <h1 className="text-3xl">AI简历优化</h1>
+    <div className="">
+      {/* 背景图片 */}
+      <div 
+        className="fixed inset-0 -z-10 bg-cover bg-left md:bg-center h-screen"
+        style={{ 
+          backgroundImage: 'url(/images/background.jpg)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'left center',
+        }}
+      />
+      <div className="mx-auto py-8 px-4 mt-12 bg-white/80 rounded-lg w-[calc(100%-2rem)] lg:w-[calc(100%-8rem)]" >
+        <div className="text-center">
+          <div className="flex items-center justify-center mb-2">
+            <h1 className="text-3xl font-semibold bg-gradient-to-r from-blue-700 to-blue-500 bg-clip-text text-transparent">
+              AI简历优化
+            </h1>
           </div>
-          <p className="text-gray-600">
+          <p className="text-gray-500">
             上传您的简历，让AI为您智能优化内容和格式
           </p>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-200">
-          <div className="p-6 pb-0">
-            <div className="flex items-center">
-              <FiFileText className="w-5 h-5 mr-2" />
-              <h2 className="text-lg font-medium">上传简历</h2>
-            </div>
+        <div className="p-4 lg:p-6 max-w-3xl mx-auto">
+
+          <div className="flex items-center mb-2">
+            <h2 className="text-lg font-medium">上传简历</h2>
           </div>
-          <div className="p-6 pt-4 space-y-6">
+
+          <div className="space-y-6">
             {!isOptimizing && (
               <>
                 <ResumeSelector
@@ -338,11 +347,11 @@ const SimpleResume: React.FC = () => {
                 />
                 {/* 开始优化按钮 */}
                 <Button
+                  variant="primary"
                   onClick={handleStartOptimization}
                   disabled={!selectedFile || isOptimizing}
                   className="w-full h-12"
                 >
-                  <FiStar className="w-4 h-4 mr-2" />
                   {isOptimizing ? '处理中...' : '开始编辑简历'}
                 </Button>
               </>

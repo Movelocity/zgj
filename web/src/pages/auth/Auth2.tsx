@@ -322,7 +322,16 @@ const Auth2: React.FC = () => {
         }
       `}</style>
       
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-emerald-50 flex items-center justify-center p-4">
+      <div className="min-h-screen flex items-center justify-center">
+        {/* 背景图片 */}
+        <div 
+          className="fixed inset-0 -z-10 bg-cover bg-left md:bg-center h-screen"
+          style={{ 
+            backgroundImage: 'url(/images/background.jpg)',
+            backgroundSize: 'cover',
+            backgroundPosition: 'left center',
+          }}
+        />
         <div className="w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-8">
@@ -333,23 +342,19 @@ const Auth2: React.FC = () => {
           
           <div className="flex items-center justify-center space-x-2 mb-4">
             <img src="/favicon.ico" alt="职管加" className="h-8 w-8" />
-            <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent">
+            <span className="text-2xl font-bold bg-gradient-to-r from-blue-700 to-indigo-500 bg-clip-text text-transparent">
               职管加 - 简历润色工具
             </span>
           </div>
         </div>
 
         {/* Auth Forms */}
-        <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-xl">
+        <Card className="bg-white backdrop-blur-sm border-0 shadow-xl">
           
           <CardContent>
             <Tabs value={activeTab}>
               {/* 登录 Tab */}
               <TabsContent value="signin" className="space-y-4 mt-0">
-                {/* <div className="text-center mb-4"> */}
-                  {/* <h2 className="text-2xl font-bold text-slate-900">欢迎回来</h2> */}
-                  {/* <p className="text-slate-600 mt-1">登录您的账号继续使用</p> */}
-                {/* </div> */}
 
                 {/* 登录方式切换 - 下边框高亮tab */}
                 <div className="flex border-b border-slate-200 mb-6">
@@ -469,7 +474,7 @@ const Auth2: React.FC = () => {
                     <Button
                       type="submit"
                       disabled={loading || !formData.phone || !formData.verificationCode || !agreed}
-                      className="w-full bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 py-6"
+                      className="w-full bg-blue-700 hover:bg-blue-600 text-white py-6"
                       size="lg"
                     >
                       {loading ? (
@@ -529,11 +534,7 @@ const Auth2: React.FC = () => {
                       </div>
                     </div>
                     
-                    <div className="flex items-center justify-end">
-                      <Button variant="link" className="text-sm text-slate-600 p-0 h-auto">
-                        忘记密码？
-                      </Button>
-                    </div>
+                    
                     
                     {/* 用户协议 */}
                     <div className="flex items-center space-x-2">
@@ -555,7 +556,7 @@ const Auth2: React.FC = () => {
                     <Button
                       type="submit"
                       disabled={loading || !formData.phone || !formData.password || !agreed}
-                      className="w-full bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 py-6"
+                      className="w-full bg-blue-700 hover:bg-blue-600 text-white py-6"
                       size="lg"
                     >
                       {loading ? (
@@ -569,7 +570,7 @@ const Auth2: React.FC = () => {
                     </Button>
                     
                     {/* 切换到注册 */}
-                    <div className="text-center">
+                    <div className="text-center flex items-center justify-between">
                       <button
                         type="button"
                         onClick={() => setActiveTab('signup')}
@@ -577,6 +578,12 @@ const Auth2: React.FC = () => {
                       >
                         还没有账号？立即注册
                       </button>
+
+                      <div className="">
+                        <Button variant="link" className="text-sm text-slate-600 p-0 h-auto">
+                          忘记密码？
+                        </Button>
+                      </div>
                     </div>
                   </form>
                 )}
@@ -603,7 +610,6 @@ const Auth2: React.FC = () => {
                 
                 <form onSubmit={handleSignUp} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="fullName">姓名（选填）</Label>
                     <div className="relative input-icon-wrapper">
                       <User className="w-4 h-4 input-icon" />
                       <Input
@@ -620,7 +626,6 @@ const Auth2: React.FC = () => {
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="phone">手机号</Label>
                     <div className="relative input-icon-wrapper">
                       <Phone className="w-4 h-4 input-icon" />
                       <Input
@@ -638,7 +643,6 @@ const Auth2: React.FC = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="verificationCode">验证码</Label>
                     <div className="flex gap-2">
                       <Input
                         id="verificationCode"
@@ -683,7 +687,7 @@ const Auth2: React.FC = () => {
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="password">密码（选填，默认123456）</Label>
+                    <Label htmlFor="password">密码（选填，可后续修改）</Label>
                     <div className="relative input-icon-wrapper">
                       <Lock className="w-4 h-4 input-icon" />
                       <Input
@@ -711,7 +715,6 @@ const Auth2: React.FC = () => {
                   {/* 确认密码（仅在密码框有内容时显示） */}
                   {formData.password && (
                     <div className="space-y-2">
-                      <Label htmlFor="confirmPassword">确认密码</Label>
                       <div className="relative input-icon-wrapper">
                         <Lock className="w-4 h-4 input-icon" />
                         <Input
@@ -762,7 +765,7 @@ const Auth2: React.FC = () => {
                   <Button
                     type="submit"
                     disabled={loading || !formData.phone || !formData.verificationCode || !agreed}
-                    className="w-full bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 py-6"
+                    className="w-full bg-blue-700 hover:bg-blue-600 text-white py-6"
                     size="lg"
                   >
                     {loading ? (

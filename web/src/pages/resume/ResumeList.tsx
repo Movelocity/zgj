@@ -4,10 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import { Button, Modal } from '@/components/ui';
 import { resumeAPI } from '@/api/resume';
 import { fileAPI } from '@/api/file';
-import type { ResumeInfo, ResumeUploadData, CreateTextResumeData } from '@/types/resume';
+import type { ResumeInfo, CreateTextResumeData } from '@/types/resume';
 import { showSuccess, showError, showWarning } from '@/utils/toast';
-// import { useAuthStore } from '@/store';
-// import { ADMIN_ROLE } from '@/utils/constants';
 
 // 分组后的简历数据结构
 interface GroupedResume {
@@ -105,45 +103,45 @@ const ResumeList: React.FC = () => {
   };
 
   // 上传简历
-  const handleUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
-    if (!files || files.length === 0) return;
+  // const handleUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  //   const files = event.target.files;
+  //   if (!files || files.length === 0) return;
 
-    const file = files[0];
+  //   const file = files[0];
     
-    // 检查文件类型
-    const allowedTypes = ['.pdf', '.doc', '.docx'];
-    const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase();
-    if (!allowedTypes.includes(fileExtension)) {
-      showWarning('请上传 PDF、DOC 或 DOCX 格式的简历文件');
-      return;
-    }
+  //   // 检查文件类型
+  //   const allowedTypes = ['.pdf', '.doc', '.docx'];
+  //   const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase();
+  //   if (!allowedTypes.includes(fileExtension)) {
+  //     showWarning('请上传 PDF、DOC 或 DOCX 格式的简历文件');
+  //     return;
+  //   }
 
-    // 检查文件大小 (10MB)
-    if (file.size > 10 * 1024 * 1024) {
-      showWarning('文件大小不能超过 10MB');
-      return;
-    }
+  //   // 检查文件大小 (10MB)
+  //   if (file.size > 10 * 1024 * 1024) {
+  //     showWarning('文件大小不能超过 10MB');
+  //     return;
+  //   }
 
-    try {
-      setUploading(true);
-      const uploadData: ResumeUploadData = { file };
-      const response = await resumeAPI.uploadResume(uploadData);
+  //   try {
+  //     setUploading(true);
+  //     const uploadData: ResumeUploadData = { file };
+  //     const response = await resumeAPI.uploadResume(uploadData);
       
-      if (response.code === 0) {
-        showSuccess('简历上传成功');
-        loadResumes(currentPage);
-      }
-    } catch (error) {
-      showError(error instanceof Error ? error.message : '简历上传失败');
-    } finally {
-      setUploading(false);
-      // 清空文件输入
-      if (event.target) {
-        event.target.value = '';
-      }
-    }
-  };
+  //     if (response.code === 0) {
+  //       showSuccess('简历上传成功');
+  //       loadResumes(currentPage);
+  //     }
+  //   } catch (error) {
+  //     showError(error instanceof Error ? error.message : '简历上传失败');
+  //   } finally {
+  //     setUploading(false);
+  //     // 清空文件输入
+  //     if (event.target) {
+  //       event.target.value = '';
+  //     }
+  //   }
+  // };
 
   // 删除简历
   const handleDelete = async (resumeId: string, resumeName: string) => {
@@ -216,10 +214,19 @@ const ResumeList: React.FC = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50 pt-20">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen">
+      {/* 背景图片 */}
+      <div 
+        className="fixed inset-0 -z-10 bg-cover bg-left md:bg-center h-screen"
+        style={{ 
+          backgroundImage: 'url(/images/background.jpg)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'left center',
+        }}
+      />
+      <div className="max-w-6xl mx-auto p-4 lg:p-8">
         {/* 页面标题和操作按钮 */}
-        <div className="flex justify-between items-center mb-8">
+        {/* <div className="flex justify-between items-center mb-8">
           <div className="flex items-center space-x-3">
             <input
               type="file"
@@ -229,19 +236,22 @@ const ResumeList: React.FC = () => {
               onChange={handleUpload}
               disabled={uploading}
             />
-            {resumes.length > 0 && <Button
-              onClick={() => document.getElementById('resume-upload')?.click()}
-              disabled={uploading}
-              className="flex items-center space-x-2"
-            >
-              <FiUpload className="w-4 h-4" />
-              <span>{uploading ? '上传中...' : '上传简历'}</span>
-            </Button>}
+            {resumes.length > 0 && (
+              <Button
+                onClick={() => document.getElementById('resume-upload')?.click()}
+                disabled={uploading}
+                className="flex items-center space-x-2"
+                variant="primary"
+              >
+                <FiUpload className="w-4 h-4" />
+                <span>{uploading ? '上传中...' : '上传简历'}</span>
+              </Button>
+          )}
           </div>
-        </div>
+        </div> */}
 
         {/* 简历列表 */}
-        <div className="bg-white rounded-lg shadow-md overflow-hidden">
+        <div className="rounded-lg shadow-md overflow-hidden">
           {loading ? (
             <div className="p-8 text-center">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
@@ -274,7 +284,7 @@ const ResumeList: React.FC = () => {
           ) : (
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+                <thead className="bg-gray-50/80">
                   <tr>
                     <th className="w-8 px-2 py-3"></th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">

@@ -502,6 +502,7 @@ export default function ResumeDetails() {
             <Button
               onClick={handleSaveResume}
               disabled={isSaving}
+              variant="primary"
             >
               <FiSave className="w-4 h-4 mr-2" />
               保存

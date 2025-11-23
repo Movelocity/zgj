@@ -105,7 +105,7 @@ export default function FontSettingsDropdown({
                     key={key}
                     size="sm"
                     onClick={() => handleTitleSizeChange(key)}
-                    variant={fontSettings.titleSize === key? "default": "outline"}
+                    variant={fontSettings.titleSize === key? "primary": "outline"}
                   >
                     {TITLE_SIZE_PRESETS[key].label}
                   </Button>
@@ -124,7 +124,7 @@ export default function FontSettingsDropdown({
                     key={key}
                     size="sm"
                     onClick={() => handleLabelSizeChange(key)}
-                    variant={fontSettings.labelSize === key? "default": "outline"}
+                    variant={fontSettings.labelSize === key? "primary": "outline"}
                   >
                     {LABEL_SIZE_PRESETS[key].label}
                   </Button>
@@ -143,7 +143,7 @@ export default function FontSettingsDropdown({
                     key={key}
                     size="sm"
                     onClick={() => handleContentSizeChange(key)}
-                    variant={fontSettings.contentSize === key? "default": "outline"}
+                    variant={fontSettings.contentSize === key? "primary": "outline"}
                   >
                     {CONTENT_SIZE_PRESETS[key].label}
                   </Button>

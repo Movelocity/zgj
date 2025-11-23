@@ -222,12 +222,12 @@ export default function ResumeEditorV2({
                         </span>
                       }
                       triggerClassName="inline-block"
-                      panelClassName="absolute left-full top-0 ml-2 flex gap-1 bg-white shadow-lg border border-gray-200 rounded p-1 z-10"
+                      panelClassName="absolute left-full top-0 ml-2 flex gap-1 bg-white shadow-lg border border-gray-200 rounded px-1 z-10"
                     >
                       <button
                         disabled={itemIndex === 0}
                         onClick={() => moveListItem(blockIndex, item.id, 'up')}
-                        className="w-6 h-6 p-0 bg-white hover:bg-gray-50 border-0"
+                        className="w-6 h-6 px-1 bg-white hover:bg-gray-50 border-0 cursor-pointer"
                         title="上移"
                       >
                         <ChevronUp size={14} />
@@ -236,7 +236,7 @@ export default function ResumeEditorV2({
                       <button
                         onClick={() => moveListItem(blockIndex, item.id, 'down')}
                         disabled={itemIndex === block.data.length - 1}
-                        className="w-6 h-6 p-0 bg-white hover:bg-gray-50 border-0"
+                        className="w-6 h-6 px-1 bg-white hover:bg-gray-50 border-0 cursor-pointer"
                         title="下移"
                       >
                         <ChevronDown size={14} />
@@ -244,7 +244,7 @@ export default function ResumeEditorV2({
 
                       <button
                         onClick={() => removeListItem(blockIndex, item.id)}
-                        className="w-6 h-6 p-0 bg-white hover:bg-red-50 hover:text-red-600 border-0"
+                        className="w-6 h-6 px-1 bg-white hover:bg-red-50 hover:text-red-600 border-0 cursor-pointer"
                         title="删除"
                       >
                         <Trash2 size={14} />
@@ -446,12 +446,12 @@ export default function ResumeEditorV2({
                         </span>
                       }
                       triggerClassName="inline-block"
-                      panelClassName="absolute left-full top-0 ml-2 flex gap-1 bg-white shadow-lg border border-gray-200 rounded p-1 z-10"
+                      panelClassName="absolute left-full top-0 ml-2 flex gap-1 bg-white shadow-lg border border-gray-200 rounded px-1 z-10"
                     >
                       <button
                         onClick={() => moveBlock(originalIndex, 'up')}
                         disabled={originalIndex === 0}
-                        className="w-6 h-6 p-0 bg-white hover:bg-gray-50 border-0"
+                        className="w-6 h-6 px-1 bg-white hover:bg-gray-50 border-0 cursor-pointer"
                         title="上移板块"
                       >
                         <ChevronUp size={14} />
@@ -459,7 +459,7 @@ export default function ResumeEditorV2({
                       <button
                         onClick={() => moveBlock(originalIndex, 'down')}
                         disabled={originalIndex === resumeData.blocks.length - 1}
-                        className="w-6 h-6 p-0 bg-white hover:bg-gray-50 border-0"
+                        className="w-6 h-6 px-1 bg-white hover:bg-gray-50 border-0 cursor-pointer"
                         title="下移板块"
                       >
                         <ChevronDown size={14} />
@@ -467,7 +467,7 @@ export default function ResumeEditorV2({
                       {isListBlock(block) && (
                         <button
                           onClick={() => addListItem(originalIndex)}
-                          className="w-6 h-6 p-0 bg-white hover:bg-green-50 hover:text-green-600 border-0"
+                          className="w-6 h-6 px-1 bg-white hover:bg-green-50 hover:text-green-600 border-0 cursor-pointer"
                           title="添加项目/经历"
                         >
                           <Plus size={14} />
@@ -475,7 +475,7 @@ export default function ResumeEditorV2({
                       )}
                       <button
                         onClick={() => removeBlock(originalIndex)}
-                        className="w-6 h-6 p-0 bg-white hover:bg-red-50 hover:text-red-600 border-0"
+                        className="w-6 h-6 px-1 bg-white hover:bg-red-50 hover:text-red-600 border-0 cursor-pointer"
                         title="删除板块"
                       >
                         <Trash2 size={14} />

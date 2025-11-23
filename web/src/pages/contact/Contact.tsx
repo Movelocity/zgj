@@ -1,45 +1,20 @@
-import React from 'react';
-// import { Link } from 'react-router-dom';
+import React, { useEffect } from 'react';
 import { useSiteVariable } from '@/hooks/useSiteVariable';
-// import { FaEnvelope, FaPhone, FaMapMarkerAlt } from 'react-icons/fa';
 import Loading from '@/components/ui/Loading';
-// import { ROUTES } from '@/utils/constants';
 import Footer from '@/components/layout/Footer';
 
 const Contact: React.FC = () => {
   const { value: contactImg, loading: imgLoading } = useSiteVariable('contact_img');
-  // const { value: contactEmail, loading: emailLoading } = useSiteVariable('contact_email');
-  // const { value: contactPhone, loading: phoneLoading } = useSiteVariable('contact_phone');
-  // const { value: contactAddress, loading: addressLoading } = useSiteVariable('contact_address');
+  const isLoading = imgLoading
 
-  const isLoading = imgLoading // || emailLoading || phoneLoading || addressLoading;
+  useEffect(() => {
+    // 打开页面滑动到顶部
+    window.scrollTo(0, 0);
+  }, []);
 
-  // const contactMethods = [
-  //   {
-  //     icon: <FaEnvelope className="w-5 h-5" />,
-  //     label: '邮箱',
-  //     value: contactEmail || 'support@example.com',
-  //     href: `mailto:${contactEmail || 'support@example.com'}`,
-  //     show: true,
-  //   },
-  //   {
-  //     icon: <FaPhone className="w-5 h-5" />,
-  //     label: '电话',
-  //     value: contactPhone || '',
-  //     href: `tel:${contactPhone || ''}`,
-  //     show: !!contactPhone,
-  //   },
-  //   {
-  //     icon: <FaMapMarkerAlt className="w-5 h-5" />,
-  //     label: '地址',
-  //     value: contactAddress || '',
-  //     href: null,
-  //     show: !!contactAddress,
-  //   },
-  // ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex flex-col pt-16">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex flex-col">
       <div className="flex-1">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           {/* Header */}

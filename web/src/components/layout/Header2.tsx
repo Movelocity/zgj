@@ -72,7 +72,7 @@ const Header: React.FC = () => {
                 to={item.path}
                 className={cn(
                   'text-slate-600 hover:text-slate-900 transition-colors', 
-                  isActive? 'text-blue-600' : 'text-gray-700'
+                  isActive? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-700'
                 )}
               >
                 {item.label}

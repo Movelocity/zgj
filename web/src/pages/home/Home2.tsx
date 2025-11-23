@@ -6,6 +6,7 @@ import { ChevronRight, CheckCircle, Star, Users, TrendingUp, FileText, Briefcase
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store';
 import { ROUTES } from '@/utils/constants';
+import { Link } from 'react-router-dom';
 // import Header2 from '@/components/layout/Header2';
 
 const Home2: React.FC = () => {
@@ -28,7 +29,7 @@ const Home2: React.FC = () => {
       </nav> */}
 
       {/* 主视觉区 */}
-      <section className="relative py-20 px-4 sm:px-6 lg:px-8">
+      <section className="relative py-10 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div className="text-center lg:text-left">
@@ -49,7 +50,7 @@ const Home2: React.FC = () => {
                 <Button 
                   onClick={handleGetStarted}
                   size="lg" 
-                  className="bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-lg px-8 py-6 rounded-xl"
+                  className="bg-gradient-to-r from-blue-700 to-blue-600 hover:from-blue-600 hover:to-blue-500 text-lg px-8 py-6 rounded-xl"
                 >
                   免费试用
                   <ChevronRight className="w-5 h-5 ml-2" />
@@ -80,7 +81,7 @@ const Home2: React.FC = () => {
             <div className="relative">
               <div className="relative bg-white rounded-2xl shadow-2xl p-8 transform rotate-1">
                 <img 
-                  src="/demo-resume.jpg" 
+                  src="/images/demo-resume.jpg" 
                   alt="Professional Resume with AI Analysis" 
                   className="w-full h-auto rounded-lg"
                 />
@@ -150,8 +151,11 @@ const Home2: React.FC = () => {
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             <Card className="group hover:shadow-lg transition-all duration-300 border-0 bg-white/80 backdrop-blur-sm">
               <CardHeader>
-                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                  <Target className="w-6 h-6 text-white" />
+                <div className="flex items-center justify-between">
+                  <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                    <Target className="w-6 h-6 text-white" />
+                  </div>
+                  <Link to="/simple-resume" className=" text-blue-600">立即体验 →</Link>
                 </div>
                 <CardTitle className="text-xl">AI 简历分析</CardTitle>
                 <CardDescription>利用先进的自然语言处理技术，智能解析简历内容，精准匹配职位描述。</CardDescription>
@@ -160,21 +164,28 @@ const Home2: React.FC = () => {
 
             <Card className="group hover:shadow-lg transition-all duration-300 border-0 bg-white/80 backdrop-blur-sm">
               <CardHeader>
-                <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                  <FileText className="w-6 h-6 text-white" />
+                <div className="flex items-center justify-between">
+                  <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                    <FileText className="w-6 h-6 text-white" />
+                  </div>
+                  <Link to="/job-resume" className=" text-emerald-600">立即体验 →</Link>
                 </div>
-                <CardTitle className="text-xl">可视化标注</CardTitle>
-                <CardDescription>色彩编码的反馈直接显示在简历上，清晰展示需要改进的地方和亮点。</CardDescription>
+                <CardTitle className="text-xl">简历-职位匹配</CardTitle>
+                <CardDescription>根据职位描述，智能分析简历与职位的匹配度，给出优化建议。</CardDescription>
               </CardHeader>
             </Card>
 
             <Card className="group hover:shadow-lg transition-all duration-300 border-0 bg-white/80 backdrop-blur-sm">
               <CardHeader>
-                <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                  <Briefcase className="w-6 h-6 text-white" />
+                <div className="flex items-center justify-between">
+                  <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                    <Briefcase className="w-6 h-6 text-white" />
+                  </div>
+                  <Link to="/contact" className=" text-purple-600">查看二维码 →</Link>
                 </div>
-                <CardTitle className="text-xl">公司研究</CardTitle>
-                <CardDescription>自动获取目标公司的洞察、文化和价值观，帮助定制申请内容。</CardDescription>
+
+                <CardTitle className="text-xl">内推机会</CardTitle>
+                <CardDescription>加入群聊，每周查看内推机会，提升面试获得率</CardDescription>
               </CardHeader>
             </Card>
 
@@ -360,10 +371,9 @@ const Home2: React.FC = () => {
                 最受欢迎
               </Badge>
             </div>
-            <CardHeader className="text-center pb-4">
-              <CardTitle className="text-3xl font-bold">免费计划</CardTitle>
-              <CardDescription className="text-lg mt-2">开始使用所需的一切</CardDescription>
-              <div className="mt-6">
+            <CardHeader className="text-center pb-4 flex items-end justify-around flex-row">
+              <div className="text-3xl font-bold">免费试用</div>
+              <div>
                 <span className="text-5xl font-bold text-slate-900">¥0</span>
                 <span className="text-xl text-slate-600">/月</span>
               </div>
@@ -397,7 +407,7 @@ const Home2: React.FC = () => {
               </ul>
               <Button 
                 onClick={handleGetStarted}
-                className="w-full bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-lg py-6"
+                className="w-full bg-gradient-to-r from-blue-700 to-blue-600 hover:from-blue-600 hover:to-blue-500 text-lg py-6"
                 size="lg"
               >
                 立即免费开始
@@ -411,7 +421,9 @@ const Home2: React.FC = () => {
           <div className="mt-12 text-center">
             <p className="text-slate-600 mb-4">寻找团队或企业解决方案？</p>
             <Button variant="outline" size="lg">
-              联系销售
+              <Link to="/contact">
+                联系销售
+              </Link>
             </Button>
           </div>
         </div>
@@ -485,7 +497,7 @@ const Home2: React.FC = () => {
             准备好改变你的职业生涯了吗？
           </h2>
           <p className="text-xl text-blue-100 mb-8">
-            加入数千名已经通过职管加提升面试率的求职者。
+            成为数千名即将通过职管加提升面试率的求职者之一
           </p>
           <Button 
             onClick={handleGetStarted}
@@ -495,7 +507,7 @@ const Home2: React.FC = () => {
             立即免费试用
             <ChevronRight className="w-5 h-5 ml-2" />
           </Button>
-          <p className="text-blue-100 mt-4">无需信用卡 • 即刻访问 • 100% 安全</p>
+          <p className="text-blue-100 mt-4">无需消费 • 即刻访问 • 100% 安全</p>
         </div>
       </section>
 
@@ -516,26 +528,66 @@ const Home2: React.FC = () => {
             <div>
               <h3 className="font-semibold text-white mb-4">产品</h3>
               <ul className="space-y-2 text-sm">
-                <li><a href="#features" className="hover:text-white transition-colors">功能特色</a></li>
-                <li><a href="#pricing" className="hover:text-white transition-colors">价格方案</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">API</a></li>
+              <li>
+                <Link to="/simple-resume" className="hover:text-white">
+                  简历优化
+                </Link>
+              </li>
+              <li>
+                <Link to="/job-resume" className="hover:text-white">
+                  职位匹配
+                </Link>
+              </li>
+              <li>
+                <Link to="/resumes" className="hover:text-white">
+                  简历管理
+                </Link>
+              </li>
               </ul>
             </div>
             <div>
-              <h3 className="font-semibold text-white mb-4">公司</h3>
+              <h3 className="font-semibold text-white mb-4">团队</h3>
               <ul className="space-y-2 text-sm">
-                <li><a href="#" className="hover:text-white transition-colors">关于我们</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">博客</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">加入我们</a></li>
+                <li>
+                  <Link to="/contact" className="hover:text-white">
+                    关于我们
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/contact" className="hover:text-white">
+                    博客
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/contact" className="hover:text-white">
+                    加入我们
+                  </Link>
+                </li>
               </ul>
             </div>
             <div>
               <h3 className="font-semibold text-white mb-4">支持</h3>
               <ul className="space-y-2 text-sm">
-                <li><a href="#" className="hover:text-white transition-colors">帮助中心</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">联系我们</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">隐私政策</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">服务条款</a></li>
+                <li>
+                  <Link to="/contact" className="hover:text-white">
+                    帮助中心
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/contact" className="hover:text-white">
+                    联系我们
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/contact" className="hover:text-white">
+                    隐私政策
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/contact" className="hover:text-white">
+                    服务条款
+                  </Link>
+                </li>
               </ul>
             </div>
           </div>
