@@ -243,3 +243,22 @@ func BatchUpdateInvitation(c *gin.Context) {
 
 	utils.OkWithMessage("批量更新成功", c)
 }
+
+// GetOrCreateNormalInvitation 获取或创建普通邀请码
+func GetOrCreateNormalInvitation(c *gin.Context) {
+	// 从 JWT 获取用户ID
+	userID := c.GetString("userID")
+	if userID == "" {
+		utils.FailWithMessage("用户未登录", c)
+		return
+	}
+
+	// 调用服务层
+	response, err := service.InvitationService.GetOrCreateNormalInvitation(userID)
+	if err != nil {
+		utils.FailWithMessage(err.Error(), c)
+		return
+	}
+
+	utils.OkWithData(response, c)
+}

@@ -43,6 +43,11 @@ export const invitationAPI = {
     return apiClient.get('/api/invitations/my-created', { params });
   },
 
+  // 获取或创建普通邀请码（自动返回最新有效邀请码，如果没有则创建）
+  getNormalCode: (): Promise<ApiResponse<InvitationCode>> => {
+    return apiClient.get('/api/invitations/normal');
+  },
+
   // 获取邀请码列表（管理员）
   getInvitationList: (params?: { page?: number; limit?: number }): Promise<ApiResponse<InvitationListResponse>> => {
     return apiClient.get('/api/invitations', { params });

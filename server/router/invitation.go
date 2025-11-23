@@ -21,6 +21,7 @@ func InitInvitationRouter(privateGroup *gin.RouterGroup, publicGroup *gin.Router
 		InvitationPrivateRouter.POST("/use", invitation.UseInvitation)                      // 使用邀请码（需要登录）
 		InvitationPrivateRouter.GET("/my-use", invitation.GetUserInvitationUse)             // 查询当前用户的邀请码使用记录
 		InvitationPrivateRouter.GET("/my-created", invitation.GetUserCreatedInvitationList) // 获取当前用户创建的邀请码列表
+		InvitationPrivateRouter.GET("/normal", invitation.GetOrCreateNormalInvitation)      // 获取或创建普通邀请码
 	}
 
 	// 管理员路由 - 邀请码管理

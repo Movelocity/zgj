@@ -598,3 +598,87 @@ func (s *invitationService) GetUserCreatedInvitationList(userID string, page, li
 
 	return response, nil
 }
+
+// GetOrCreateNormalInvitation 获取或创建普通邀请码
+// 获取最新一个有效邀请码，如果没有，则创建一个普通邀请码（max_uses=1, 永不过期）
+func (s *invitationService) GetOrCreateNormalInvitation(userID string) (*InvitationCodeResponse, error) {
+	// 验证用户是否存在
+	var user model.User
+	if err := global.DB.Where("id = ?", userID).First(&user).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errors.New("用户不存在")
+		}
+		return nil, errors.New("查询用户失败")
+	}
+
+	// 查询最新的有效邀请码
+	var invitation model.InvitationCode
+	err := global.DB.Where("creator_id = ? AND is_active = ?", userID, true).
+		Order("created_at DESC").
+		First(&invitation).Error
+
+	// 如果找到了邀请码，检查是否有效
+	if err == nil {
+		// 检查邀请码是否有效（未过期且未达使用上限）
+		if invitation.IsValid() {
+			// 返回现有的有效邀请码
+			return &InvitationCodeResponse{
+				Code:      invitation.Code,
+				ExpiresAt: invitation.ExpiresAt,
+				MaxUses:   invitation.MaxUses,
+				UsedCount: invitation.UsedCount,
+				CreatedAt: invitation.CreatedAt,
+				IsActive:  invitation.IsActive,
+				Note:      invitation.Note,
+				CreatorID: user.ID,
+				Creator:   user.Name,
+			}, nil
+		}
+	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
+		// 如果不是"未找到"错误，说明查询出错
+		return nil, errors.New("查询邀请码失败")
+	}
+
+	// 如果没有有效的邀请码，创建一个普通邀请码
+	// 生成唯一邀请码
+	var code string
+	for {
+		code = s.GenerateInvitationCode()
+		// 检查是否已存在
+		var existingCode model.InvitationCode
+		if err := global.DB.Where("code = ?", code).First(&existingCode).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				break // 邀请码不存在，可以使用
+			}
+		}
+	}
+
+	// 创建普通邀请码：max_uses=1，永不过期
+	newInvitation := model.InvitationCode{
+		Code:      code,
+		CreatorID: userID,
+		MaxUses:   1,
+		UsedCount: 0,
+		ExpiresAt: nil, // 永不过期
+		IsActive:  true,
+		Note:      "普通邀请码",
+	}
+
+	if err := global.DB.Create(&newInvitation).Error; err != nil {
+		return nil, errors.New("创建邀请码失败")
+	}
+
+	response := &InvitationCodeResponse{
+		Code:      newInvitation.Code,
+		ExpiresAt: newInvitation.ExpiresAt,
+		MaxUses:   newInvitation.MaxUses,
+		UsedCount: newInvitation.UsedCount,
+		CreatedAt: newInvitation.CreatedAt,
+		IsActive:  newInvitation.IsActive,
+		Note:      newInvitation.Note,
+		CreatorID: user.ID,
+		Creator:   user.Name,
+	}
+
+	return response, nil
+}

@@ -34,8 +34,8 @@ const ProfileInfo: React.FC<ProfileInfoProps> = ({ loading, setLoading }) => {
   const [invitationCode, setInvitationCode] = useState('');
   const [submittingInvitation, setSubmittingInvitation] = useState(false);
 
-  // 用户创建的邀请码列表
-  const [myInvitations, setMyInvitations] = useState<InvitationCode[]>([]);
+  // 用户的普通邀请码（用于分享）
+  const [myNormalInvitation, setMyNormalInvitation] = useState<InvitationCode | null>(null);
 
   // 修改密码 modal 状态
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
@@ -71,15 +71,15 @@ const ProfileInfo: React.FC<ProfileInfoProps> = ({ loading, setLoading }) => {
     }
   };
 
-  // 加载用户创建的邀请码列表
-  const loadMyInvitations = async () => {
+  // 加载用户的普通邀请码（用于分享）
+  const loadMyNormalInvitation = async () => {
     try {
-      const response = await invitationAPI.getMyCreatedInvitations({ page: 1, limit: 100 });
+      const response = await invitationAPI.getNormalCode();
       if (response.code === 0) {
-        setMyInvitations(response.data.data);
+        setMyNormalInvitation(response.data);
       }
     } catch (error) {
-      console.error('加载邀请码列表失败:', error);
+      console.error('加载邀请码失败:', error);
     }
   };
 
@@ -196,7 +196,7 @@ const ProfileInfo: React.FC<ProfileInfoProps> = ({ loading, setLoading }) => {
   useEffect(() => {
     loadProfile();
     loadInvitationUse();
-    loadMyInvitations();
+    loadMyNormalInvitation();
   }, []);
 
   return (
@@ -312,37 +312,32 @@ const ProfileInfo: React.FC<ProfileInfoProps> = ({ loading, setLoading }) => {
         </div>
       )}
 
-      {/* 我的邀请码部分 - 只显示第一个有效的邀请码 */}
-      {(() => {
-        const activeInvitation = myInvitations.find(inv => inv.is_active);
-        if (!activeInvitation) return null;
-        
-        return (
-          <div className="">
-            <div className="flex items-center gap-3">
-              <h3 className="text-sm font-medium text-gray-700">我的邀请码</h3>
-              <div className="text-xs text-gray-500">
-                已邀请 {activeInvitation.used_count} 人
-              </div>
-              
+      {/* 我的邀请码部分 - 显示普通邀请码 */}
+      {myNormalInvitation && (
+        <div className="">
+          <div className="flex items-center gap-3">
+            <h3 className="text-sm font-medium text-gray-700">我的邀请码</h3>
+            <div className="text-xs text-gray-500">
+              已邀请 {myNormalInvitation.used_count} 人
             </div>
-            <div>
-              <code className="text-base font-mono font-semibold text-gray-900 bg-gray-50 px-3 py-1.5 rounded">
-                {activeInvitation.code}
-              </code>
-              <Button
-                variant="text"
-                onClick={() => handleCopyCode(activeInvitation.code)}
-                className=""
-                title="复制邀请码"
-                // icon={<CopyIcon className="w-4 h-4 mr-1" />}
-              >
-                复制邀请链接
-              </Button>
-            </div>
+            
           </div>
-        );
-      })()}
+          <div>
+            <code className="text-base font-mono font-semibold text-gray-900 bg-gray-50 px-3 py-1.5 rounded">
+              {myNormalInvitation.code}
+            </code>
+            <Button
+              variant="text"
+              onClick={() => handleCopyCode(myNormalInvitation.code)}
+              className=""
+              title="复制邀请码"
+              // icon={<CopyIcon className="w-4 h-4 mr-1" />}
+            >
+              复制邀请链接
+            </Button>
+          </div>
+        </div>
+      )}
 
       <div className="flex justify-end gap-3">
         <Button variant="outline" onClick={() => setIsPasswordModalOpen(true)}>
