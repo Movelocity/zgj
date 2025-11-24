@@ -23,8 +23,8 @@ const CreditsDisplay: React.FC<CreditsDisplayProps> = ({ className = '', showLab
     try {
       setLoading(true);
       const response = await getMyCredits();
-      if (response.data.code === 0) {
-        setCredits(response.data.data.total_credits);
+      if (response.code === 0) {
+        setCredits(response.data.total_credits);
       } else {
         showError('加载积分失败');
       }
