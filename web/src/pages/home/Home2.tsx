@@ -7,11 +7,13 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store';
 import { ROUTES } from '@/utils/constants';
 import { Link } from 'react-router-dom';
-// import Header2 from '@/components/layout/Header2';
+import { useSiteVariable } from '@/hooks/useSiteVariable';
 
 const Home2: React.FC = () => {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuthStore();
+
+  const { value: qr_code_img, loading: qr_code_loading } = useSiteVariable('qr_code_img');
 
   const handleGetStarted = () => {
     if (isAuthenticated) {
@@ -74,15 +76,15 @@ const Home2: React.FC = () => {
               </div>
               <div className="mt-8 flex items-center gap-6 justify-center lg:justify-start text-sm text-slate-600">
                 <div className="flex items-center gap-2">
-                  <CheckCircle className="w-5 h-5 text-emerald-500" />
+                  <CheckCircle className="w-5 h-5 text-blue-800" />
                   免费试用
                 </div>
                 <div className="flex items-center gap-2">
-                  <CheckCircle className="w-5 h-5 text-emerald-500" />
+                  <CheckCircle className="w-5 h-5 text-blue-800" />
                   快速获取结果
                 </div>
                 <div className="flex items-center gap-2">
-                  <CheckCircle className="w-5 h-5 text-emerald-500" />
+                  <CheckCircle className="w-5 h-5 text-blue-800" />
                   100% 安全
                 </div>
               </div>
@@ -95,13 +97,13 @@ const Home2: React.FC = () => {
                   className="w-full h-auto rounded-lg"
                 />
                 <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 to-emerald-500/20 rounded-lg mix-blend-overlay"></div>
-                <div className="absolute top-4 right-4 bg-emerald-500 text-white px-3 py-1 rounded-full text-sm font-medium">
+                <div className="absolute top-4 right-4 bg-blue-800 text-white px-3 py-1 rounded-full text-sm font-medium">
                   92% 匹配度
                 </div>
               </div>
               <div className="absolute -top-4 -left-4 bg-white rounded-xl shadow-lg p-4 transform -rotate-2">
                 <div className="flex items-center gap-2 text-sm">
-                  <div className="w-3 h-3 bg-emerald-500 rounded-full"></div>
+                  <div className="w-3 h-3 bg-blue-800 rounded-full"></div>
                   <span className="font-medium">技能匹配：优秀</span>
                 </div>
               </div>
@@ -376,7 +378,7 @@ const Home2: React.FC = () => {
           
           <Card className="relative bg-gradient-to-br from-blue-50 to-emerald-50 border-2 border-blue-200 shadow-xl">
             <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-              <Badge className="bg-gradient-to-r from-blue-600 to-emerald-600 text-white px-6 py-2">
+              <Badge className="bg-gradient-to-r from-blue-800 to-cyan-400 text-white px-6 py-2">
                 最受欢迎
               </Badge>
             </div>
@@ -523,10 +525,10 @@ const Home2: React.FC = () => {
       {/* 页脚 */}
       <footer className="bg-slate-900 text-slate-300 py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-8">
             <div>
               <div className="flex items-center space-x-2 mb-4">
-                <img src="/favicon.ico" alt="职管加" className="h-8 w-8" />
+                <img src="/images/icon_128x128.webp" alt="职管加" className="h-8 w-8" />
 
                 <span className="text-xl font-bold text-white">职管加</span>
               </div>
@@ -563,14 +565,9 @@ const Home2: React.FC = () => {
                   </Link>
                 </li>
                 <li>
-                  <Link to="/contact" className="hover:text-white">
-                    博客
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/contact" className="hover:text-white">
-                    加入我们
-                  </Link>
+                  {!qr_code_loading && qr_code_img && (
+                    <img src={qr_code_img} alt="职管加" className="h-20 w-20" />
+                  )}
                 </li>
               </ul>
             </div>

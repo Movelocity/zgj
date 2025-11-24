@@ -341,7 +341,7 @@ const Auth2: React.FC = () => {
           </Button>
           
           <div className="flex items-center justify-center space-x-2 mb-4">
-            <img src="/favicon.ico" alt="职管加" className="h-8 w-8" />
+            <img src="/images/favicon.ico" alt="职管加" className="h-8 w-8" />
             <span className="text-2xl font-bold bg-gradient-to-r from-blue-700 to-indigo-500 bg-clip-text text-transparent">
               职管加 - 简历润色工具
             </span>

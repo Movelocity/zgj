@@ -5,7 +5,6 @@ import Footer from '@/components/layout/Footer';
 
 const Contact: React.FC = () => {
   const { value: contactImg, loading: imgLoading } = useSiteVariable('contact_img');
-  const isLoading = imgLoading
 
   useEffect(() => {
     // 打开页面滑动到顶部
@@ -28,7 +27,7 @@ const Contact: React.FC = () => {
             </p>
           </div>
 
-          {isLoading ? (
+          {imgLoading ? (
             <div className="flex justify-center items-center py-20">
               <Loading size="lg" text="加载中..." />
             </div>

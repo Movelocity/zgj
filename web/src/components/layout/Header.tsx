@@ -58,7 +58,7 @@ const Header: React.FC = () => {
           <div className="flex items-center">
             <Link to={ROUTES.HOME} className="flex items-center space-x-2">
               {/* <DocumentTextIcon className="h-8 w-8 text-blue-600" /> */}
-              <img src="/favicon.ico" alt="职管加" className="h-8 w-8" />
+              <img src="/images/icon_128x128.webp" alt="职管加" className="h-8 w-8" />
               <span className="text-xl font-bold text-gray-900">职管加</span>
             </Link>
           </div>

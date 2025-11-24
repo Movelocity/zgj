@@ -49,7 +49,7 @@ local:
 upload:
   image-max-size: 5   # MB
   file-max-size: 10   # MB
-  allow-image-types: "image/jpeg,image/png,image/gif"
+  allow-image-types: "image/jpeg,image/png,image/gif,image/webp"
   allow-file-types: "application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
 
 log:

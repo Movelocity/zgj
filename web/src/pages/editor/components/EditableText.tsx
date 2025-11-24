@@ -136,7 +136,7 @@ export const EditableText = ({
           !currentDisplayValue ? 'text-gray-400 italic' : '',
           'bg-yellow-50 border border-yellow-200 hover:bg-yellow-100/80'
         )}
-        onClick={() => startEditing(fieldId, currentDisplayValue)}
+        // onClick={() => startEditing(fieldId, currentDisplayValue)} 不允许点击编辑
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
       >
