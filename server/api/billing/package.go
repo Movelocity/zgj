@@ -22,6 +22,7 @@ type CreateBillingPackageRequest struct {
 	IsActive      bool    `json:"is_active"`
 	IsVisible     bool    `json:"is_visible"`
 	SortOrder     int     `json:"sort_order"`
+	DisplayOrder  int     `json:"display_order"`
 }
 
 // CreateBillingPackage 创建套餐（管理员）
@@ -44,6 +45,7 @@ func CreateBillingPackage(c *gin.Context) {
 		IsActive:      req.IsActive,
 		IsVisible:     req.IsVisible,
 		SortOrder:     req.SortOrder,
+		DisplayOrder:  req.DisplayOrder,
 	}
 
 	service := &billingService.PackageService{}
@@ -125,6 +127,7 @@ func UpdateBillingPackage(c *gin.Context) {
 	pkg.IsActive = req.IsActive
 	pkg.IsVisible = req.IsVisible
 	pkg.SortOrder = req.SortOrder
+	pkg.DisplayOrder = req.DisplayOrder
 
 	if err := service.UpdateBillingPackage(pkg); err != nil {
 		utils.FailWithMessage("更新套餐失败: "+err.Error(), c)
@@ -132,4 +135,17 @@ func UpdateBillingPackage(c *gin.Context) {
 	}
 
 	utils.OkWithData(pkg, c)
+}
+
+// GetPublicBillingPackages 获取公开可见的套餐列表（无需鉴权）
+// GET /api/billing/packages
+func GetPublicBillingPackages(c *gin.Context) {
+	service := &billingService.PackageService{}
+	packages, err := service.GetPublicBillingPackages()
+	if err != nil {
+		utils.FailWithMessage("查询失败: "+err.Error(), c)
+		return
+	}
+
+	utils.OkWithData(packages, c)
 }

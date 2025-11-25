@@ -44,6 +44,7 @@ export interface BillingPackage {
   is_active: boolean;
   is_visible: boolean;
   sort_order: number;
+  display_order: number;
   metadata?: Record<string, any>;
 }
 
@@ -80,6 +81,7 @@ export interface CreateBillingPackageRequest {
   is_active: boolean;
   is_visible: boolean;
   sort_order?: number;
+  display_order?: number;
 }
 
 // 分配套餐请求

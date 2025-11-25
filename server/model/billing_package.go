@@ -20,9 +20,10 @@ type BillingPackage struct {
 	CreditsAmount int `gorm:"not null" json:"credits_amount"`
 	ValidityDays  int `gorm:"default:0" json:"validity_days"` // 0=permanent
 
-	IsActive  bool `gorm:"default:true" json:"is_active"`
-	IsVisible bool `gorm:"default:true" json:"is_visible"`
-	SortOrder int  `gorm:"default:0" json:"sort_order"`
+	IsActive     bool `gorm:"default:true" json:"is_active"`
+	IsVisible    bool `gorm:"default:true" json:"is_visible"`
+	SortOrder    int  `gorm:"default:0" json:"sort_order"`
+	DisplayOrder int  `gorm:"default:0" json:"display_order"`
 
 	Metadata JSON `gorm:"type:jsonb" json:"metadata,omitempty"`
 }

@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { FiUser } from 'react-icons/fi';
-import { ProfileInfo } from './components';
+import { FiUser, FiPackage } from 'react-icons/fi';
+import { ProfileInfo, PackagesList } from './components';
 import { Button } from '@/components/ui/Button';
 
-type TabType = 'account';
+type TabType = 'account' | 'packages';
 
 const Profile: React.FC = () => {
   const [loading, setLoading] = useState(false);
@@ -11,12 +11,15 @@ const Profile: React.FC = () => {
 
   const tabs = [
     { id: 'account' as TabType, name: '账号设置', icon: FiUser },
+    { id: 'packages' as TabType, name: '升级计划', icon: FiPackage },
   ];
 
   const renderContent = () => {
     switch (activeTab) {
       case 'account':
         return <ProfileInfo loading={loading} setLoading={setLoading} />;
+      case 'packages':
+        return <PackagesList />;
       default:
         return null;
     }
@@ -50,7 +53,7 @@ const Profile: React.FC = () => {
               })}
             </nav>
           </div>
-          <div className="p-6 pl-[220px] relative">
+          <div className="p-6 ml-[210px] relative">
             {renderContent()}
           </div>
         </div>

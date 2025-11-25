@@ -8,11 +8,12 @@ import (
 
 // InitBillingRouter 初始化计费相关路由
 func InitBillingRouter(privateGroup *gin.RouterGroup, publicGroup *gin.RouterGroup, adminGroup *gin.RouterGroup) {
-	// 公共路由 - 动作价格查询
+	// 公共路由 - 动作价格查询和套餐列表
 	BillingPublicRouter := publicGroup.Group("/api/billing")
 	{
 		BillingPublicRouter.GET("/action-prices", billing.ListActionPrices)             // 查询动作价格列表
 		BillingPublicRouter.GET("/action-prices/active", billing.GetActiveActionPrices) // 获取启用的动作价格
+		BillingPublicRouter.GET("/packages", billing.GetPublicBillingPackages)          // 获取公开可见的套餐列表
 	}
 
 	// 用户路由 - 我的套餐和积分

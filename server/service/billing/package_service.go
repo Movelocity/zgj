@@ -43,3 +43,13 @@ func (s *PackageService) ListBillingPackages(activeOnly bool, visibleOnly bool) 
 func (s *PackageService) UpdateBillingPackage(pkg *model.BillingPackage) error {
 	return global.DB.Save(pkg).Error
 }
+
+// GetPublicBillingPackages 获取公开可见的套餐列表（用于前台展示）
+func (s *PackageService) GetPublicBillingPackages() ([]model.BillingPackage, error) {
+	var packages []model.BillingPackage
+	err := global.DB.
+		Where("is_active = ? AND is_visible = ?", true, true).
+		Order("display_order ASC, id ASC").
+		Find(&packages).Error
+	return packages, err
+}

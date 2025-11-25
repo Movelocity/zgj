@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { adminAPI } from '@/api/admin';
 import {Button, Input} from '@/components/ui';
-import { showSuccess, showError } from '@/utils/toast';
+import { showError } from '@/utils/toast';
 import type { User } from '@/types/user';
 import { UserDetailDrawer } from '@/components/drawers';
 

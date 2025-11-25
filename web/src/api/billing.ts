@@ -39,6 +39,13 @@ export const getActiveActionPrices = (): Promise<ApiResponse<BillingActionPrice[
 };
 
 /**
+ * 获取公开可见的套餐列表（无需鉴权）
+ */
+export const getPublicBillingPackages = (): Promise<ApiResponse<BillingPackage[]>> => {
+  return apiClient.get<ApiResponse<BillingPackage[]>>('/api/billing/packages') as any;
+};
+
+/**
  * ==================== 用户API ====================
  */
 
