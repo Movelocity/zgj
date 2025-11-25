@@ -163,7 +163,7 @@ const Home2: React.FC = () => {
             <Card className="group hover:shadow-lg transition-all duration-300 border-0 bg-white/80 backdrop-blur-sm">
               <CardHeader>
                 <div className="flex items-center justify-between">
-                  <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center mb-4 group-hover:scale-105 transition-transform">
+                  <div className="w-12 h-12 bg-gradient-to-br from-blue-700 to-blue-200 rounded-xl flex items-center justify-center mb-4 group-hover:scale-105 transition-transform">
                     <Target className="w-6 h-6 text-white" />
                   </div>
                   <Link to="/simple-resume" className="text-blue-600 group-hover:scale-105 transition-transform">立即体验 →</Link>
@@ -176,10 +176,10 @@ const Home2: React.FC = () => {
             <Card className="group hover:shadow-lg transition-all duration-300 border-0 bg-white/80 backdrop-blur-sm">
               <CardHeader>
                 <div className="flex items-center justify-between">
-                  <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl flex items-center justify-center mb-4 group-hover:scale-105 transition-transform">
+                  <div className="w-12 h-12 bg-gradient-to-br from-cyan-500 to-cyan-200 rounded-xl flex items-center justify-center mb-4 group-hover:scale-105 transition-transform">
                     <FileText className="w-6 h-6 text-white" />
                   </div>
-                  <Link to="/job-resume" className="text-emerald-600 group-hover:scale-105 transition-transform">立即体验 →</Link>
+                  <Link to="/job-resume" className="text-cyan-600 group-hover:scale-105 transition-transform">立即体验 →</Link>
                 </div>
                 <CardTitle className="text-xl">简历-职位匹配</CardTitle>
                 <CardDescription>根据职位描述，智能分析简历与职位的匹配度，给出优化建议。</CardDescription>
@@ -189,10 +189,10 @@ const Home2: React.FC = () => {
             <Card className="group hover:shadow-lg transition-all duration-300 border-0 bg-white/80 backdrop-blur-sm">
               <CardHeader>
                 <div className="flex items-center justify-between">
-                  <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl flex items-center justify-center mb-4 group-hover:scale-105 transition-transform">
+                  <div className="w-12 h-12 bg-gradient-to-br from-violet-500 to-violet-200 rounded-xl flex items-center justify-center mb-4 group-hover:scale-105 transition-transform">
                     <Briefcase className="w-6 h-6 text-white" />
                   </div>
-                  <Link to="/contact" className="text-purple-600 group-hover:scale-105 transition-transform">查看二维码 →</Link>
+                  <Link to="/contact" className="text-violet-600 group-hover:scale-105 transition-transform">查看二维码 →</Link>
                 </div>
 
                 <CardTitle className="text-xl">内推机会</CardTitle>
@@ -202,7 +202,7 @@ const Home2: React.FC = () => {
 
             <Card className="group hover:shadow-lg transition-all duration-300 border-0 bg-white/80 backdrop-blur-sm">
               <CardHeader>
-                <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                <div className="w-12 h-12 bg-gradient-to-br from-amber-500 to-amber-200 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                   <Zap className="w-6 h-6 text-white" />
                 </div>
                 <CardTitle className="text-xl">求职信生成</CardTitle>
@@ -212,7 +212,7 @@ const Home2: React.FC = () => {
 
             <Card className="group hover:shadow-lg transition-all duration-300 border-0 bg-white/80 backdrop-blur-sm">
               <CardHeader>
-                <div className="w-12 h-12 bg-gradient-to-br from-red-500 to-red-600 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                <div className="w-12 h-12 bg-gradient-to-br from-red-500 to-red-100 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                   <TrendingUp className="w-6 h-6 text-white" />
                 </div>
                 <CardTitle className="text-xl">差距分析</CardTitle>
@@ -222,7 +222,7 @@ const Home2: React.FC = () => {
 
             <Card className="group hover:shadow-lg transition-all duration-300 border-0 bg-white/80 backdrop-blur-sm">
               <CardHeader>
-                <div className="w-12 h-12 bg-gradient-to-br from-teal-500 to-teal-600 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                <div className="w-12 h-12 bg-gradient-to-br from-teal-400 to-teal-100 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                   <Shield className="w-6 h-6 text-white" />
                 </div>
                 <CardTitle className="text-xl">多格式支持</CardTitle>
@@ -378,7 +378,7 @@ const Home2: React.FC = () => {
           
           <Card className="relative bg-gradient-to-br from-blue-50 to-emerald-50 border-2 border-blue-200 shadow-xl">
             <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-              <Badge className="bg-gradient-to-r from-blue-800 to-cyan-400 text-white px-6 py-2">
+              <Badge variant="none" className="bg-gradient-to-r from-blue-800 to-cyan-400 text-white px-6 py-2">
                 最受欢迎
               </Badge>
             </div>
