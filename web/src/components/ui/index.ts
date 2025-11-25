@@ -7,3 +7,4 @@ export { default as Loading } from './Loading';
 export { default as Modal } from './Modal';
 export { default as Toast } from './Toast';
 export { default as ToastContainer } from './ToastContainer';
+export { default as Drawer } from './Drawer';

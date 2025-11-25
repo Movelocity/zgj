@@ -3,7 +3,7 @@ import { adminAPI } from '@/api/admin';
 import {Button, Input} from '@/components/ui';
 import { showSuccess, showError } from '@/utils/toast';
 import type { User } from '@/types/user';
-import { EditUserModal, ChangeRoleModal, ChangePasswordModal } from '@/components/modals';
+import { UserDetailDrawer } from '@/components/drawers';
 
 const UserManagement: React.FC = () => {
   const [loading, setLoading] = useState(false);
@@ -16,10 +16,9 @@ const UserManagement: React.FC = () => {
   const [searchKeyword, setSearchKeyword] = useState('');
   const [searchInput, setSearchInput] = useState('');
   
-  // 模态框状态
-  const [editUserModal, setEditUserModal] = useState({ isOpen: false, user: null as User | null });
-  const [changeRoleModal, setChangeRoleModal] = useState({ isOpen: false, user: null as User | null });
-  const [changePasswordModal, setChangePasswordModal] = useState({ isOpen: false, user: null as User | null });
+  // Drawer state
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
   // 加载用户列表
   const loadUsers = async (page = 1, keyword = searchKeyword) => {
@@ -63,90 +62,26 @@ const UserManagement: React.FC = () => {
     loadUsers(1, '');
   };
 
-  // 激活/禁用用户
-  const handleToggleUserStatus = async (userId: string, isActive: boolean) => {
-    try {
-      setLoading(true);
-      const response = isActive 
-        ? await adminAPI.deactivateUser(userId)
-        : await adminAPI.activateUser(userId);
-      
-      if (response.code === 0) {
-        showSuccess(`用户${isActive ? '禁用' : '激活'}成功`);
-        await loadUsers(pagination.current);
-      } else {
-        showError(response.msg || `用户${isActive ? '禁用' : '激活'}失败`);
-      }
-    } catch (error) {
-      console.error('操作用户状态失败:', error);
-      showError(`用户${isActive ? '禁用' : '激活'}失败，请重试`);
-    } finally {
-      setLoading(false);
-    }
+  // Open user detail drawer
+  const handleOpenUserDrawer = (user: User) => {
+    setSelectedUser(user);
+    setIsDrawerOpen(true);
   };
 
-  // 删除用户
-  const handleDeleteUser = async (userId: string, userName: string) => {
-    if (!confirm(`确认删除用户 "${userName}" 吗？此操作不可恢复！`)) {
-      return;
-    }
+  // Close drawer
+  const handleCloseDrawer = () => {
+    setIsDrawerOpen(false);
+    setSelectedUser(null);
+  };
 
-    try {
-      setLoading(true);
-      const response = await adminAPI.deleteUser(userId);
-      
-      if (response.code === 0) {
-        showSuccess('用户删除成功');
-        await loadUsers(pagination.current);
-      } else {
-        showError(response.msg || '用户删除失败');
-      }
-    } catch (error) {
-      console.error('删除用户失败:', error);
-      showError('删除用户失败，请重试');
-    } finally {
-      setLoading(false);
-    }
+  // Handle drawer success (reload user list)
+  const handleDrawerSuccess = () => {
+    loadUsers(pagination.current);
   };
 
   // 翻页
   const handlePageChange = (page: number) => {
     loadUsers(page);
-  };
-
-  // 编辑用户信息
-  const handleEditUser = (user: User) => {
-    setEditUserModal({ isOpen: true, user });
-  };
-
-  // 修改用户角色
-  const handleChangeRole = (user: User) => {
-    setChangeRoleModal({ isOpen: true, user });
-  };
-
-  // 修改用户密码
-  const handleChangePassword = (user: User) => {
-    setChangePasswordModal({ isOpen: true, user });
-  };
-
-  // 模态框关闭处理
-  const handleModalClose = (modalType: 'edit' | 'role' | 'password') => {
-    switch (modalType) {
-      case 'edit':
-        setEditUserModal({ isOpen: false, user: null });
-        break;
-      case 'role':
-        setChangeRoleModal({ isOpen: false, user: null });
-        break;
-      case 'password':
-        setChangePasswordModal({ isOpen: false, user: null });
-        break;
-    }
-  };
-
-  // 模态框成功处理（重新加载用户列表）
-  const handleModalSuccess = () => {
-    loadUsers(pagination.current);
   };
 
   // 获取用户角色显示名称
@@ -289,49 +224,14 @@ const UserManagement: React.FC = () => {
                         {user.last_login ? new Date(user.last_login).toLocaleDateString() : '未登录'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <div className="flex justify-end">
-                          <Button
-                            variant="link"
-                            size="sm"
-                            onClick={() => handleEditUser(user)}
-                            disabled={loading}
-                          >
-                            编辑
-                          </Button>
-                          <Button
-                            variant="link"
-                            size="sm"
-                            onClick={() => handleChangeRole(user)}
-                            disabled={loading}
-                          >
-                            权限
-                          </Button>
-                          <Button
-                            variant="link"
-                            size="sm"
-                            onClick={() => handleChangePassword(user)}
-                            disabled={loading}
-                          >
-                            重置密码
-                          </Button>
-                          <Button
-                            variant="link"
-                            size="sm"
-                            onClick={() => handleToggleUserStatus(user.id, user.active)}
-                            disabled={loading}
-                          >
-                            {user.active ? '禁用' : '激活'}
-                          </Button>
-                          <Button
-                            variant="link"
-                            size="sm"
-                            onClick={() => handleDeleteUser(user.id, user.name || user.phone)}
-                            disabled={loading}
-                            className="text-red-600 hover:text-red-700"
-                          >
-                            删除
-                          </Button>
-                        </div>
+                        <Button
+                          variant="link"
+                          size="sm"
+                          onClick={() => handleOpenUserDrawer(user)}
+                          disabled={loading}
+                        >
+                          管理
+                        </Button>
                       </td>
                     </tr>
                   ))}
@@ -373,28 +273,12 @@ const UserManagement: React.FC = () => {
         )}
       </div>
 
-      {/* 编辑用户信息模态框 */}
-      <EditUserModal
-        user={editUserModal.user}
-        isOpen={editUserModal.isOpen}
-        onClose={() => handleModalClose('edit')}
-        onSuccess={handleModalSuccess}
-      />
-
-      {/* 修改用户角色模态框 */}
-      <ChangeRoleModal
-        user={changeRoleModal.user}
-        isOpen={changeRoleModal.isOpen}
-        onClose={() => handleModalClose('role')}
-        onSuccess={handleModalSuccess}
-      />
-
-      {/* 修改用户密码模态框 */}
-      <ChangePasswordModal
-        user={changePasswordModal.user}
-        isOpen={changePasswordModal.isOpen}
-        onClose={() => handleModalClose('password')}
-        onSuccess={handleModalSuccess}
+      {/* User Detail Drawer */}
+      <UserDetailDrawer
+        user={selectedUser}
+        isOpen={isDrawerOpen}
+        onClose={handleCloseDrawer}
+        onSuccess={handleDrawerSuccess}
       />
     </div>
   );
