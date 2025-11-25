@@ -145,7 +145,7 @@ const Home2: React.FC = () => {
       </section>
 
       {/* 功能特色 */}
-      <section id="features" className="py-20 px-4 sm:px-6 lg:px-8">
+      <section id="features" className="py-20 px-4 sm:px-6 lg:px-8 bg-white">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <Badge className="mb-4 bg-emerald-100 text-emerald-700 hover:bg-emerald-100">

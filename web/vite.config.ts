@@ -27,7 +27,7 @@ export default defineConfig(({mode}) => {
           manualChunks: {
             vendor: ['react', 'react-dom'],
             router: ['react-router-dom'],
-            ui: ['@headlessui/react', 'react-icons'],
+            ui: ['react-icons'],
           },
         },
       },

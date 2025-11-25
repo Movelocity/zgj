@@ -21,7 +21,7 @@
 - **路由**: React Router v7
 - **HTTP客户端**: Axios 1.12
 - **构建工具**: Vite 7.1
-- **UI组件库**: Headless UI 2.2 + React Icons 5.5 + Lucide React
+- **UI组件库**: React Icons 5.5 + Lucide React
 - **Markdown渲染**: React Markdown 10.1
 - **代码检查**: ESLint 9.33 + TypeScript ESLint 8.39
 - **包管理**: pnpm

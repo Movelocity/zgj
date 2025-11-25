@@ -335,15 +335,15 @@ const Auth2: React.FC = () => {
         <div className="w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-8">
-          <Button variant="ghost" onClick={handleBack} className="absolute top-4 left-4 md:top-8 md:left-8">
+          <Button variant="link" onClick={handleBack} className="absolute top-4 left-4 md:top-8 md:left-8">
             <ArrowLeft className="w-4 h-4 mr-2" />
             返回首页
           </Button>
           
           <div className="flex items-center justify-center space-x-2 mb-4">
             <img src="/images/favicon.ico" alt="职管加" className="h-8 w-8" />
-            <span className="text-2xl font-bold bg-gradient-to-r from-blue-700 to-indigo-500 bg-clip-text text-transparent">
-              职管加 - 简历润色工具
+            <span className="text-2xl font-bold bg-gradient-to-r from-blue-800 to-cyan-400 bg-clip-text text-transparent">
+              职管加 - 用AI打造完美简历
             </span>
           </div>
         </div>
@@ -368,7 +368,7 @@ const Auth2: React.FC = () => {
                         : 'text-slate-600 hover:text-slate-900'
                     )}
                   >
-                    手机登录
+                    短信登录
                     {loginMethod === 'phone' && (
                       <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600"></span>
                     )}
@@ -486,6 +486,14 @@ const Auth2: React.FC = () => {
                         '登录'
                       )}
                     </Button>
+
+                    <button
+                        type="button"
+                        onClick={() => setActiveTab('signup')}
+                        className="cursor-pointer text-blue-600 hover:text-blue-700 text-sm font-medium transition-colors"
+                      >
+                        还没有账号？立即注册
+                      </button>
                   </form>
                 )}
 
@@ -493,7 +501,7 @@ const Auth2: React.FC = () => {
                 {loginMethod === 'password' && (
                   <form onSubmit={handlePasswordSignIn} className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="phone">手机号</Label>
+                      {/* <Label htmlFor="phone">手机号</Label> */}
                       <div className="relative input-icon-wrapper">
                         <Phone className="w-4 h-4 input-icon" />
                         <Input
@@ -511,7 +519,7 @@ const Auth2: React.FC = () => {
                     </div>
                     
                     <div className="space-y-2">
-                      <Label htmlFor="password">密码</Label>
+                      {/* <Label htmlFor="password">密码</Label> */}
                       <div className="relative input-icon-wrapper">
                         <Lock className="w-4 h-4 input-icon" />
                         <Input
@@ -533,7 +541,8 @@ const Auth2: React.FC = () => {
                         </button>
                       </div>
                     </div>
-                    
+
+                    {/* 邀请码提示 */}
                     
                     
                     {/* 用户协议 */}
@@ -579,11 +588,11 @@ const Auth2: React.FC = () => {
                         还没有账号？立即注册
                       </button>
 
-                      <div className="">
+                      {/* <div className="">
                         <Button variant="link" className="text-sm text-slate-600 p-0 h-auto">
                           忘记密码？
                         </Button>
-                      </div>
+                      </div> */}
                     </div>
                   </form>
                 )}
@@ -616,7 +625,7 @@ const Auth2: React.FC = () => {
                         id="fullName"
                         name="fullName"
                         type="text"
-                        placeholder="请输入您的姓名"
+                        placeholder="用户名"
                         value={formData.fullName}
                         onChange={handleInputChange}
                         className="pl-10"
@@ -674,7 +683,7 @@ const Auth2: React.FC = () => {
 
                   {/* 邀请码（选填） */}
                   <div className="space-y-2">
-                    <Label htmlFor="invitationCode">邀请码（选填）</Label>
+                    {/* <Label htmlFor="invitationCode">邀请码（选填）</Label> */}
                     <Input
                       id="invitationCode"
                       name="invitationCode"
@@ -687,7 +696,7 @@ const Auth2: React.FC = () => {
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="password">密码（选填，可后续修改）</Label>
+                    {/* <Label htmlFor="password">密码（选填，可后续修改）</Label> */}
                     <div className="relative input-icon-wrapper">
                       <Lock className="w-4 h-4 input-icon" />
                       <Input

@@ -125,8 +125,8 @@ const Header: React.FC = () => {
             </div>
           ) : (
             <Link to={ROUTES.AUTH}>
-              <Button className="bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700">
-                免费试用
+              <Button className="bg-gradient-to-r from-blue-800 to-cyan-400 hover:from-blue-700 hover:to-cyan-300">
+                立即试用
               </Button>
             </Link>
           )}
