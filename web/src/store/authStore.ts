@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { User, LoginCredentials, AuthData, RegisterData } from '@/types/user';
+import type { User, LoginCredentials, AuthData, RegisterData, AuthResponse } from '@/types/user';
 import { authAPI } from '@/api/auth';
 import { TOKEN_KEY } from '@/utils/constants';
 import { ADMIN_ROLE } from '@/utils/constants';
@@ -14,7 +14,7 @@ interface AuthState {
   
   // Actions
   login: (credentials: LoginCredentials) => Promise<void>;
-  auth: (data: AuthData) => Promise<void>;
+  auth: (data: AuthData) => Promise<AuthResponse | undefined>;
   register: (data: RegisterData) => Promise<{ token: string; user: User; message?: string }>;
   logout: () => void;
   checkAuth: () => Promise<boolean>;
@@ -67,6 +67,8 @@ export const useAuthStore = create<AuthState>()(
             token, 
             isLoading: false 
           });
+          
+          return response.data;
         } catch (error) {
           set({ 
             isLoading: false, 

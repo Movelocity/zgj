@@ -88,10 +88,11 @@ type UnifiedAuthRequest struct {
 
 // UnifiedAuthResponse 统一认证响应
 type UnifiedAuthResponse struct {
-	Token     string    `json:"token"`
-	ExpiresAt time.Time `json:"expires_at"`
-	User      UserInfo  `json:"user"`
-	IsNewUser bool      `json:"is_new_user"` // 标识是否为新注册用户
+	Token             string    `json:"token"`
+	ExpiresAt         time.Time `json:"expires_at"`
+	User              UserInfo  `json:"user"`
+	IsNewUser         bool      `json:"is_new_user"`                  // 标识是否为新注册用户
+	GeneratedPassword string    `json:"generated_password,omitempty"` // 自动注册时生成的随机密码
 }
 
 // UserListResponse 用户列表响应

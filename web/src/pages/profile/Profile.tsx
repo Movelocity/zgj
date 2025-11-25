@@ -14,7 +14,7 @@ const Profile: React.FC = () => {
 
   const tabs = [
     { id: 'account' as TabType, name: '账号设置', icon: FiUser, adminOnly: false },
-    { id: 'packages' as TabType, name: '升级计划(Pro)', icon: FiPackage, adminOnly: true },
+    { id: 'packages' as TabType, name: '升级计划(Pro)', icon: FiPackage, adminOnly: false },
   ];
 
   const renderContent = () => {

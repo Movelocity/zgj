@@ -203,6 +203,14 @@ const Header: React.FC = () => {
                 </Button>
               </Link>
             )}
+
+            {isAuthenticated && (
+              <Link to={ROUTES.PROFILE} onClick={closeMobileMenu}>
+                <Button variant="ghost" size="default" className="w-full justify-start font-normal">
+                  我的账号
+                </Button>
+              </Link>
+            )}
           </div>
 
           

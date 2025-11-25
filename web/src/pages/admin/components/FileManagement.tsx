@@ -321,6 +321,7 @@ const FileManagement: React.FC = () => {
             onClick={() => fileInputRef.current?.click()}
             disabled={uploading}
             className="flex items-center gap-2"
+            variant="outline"
           >
             <FiUpload className="w-4 h-4" />
             {uploading ? '上传中...' : '上传文件'}

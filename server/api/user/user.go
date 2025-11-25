@@ -300,7 +300,7 @@ func UnifiedAuth(c *gin.Context) {
 	userAgent := c.GetHeader("User-Agent")
 
 	// 调用统一认证服务
-	token, userInfo, isNewUser, err := service.UserService.LoginOrRegister(req.Phone, req.Name)
+	token, userInfo, isNewUser, generatedPassword, err := service.UserService.LoginOrRegister(req.Phone, req.Name)
 	if err != nil {
 		utils.FailWithMessage(err.Error(), c)
 		return
@@ -314,10 +314,11 @@ func UnifiedAuth(c *gin.Context) {
 	}
 
 	response := userService.UnifiedAuthResponse{
-		Token:     token,
-		ExpiresAt: time.Now().Add(global.CONFIG.JWT.ExpiresTime),
-		User:      *userInfo,
-		IsNewUser: isNewUser,
+		Token:             token,
+		ExpiresAt:         time.Now().Add(global.CONFIG.JWT.ExpiresTime),
+		User:              *userInfo,
+		IsNewUser:         isNewUser,
+		GeneratedPassword: generatedPassword,
 	}
 
 	utils.OkWithData(response, c)

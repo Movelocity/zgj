@@ -48,7 +48,7 @@ const Home2: React.FC = () => {
                 <Star className="w-4 h-4 mr-1" />
                 AI 智能简历分析
               </Badge>
-              <h1 className="text-4xl md:text-6xl font-bold text-slate-900 leading-tight mb-6 flex items-center gap-2 justify-center lg:flex-col lg:items-start">
+              <h1 className="text-6xl font-bold text-slate-900 leading-tight mb-6 flex items-center gap-2 justify-center flex-col md:flex-row lg:flex-col lg:items-start">
                 用 AI 打造
                 <span className="bg-gradient-to-r from-blue-900 to-cyan-400 bg-clip-text text-transparent block">
                   完美简历

@@ -251,7 +251,7 @@ const ResumeList: React.FC = () => {
         </div> */}
 
         {/* 简历列表 */}
-        <div className="rounded-lg shadow-md overflow-hidden min-h-[50vh]">
+        <div className="rounded-lg shadow-md overflow-hidden min-h-[50vh] flex flex-col">
           {loading ? (
             <div className="p-8 text-center">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
@@ -259,22 +259,15 @@ const ResumeList: React.FC = () => {
             </div>
           ) : resumes.length === 0 ? (
             <div className="p-8 text-center">
-              <FiFileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-600 mb-4">还没有上传任何简历</p>
+              <FiFileText className="w-16 h-16 text-zinc-600 mx-auto mb-4" />
+              <p className="text-gray-600 mb-4">还没有已创建的简历哦</p>
               <div className="flex justify-center space-x-3">
-                {/* <Button
-                  onClick={() => setShowCreateTextModal(true)}
-                  variant="outline"
-                >
-                  <FiPlus className="w-4 h-4 mr-2" />
-                  创建简历
-                </Button> */}
                 <Button
                   onClick={() => {
                     // document.getElementById('resume-upload')?.click();
                     navigate('/simple-resume');
                   }}
-                  variant="outline"
+                  variant="primary"
                 >
                   <FiUpload className="w-4 h-4 mr-2" />
                   上传简历
@@ -282,7 +275,7 @@ const ResumeList: React.FC = () => {
               </div>
             </div>
           ) : (
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto flex-1 bg-gray-50/80">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50/80">
                   <tr>

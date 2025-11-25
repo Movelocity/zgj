@@ -32,7 +32,14 @@ export interface LoginCredentials {
 export interface AuthData {
   phone: string;
   sms_code: string;
-  name?: string; // 可选，首次注册时提供
+  name?: string; // 可选,首次注册时提供
+}
+
+export interface AuthResponse {
+  token: string;
+  user: User;
+  is_new_user?: boolean;
+  generated_password?: string; // 自动注册时生成的随机密码
 }
 
 export interface RegisterData {

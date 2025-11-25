@@ -21,6 +21,65 @@ type userService struct{}
 
 var UserService = &userService{}
 
+// generateRandomPassword 生成随机复杂密码（12位，包含大小写字母、数字和特殊字符）
+func (s *userService) generateRandomPassword() (string, error) {
+	const (
+		lowercase   = "abcdefghijklmnopqrstuvwxyz"
+		uppercase   = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+		digits      = "0123456789"
+		special     = "!@#$%^&*"
+		allChars    = lowercase + uppercase + digits + special
+		passwordLen = 12
+	)
+
+	// 确保密码包含每种类型的字符
+	password := make([]byte, passwordLen)
+
+	// 至少包含1个小写字母
+	b := make([]byte, 1)
+	if _, err := rand.Read(b); err != nil {
+		return "", err
+	}
+	password[0] = lowercase[int(b[0])%len(lowercase)]
+
+	// 至少包含1个大写字母
+	if _, err := rand.Read(b); err != nil {
+		return "", err
+	}
+	password[1] = uppercase[int(b[0])%len(uppercase)]
+
+	// 至少包含1个数字
+	if _, err := rand.Read(b); err != nil {
+		return "", err
+	}
+	password[2] = digits[int(b[0])%len(digits)]
+
+	// 至少包含1个特殊字符
+	if _, err := rand.Read(b); err != nil {
+		return "", err
+	}
+	password[3] = special[int(b[0])%len(special)]
+
+	// 填充剩余位置
+	for i := 4; i < passwordLen; i++ {
+		if _, err := rand.Read(b); err != nil {
+			return "", err
+		}
+		password[i] = allChars[int(b[0])%len(allChars)]
+	}
+
+	// 随机打乱顺序
+	for i := passwordLen - 1; i > 0; i-- {
+		if _, err := rand.Read(b); err != nil {
+			return "", err
+		}
+		j := int(b[0]) % (i + 1)
+		password[i], password[j] = password[j], password[i]
+	}
+
+	return string(password), nil
+}
+
 // generateInvitationCode 生成邀请码（格式：ABCD-EFGH-IJKL）
 func (s *userService) generateInvitationCode() string {
 	b := make([]byte, 9) // 9字节可以生成15个字符（base32编码）
@@ -643,7 +702,7 @@ func (s *userService) SetUserActive(userID string, active bool) error {
 }
 
 // LoginOrRegister 统一认证接口 - 自动登录或注册
-func (s *userService) LoginOrRegister(phone, name string) (string, *UserInfo, bool, error) {
+func (s *userService) LoginOrRegister(phone, name string) (string, *UserInfo, bool, string, error) {
 	// 尝试查找现有用户
 	var existingUser model.User
 	err := global.DB.Where("phone = ?", phone).First(&existingUser).Error
@@ -651,7 +710,7 @@ func (s *userService) LoginOrRegister(phone, name string) (string, *UserInfo, bo
 	if err == nil {
 		// 用户存在，执行登录逻辑
 		if !existingUser.Active {
-			return "", nil, false, errors.New("用户已被停用")
+			return "", nil, false, "", errors.New("用户已被停用")
 		}
 
 		// 更新最后登录时间
@@ -660,7 +719,7 @@ func (s *userService) LoginOrRegister(phone, name string) (string, *UserInfo, bo
 		// 生成JWT token
 		token, err := utils.GenerateToken(existingUser.ID, existingUser.Name, existingUser.Role)
 		if err != nil {
-			return "", nil, false, errors.New("token生成失败")
+			return "", nil, false, "", errors.New("token生成失败")
 		}
 
 		// 构建用户信息
@@ -676,16 +735,22 @@ func (s *userService) LoginOrRegister(phone, name string) (string, *UserInfo, bo
 			CreatedAt: existingUser.CreatedAt,
 		}
 
-		return token, userInfo, false, nil
+		return token, userInfo, false, "", nil
 	}
 
 	if !errors.Is(err, gorm.ErrRecordNotFound) {
-		return "", nil, false, errors.New("数据库查询失败")
+		return "", nil, false, "", errors.New("数据库查询失败")
 	}
 
 	// 用户不存在，自动注册
 	if name == "" {
 		name = "用户" + phone[len(phone)-4:] // 使用手机号后4位作为默认用户名
+	}
+
+	// 生成随机复杂密码
+	randomPassword, err := s.generateRandomPassword()
+	if err != nil {
+		return "", nil, false, "", errors.New("生成密码失败")
 	}
 
 	// 检查系统中是否已有用户，如果没有则第一个注册的用户为管理员
@@ -705,20 +770,25 @@ func (s *userService) LoginOrRegister(phone, name string) (string, *UserInfo, bo
 		}
 	}()
 
-	// 创建新用户（无需密码）
-	hashedDefaultPassword, _ := utils.HashPassword("123456") // 设置默认密码，用户可后续修改
+	// 创建新用户（使用随机生成的密码）
+	hashedPassword, err := utils.HashPassword(randomPassword)
+	if err != nil {
+		tx.Rollback()
+		return "", nil, false, "", errors.New("密码加密失败")
+	}
+
 	newUser := model.User{
 		ID:       utils.GenerateTLID(),
 		Name:     name,
 		Phone:    phone,
-		Password: hashedDefaultPassword,
+		Password: hashedPassword,
 		Active:   true,
 		Role:     userRole,
 	}
 
 	if err := tx.Create(&newUser).Error; err != nil {
 		tx.Rollback()
-		return "", nil, false, errors.New("用户创建失败")
+		return "", nil, false, "", errors.New("用户创建失败")
 	}
 
 	// 创建用户档案
@@ -731,29 +801,31 @@ func (s *userService) LoginOrRegister(phone, name string) (string, *UserInfo, bo
 
 	if err := tx.Create(&userProfile).Error; err != nil {
 		tx.Rollback()
-		return "", nil, false, errors.New("用户档案创建失败")
+		return "", nil, false, "", errors.New("用户档案创建失败")
 	}
 
 	// 为新用户创建无限制邀请码
 	if err := s.createUnlimitedInvitationForUser(tx, newUser.ID); err != nil {
 		tx.Rollback()
-		return "", nil, false, err
+		return "", nil, false, "", err
 	}
 
 	// 提交事务
 	if err := tx.Commit().Error; err != nil {
-		return "", nil, false, errors.New("注册失败")
+		return "", nil, false, "", errors.New("注册失败")
 	}
 
 	// 如果是第一个用户（管理员），输出提示信息
 	if userRole == 888 {
-		fmt.Printf("首个用户通过统一认证注册成功，已自动设为管理员 - 手机号: %s, 用户名: %s\n", phone, name)
+		fmt.Printf("首个用户通过统一认证注册成功，已自动设为管理员 - 手机号: %s, 用户名: %s。随机密码: %s\n", phone, name, randomPassword)
+	} else {
+		fmt.Printf("用户通过统一认证注册成功 - 手机号: %s, 用户名: %s。随机密码: %s\n", phone, name, randomPassword)
 	}
 
 	// 生成JWT token
 	token, err := utils.GenerateToken(newUser.ID, newUser.Name, newUser.Role)
 	if err != nil {
-		return "", nil, false, errors.New("token生成失败")
+		return "", nil, false, "", errors.New("token生成失败")
 	}
 
 	// 构建用户信息
@@ -769,7 +841,8 @@ func (s *userService) LoginOrRegister(phone, name string) (string, *UserInfo, bo
 		CreatedAt: newUser.CreatedAt,
 	}
 
-	return token, userInfo, true, nil
+	// 返回随机密码，以便前端显示给用户
+	return token, userInfo, true, randomPassword, nil
 }
 
 // UpdateUserRole 更新用户角色权限
@@ -917,6 +990,7 @@ func (s *userService) allocateInvitationRewards(tx *gorm.DB, inviterID, invitedI
 
 	// 如果两个都没配置，直接返回
 	if inviterRewardErr != nil && invitedRewardErr != nil {
+		fmt.Printf("没有配置邀请奖励\n")
 		return nil // 没有配置奖励，不算错误
 	}
 

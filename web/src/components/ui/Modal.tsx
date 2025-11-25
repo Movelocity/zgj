@@ -1,6 +1,8 @@
 import React, { type ReactNode } from 'react';
 import { FiX } from 'react-icons/fi';
 import { Button } from '@/components/ui';
+import { cn } from '@/lib/utils';
+import { useIsMobile } from '@/hooks/useMediaQuery';
 
 export interface ModalProps {
   /** 是否显示模态框 */
@@ -45,6 +47,8 @@ export interface ModalProps {
   contentClassName?: string;
   /** z-index层级 */
   zIndex?: number;
+  /** 是否在移动端全屏 */
+  fullScreenOnMobile?: boolean;
 }
 
 const Modal: React.FC<ModalProps> = ({
@@ -69,6 +73,7 @@ const Modal: React.FC<ModalProps> = ({
   className = '',
   contentClassName = '',
   zIndex = 1000,
+  fullScreenOnMobile = false,
 }) => {
   if (!open) return null;
 
@@ -99,7 +104,7 @@ const Modal: React.FC<ModalProps> = ({
     };
   }, [open]);
 
-  
+  const isMobile = useIsMobile();
 
   // 尺寸配置
   const sizeClasses = {
@@ -129,12 +134,16 @@ const Modal: React.FC<ModalProps> = ({
 
   return (
     <div
-      className={`fixed inset-0 bg-black/50 flex items-center justify-center p-2 ${className}`}
+      className={`fixed inset-0 bg-black/50 flex items-center justify-center ${className}`}
       style={{ zIndex }}
       onMouseDown={handleMaskClick}
     >
       <div
-        className={`bg-white rounded-lg shadow-xl w-full ${sizeClasses[size]} ${contentClassName}`}
+        className={cn(
+          "bg-white rounded-lg shadow-xl w-full", 
+          fullScreenOnMobile && isMobile ? 'max-w-full w-screen h-screen rounded-none m-0' : sizeClasses[size], 
+          contentClassName
+        )}
         onClick={(e) => e.stopPropagation()}
       >
         {/* 模态框头部 */}

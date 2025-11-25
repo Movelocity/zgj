@@ -1,15 +1,18 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Button, Input, Label } from '@/components/ui';
+import { Button, Input } from '@/components/ui';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, Lock, User, ArrowLeft, Phone, Eye, EyeOff } from 'lucide-react';
+import { Loader2, Lock, User, ArrowLeft, Phone, Eye, EyeOff, Copy, Check } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { useGlobalStore } from '@/store';
 import { cn } from '@/lib/utils';
 import { authAPI } from '@/api/auth';
-import { showSuccess, showInfo } from '@/utils/toast';
+import { showSuccess, showInfo, showError as showErrorToast } from '@/utils/toast';
+import Modal from '@/components/ui/Modal';
+import { userAPI } from '@/api/user';
+// import { useIsMobile } from '@/hooks/useMediaQuery';
 
 const Auth2: React.FC = () => {
   const navigate = useNavigate();
@@ -35,6 +38,14 @@ const Auth2: React.FC = () => {
   const [agreed, setAgreed] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [generatedPassword, setGeneratedPassword] = useState<string>('');
+  const [passwordCopied, setPasswordCopied] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
+  const [changingPassword, setChangingPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmNewPassword, setShowConfirmNewPassword] = useState(false);
 
   useEffect(() => {
     setShowBanner(false);
@@ -43,11 +54,13 @@ const Auth2: React.FC = () => {
     };
   }, [setShowBanner]);
 
+  const autoNavigateRef = useRef(true);
+
   useEffect(() => {
-    if (isAuthenticated) {
-      navigate('/profile');
+    if (isAuthenticated && autoNavigateRef.current && !loading) {
+      navigate('/');
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, navigate, loading]);
 
   // 从 URL 参数中获取邀请码并自动填充
   const inviteFromUrl = searchParams.get('invite');
@@ -143,13 +156,20 @@ const Auth2: React.FC = () => {
     try {
       setLoading(true);
       // 使用 auth 方法（自动注册，不需要邀请码）
-      await auth({
+      const response = await auth({
         phone: formData.phone,
         sms_code: formData.verificationCode
       });
-      
-      showSuccess('登录成功！');
-      navigate('/');
+      console.log("response", response);
+      // 检查是否返回了生成的密码（新用户自动注册时）
+      if (response?.generated_password) {
+        setGeneratedPassword(response.generated_password);
+        setShowPasswordModal(true);
+        autoNavigateRef.current = false;
+        // 不立即跳转，等待用户确认或跳过密码修改
+      } else {
+        showSuccess('登录成功！');
+      }
     } catch (error: any) {
       const message = error.response?.data?.msg || error.response?.data?.message || error.message;
       setError(message || '登录失败，请重试');
@@ -176,11 +196,6 @@ const Auth2: React.FC = () => {
 
     if (formData.password.length < 6) {
       setError('密码长度至少为6位');
-      return;
-    }
-
-    if (!agreed) {
-      setError('请先同意用户协议和隐私政策');
       return;
     }
 
@@ -282,7 +297,7 @@ const Auth2: React.FC = () => {
         showSuccess('注册成功！');
       }
       
-      navigate('/');
+      // navigate('/');
     } catch (error: any) {
       const message = error.response?.data?.msg || error.response?.data?.message || error.message;
       setError(message || '注册失败，请重试');
@@ -290,6 +305,62 @@ const Auth2: React.FC = () => {
       setLoading(false);
     }
   };
+
+  // 复制密码到剪贴板
+  const handleCopyPassword = async () => {
+    try {
+      await navigator.clipboard.writeText(generatedPassword);
+      setPasswordCopied(true);
+      setTimeout(() => setPasswordCopied(false), 2000);
+      showSuccess('密码已复制');
+    } catch (error) {
+      showErrorToast('复制失败，请手动复制');
+    }
+  };
+
+  // 关闭密码弹窗，跳转到首页
+  const handleClosePasswordModal = () => {
+    setShowPasswordModal(false);
+    setGeneratedPassword('');
+    setNewPassword('');
+    setConfirmNewPassword('');
+    navigate('/');
+  };
+
+  // 修改密码
+  const handleChangePassword = async () => {
+    if (!newPassword) {
+      showErrorToast('请输入新密码');
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      showErrorToast('密码长度至少为6位');
+      return;
+    }
+
+    if (newPassword !== confirmNewPassword) {
+      showErrorToast('两次密码输入不一致');
+      return;
+    }
+
+    try {
+      setChangingPassword(true);
+      await userAPI.changePassword({
+        current_password: generatedPassword,
+        new_password: newPassword
+      });
+      showSuccess('密码修改成功！');
+      handleClosePasswordModal();
+    } catch (error: any) {
+      const message = error.response?.data?.msg || error.response?.data?.message || error.message;
+      showErrorToast(message || '密码修改失败');
+    } finally {
+      setChangingPassword(false);
+    }
+  };
+
+  // const isMobile = useIsMobile();
 
   return (
     <>
@@ -349,7 +420,7 @@ const Auth2: React.FC = () => {
         </div>
 
         {/* Auth Forms */}
-        <Card className="bg-white backdrop-blur-sm border-0 shadow-xl">
+        <Card className="bg-white/80 sm:bg-white backdrop-blur-sm border-0 shadow-xl mx-3">
           
           <CardContent>
             <Tabs value={activeTab}>
@@ -542,29 +613,9 @@ const Auth2: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* 邀请码提示 */}
-                    
-                    
-                    {/* 用户协议 */}
-                    <div className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        id="agreed-password"
-                        checked={agreed}
-                        onChange={(e) => setAgreed(e.target.checked)}
-                        className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                      />
-                      <label htmlFor="agreed-password" className="text-xs text-slate-600">
-                        我已阅读并同意
-                        <a href="#" className="text-blue-600 hover:underline mx-1">《用户协议》</a>
-                        和
-                        <a href="#" className="text-blue-600 hover:underline ml-1">《隐私政策》</a>
-                      </label>
-                    </div>
-                    
                     <Button
                       type="submit"
-                      disabled={loading || !formData.phone || !formData.password || !agreed}
+                      disabled={loading || !formData.phone || !formData.password}
                       className="w-full bg-blue-700 hover:bg-blue-600 text-white py-6"
                       size="lg"
                     >
@@ -804,6 +855,142 @@ const Auth2: React.FC = () => {
         </Card>
         </div>
       </div>
+
+      {/* 随机密码提示弹窗 */}
+      <Modal
+        open={showPasswordModal}
+        onClose={handleClosePasswordModal}
+        title="您的职管加账号已成功创建！"
+        size="md"
+        maskClosable={false}
+        escClosable={false}
+        fullScreenOnMobile={true}
+      >
+        <div className="p-6 space-y-4">
+          <Alert className="bg-blue-50 border-blue-200">
+            <AlertDescription className="text-blue-800">
+              我们为您生成了一个安全密码，请妥善保管。
+            </AlertDescription>
+          </Alert>
+
+          {/* 生成的密码 */}
+          <div className="space-y-2">
+            {/* <label className="text-sm font-medium text-gray-700">您的登录密码：</label> */}
+            <div className="flex gap-2">
+              <Input
+                type="text"
+                value={generatedPassword}
+                readOnly
+                className="font-mono bg-gray-50 flex-1"
+              />
+              <Button
+                variant="outline"
+                onClick={handleCopyPassword}
+                className="whitespace-nowrap"
+              >
+                {passwordCopied ? (
+                  <>
+                    <Check className="w-4 h-4 mr-1" />
+                    已复制
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-4 h-4 mr-1" />
+                    复制
+                  </>
+                )}
+              </Button>
+            </div>
+            <p className="text-xs text-gray-500">
+              请将此密码保存在安全的地方，或修改为您熟悉的密码。
+            </p>
+          </div>
+
+          {/* 修改密码表单 */}
+          <div className="border-t pt-4 space-y-4">
+            <h4 className="text-sm font-medium text-gray-900">修改密码（可选）</h4>
+            
+            <div className="space-y-2">
+              {/* <label className="text-sm text-gray-700">新密码</label> */}
+              <div className="relative">
+                <Input
+                  type={showNewPassword ? 'text' : 'password'}
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="请输入新密码（至少6位）"
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowNewPassword(!showNewPassword)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                >
+                  {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              {/* <label className="text-sm text-gray-700">确认新密码</label> */}
+              <div className="relative">
+                <Input
+                  type={showConfirmNewPassword ? 'text' : 'password'}
+                  value={confirmNewPassword}
+                  onChange={(e) => setConfirmNewPassword(e.target.value)}
+                  placeholder="再次输入新密码"
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmNewPassword(!showConfirmNewPassword)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                >
+                  {showConfirmNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+
+            {/* 密码不一致提示 */}
+            {newPassword && confirmNewPassword && newPassword !== confirmNewPassword && (
+              <Alert className="bg-yellow-50 border-yellow-200">
+                <AlertDescription className="text-yellow-800 text-sm">
+                  两次密码输入不一致
+                </AlertDescription>
+              </Alert>
+            )}
+
+            <div className="flex gap-3 pt-2">
+              <Button
+                variant="primary"
+                onClick={handleClosePasswordModal}
+                className="flex-1"
+              >
+                稍后修改
+              </Button>
+              <Button
+                onClick={handleChangePassword}
+                disabled={changingPassword || !newPassword || !confirmNewPassword || newPassword !== confirmNewPassword}
+                className="flex-1 bg-blue-700 hover:bg-blue-600 text-white"
+              >
+                {changingPassword ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    修改中...
+                  </>
+                ) : (
+                  '立即修改密码'
+                )}
+              </Button>
+            </div>
+          </div>
+
+          <Alert className="bg-gray-50 border-gray-200">
+            <AlertDescription className="text-gray-600 text-xs">
+              提示：您也可以点击“稍后修改”进入系统，在个人资料页面修改密码。
+            </AlertDescription>
+          </Alert>
+        </div>
+      </Modal>
     </>
   );
 };
