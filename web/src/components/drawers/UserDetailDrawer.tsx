@@ -377,7 +377,7 @@ const UserDetailDrawer: React.FC<UserDetailDrawerProps> = ({
 
             {/* 基本信息 */}
             <div className="space-y-4">
-              <h4 className="text-sm font-semibold text-gray-900 border-b pb-2">基本信息</h4>
+              {/* <h4 className="text-sm font-semibold text-gray-900 border-b pb-2">基本信息</h4> */}
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -422,7 +422,7 @@ const UserDetailDrawer: React.FC<UserDetailDrawerProps> = ({
 
             {/* 用户角色 */}
             <div className="space-y-4 pt-4 border-t">
-              <h4 className="text-sm font-semibold text-gray-900 border-b pb-2">用户角色</h4>
+              {/* <h4 className="text-sm font-semibold text-gray-900 border-b pb-2">用户角色</h4> */}
               <p className="text-sm text-gray-500">
                 当前角色：
                 <span className={`ml-2 px-2 py-1 text-xs font-medium rounded-full ${
@@ -526,7 +526,7 @@ const UserDetailDrawer: React.FC<UserDetailDrawerProps> = ({
                       新密码
                     </label>
                     <Input
-                      type="password"
+                      type="new-password"
                       value={newPassword}
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                         setNewPassword(e.target.value);

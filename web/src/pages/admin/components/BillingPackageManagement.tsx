@@ -27,8 +27,8 @@ const BillingPackageManagement: React.FC = () => {
     original_price: 0,
     credits_amount: 10,
     validity_days: 0,
-    is_active: true,
-    is_visible: true,
+    is_active: false,
+    is_visible: false,
     sort_order: 0,
     display_order: 0,
   });
@@ -68,7 +68,7 @@ const BillingPackageManagement: React.FC = () => {
       is_active: true,
       is_visible: true,
       sort_order: 0,
-      display_order: 0,
+      display_order: 100,
     });
     setModalOpen(true);
   };
@@ -392,7 +392,7 @@ const BillingPackageManagement: React.FC = () => {
                 type="number"
                 value={formData.display_order}
                 onChange={(e) =>
-                  setFormData({ ...formData, display_order: parseInt(e.target.value) || 0 })
+                  setFormData({ ...formData, display_order: parseInt(e.target.value) || 100 })
                 }
                 min="0"
                 placeholder="0"
@@ -404,7 +404,7 @@ const BillingPackageManagement: React.FC = () => {
 
           <div className="border-t pt-4">
             <label className="block text-sm font-medium text-gray-700 mb-3">状态设置</label>
-            <div className="space-y-3">
+            <div className="space-y-3 flex gap-8">
               <label className="flex items-start cursor-pointer group">
                 <input
                   type="checkbox"
@@ -433,7 +433,7 @@ const BillingPackageManagement: React.FC = () => {
                     前台可见
                   </div>
                   <div className="text-xs text-gray-500">
-                    在用户购买页面显示此套餐
+                    在用户升级页面显示此套餐
                   </div>
                 </div>
               </label>

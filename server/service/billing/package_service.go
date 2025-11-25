@@ -53,3 +53,13 @@ func (s *PackageService) GetPublicBillingPackages() ([]model.BillingPackage, err
 		Find(&packages).Error
 	return packages, err
 }
+
+// GetBillingPackageByName 根据套餐名称获取套餐
+func (s *PackageService) GetBillingPackageByName(name string) (*model.BillingPackage, error) {
+	var pkg model.BillingPackage
+	err := global.DB.Where("name = ? AND is_active = ?", name, true).First(&pkg).Error
+	if err != nil {
+		return nil, err
+	}
+	return &pkg, nil
+}

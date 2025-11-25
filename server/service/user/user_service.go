@@ -252,6 +252,12 @@ func (s *userService) RegisterWithInvitation(phone, name, invitationCode, passwo
 			tx.Rollback()
 			return "", nil, "", errors.New("更新邀请码使用次数失败")
 		}
+
+		// 分配邀请奖励套餐
+		if err := s.allocateInvitationRewards(tx, invitation.CreatorID, newUser.ID); err != nil {
+			// 记录错误但不回滚，不影响注册流程
+			fmt.Printf("分配邀请奖励失败: %v\n", err)
+		}
 	}
 
 	// 为新用户创建无限制邀请码
@@ -896,4 +902,93 @@ func (s *userService) RecordLoginFailure(ip string) {
 func (s *userService) ClearLoginFailures(ip string) {
 	key := fmt.Sprintf("login_fail:%s", ip)
 	global.Cache.Delete(key)
+}
+
+// allocateInvitationRewards 分配邀请奖励套餐
+func (s *userService) allocateInvitationRewards(tx *gorm.DB, inviterID, invitedID string) error {
+	// 查找 site_variables 中的奖励配置
+	var invitationRewardVar model.SiteVariable
+	var invitedRewardVar model.SiteVariable
+
+	// 查找邀请者奖励配置
+	inviterRewardErr := tx.Where("key = ?", "invitation_reward").First(&invitationRewardVar).Error
+	// 查找被邀请者奖励配置
+	invitedRewardErr := tx.Where("key = ?", "invited_reward").First(&invitedRewardVar).Error
+
+	// 如果两个都没配置，直接返回
+	if inviterRewardErr != nil && invitedRewardErr != nil {
+		return nil // 没有配置奖励，不算错误
+	}
+
+	// 分配邀请者奖励
+	if inviterRewardErr == nil && invitationRewardVar.Value != "" {
+		if err := s.allocatePackageByNameInTx(tx, inviterID, invitationRewardVar.Value, "邀请奖励", "inviter"); err != nil {
+			fmt.Printf("为邀请者分配套餐失败: %v\n", err)
+		}
+	}
+
+	// 分配被邀请者奖励
+	if invitedRewardErr == nil && invitedRewardVar.Value != "" {
+		if err := s.allocatePackageByNameInTx(tx, invitedID, invitedRewardVar.Value, "注册奖励", "invited"); err != nil {
+			fmt.Printf("为被邀请者分配套餐失败: %v\n", err)
+		}
+	}
+
+	return nil
+}
+
+// allocatePackageByNameInTx 在事务中根据套餐名称分配套餐
+func (s *userService) allocatePackageByNameInTx(tx *gorm.DB, userID, packageName, notes, rewardType string) error {
+	if packageName == "" {
+		return nil
+	}
+
+	// 根据套餐名称查找套餐
+	var pkg model.BillingPackage
+	if err := tx.Where("name = ? AND is_active = ?", packageName, true).First(&pkg).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return fmt.Errorf("套餐不存在: %s", packageName)
+		}
+		return fmt.Errorf("查找套餐失败: %w", err)
+	}
+
+	// 创建用户套餐
+	userPackage := &model.UserBillingPackage{
+		UserID:           userID,
+		BillingPackageID: pkg.ID,
+		PackageName:      pkg.Name,
+		PackageType:      pkg.PackageType,
+		TotalCredits:     pkg.CreditsAmount,
+		UsedCredits:      0,
+		RemainingCredits: pkg.CreditsAmount,
+		Status:           "active",
+		Priority:         0,
+		Source:           "gift",
+		Notes:            notes,
+	}
+
+	now := time.Now()
+	userPackage.ActivatedAt = &now
+	if pkg.ValidityDays > 0 {
+		expiresAt := now.AddDate(0, 0, pkg.ValidityDays)
+		userPackage.ExpiresAt = &expiresAt
+	}
+
+	if err := tx.Create(userPackage).Error; err != nil {
+		return fmt.Errorf("分配套餐失败: %w", err)
+	}
+
+	// 记录事件日志
+	details := model.JSON(fmt.Sprintf(`{"package_name":"%s","reward_type":"%s"}`, pkg.Name, rewardType))
+	tx.Create(&model.EventLog{
+		UserID:        userID,
+		EventType:     "invitation_reward",
+		EventCategory: "system",
+		Status:        "success",
+		Details:       details,
+		CreatedAt:     time.Now(),
+	})
+
+	fmt.Printf("为用户 %s 分配套餐 %s (%s) 成功\n", userID, pkg.Name, notes)
+	return nil
 }

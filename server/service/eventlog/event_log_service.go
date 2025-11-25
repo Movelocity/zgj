@@ -261,3 +261,15 @@ func (s *eventLogService) LogResumeExport(userID, resumeID, ip, userAgent string
 		Status:        StatusSuccess,
 	})
 }
+
+// LogInvitationReward 快捷记录邀请奖励
+func (s *eventLogService) LogInvitationReward(userID, packageName, rewardType string) {
+	details := model.JSON(fmt.Sprintf(`{"package_name":"%s","reward_type":"%s"}`, packageName, rewardType))
+	s.Log(context.Background(), &model.EventLog{
+		UserID:        userID,
+		EventType:     EventInvitationReward,
+		EventCategory: CategorySystem,
+		Status:        StatusSuccess,
+		Details:       details,
+	})
+}

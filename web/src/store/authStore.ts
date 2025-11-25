@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware';
 import type { User, LoginCredentials, AuthData, RegisterData } from '@/types/user';
 import { authAPI } from '@/api/auth';
 import { TOKEN_KEY } from '@/utils/constants';
+import { ADMIN_ROLE } from '@/utils/constants';
 
 interface AuthState {
   isAuthenticated: boolean;
@@ -19,6 +20,7 @@ interface AuthState {
   checkAuth: () => Promise<boolean>;
   clearError: () => void;
   setUser: (user: User) => void;
+  isAdmin: () => boolean;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -149,6 +151,11 @@ export const useAuthStore = create<AuthState>()(
       setUser: (user: User) => {
         set({ user: user, isAuthenticated: true });
       },
+      isAdmin: () => {
+        const user = get().user;
+        return user ? user.role === ADMIN_ROLE : false;
+      },
+      
     }),
     {
       name: 'auth-storage',

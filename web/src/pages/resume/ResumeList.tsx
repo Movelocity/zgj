@@ -251,7 +251,7 @@ const ResumeList: React.FC = () => {
         </div> */}
 
         {/* 简历列表 */}
-        <div className="rounded-lg shadow-md overflow-hidden">
+        <div className="rounded-lg shadow-md overflow-hidden min-h-[50vh]">
           {loading ? (
             <div className="p-8 text-center">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>

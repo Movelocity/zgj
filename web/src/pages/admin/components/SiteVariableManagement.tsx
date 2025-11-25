@@ -175,6 +175,7 @@ const SiteVariableManagement: React.FC = () => {
             刷新
           </Button>
           <Button
+            variant="outline"
             onClick={() => {
               setFormData({ key: '', value: '', description: '' });
               setShowCreateModal(true);
@@ -209,10 +210,7 @@ const SiteVariableManagement: React.FC = () => {
                   描述
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  创建时间
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  更新时间
+                  创建时间/更新时间
                 </th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                   操作
@@ -251,22 +249,20 @@ const SiteVariableManagement: React.FC = () => {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(variable.created_at).toLocaleString('zh-CN')}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(variable.updated_at).toLocaleString('zh-CN')}
+                      <div>{new Date(variable.created_at).toLocaleString('zh-CN')}</div>
+                      <div>{new Date(variable.updated_at).toLocaleString('zh-CN')}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <button
                         onClick={() => openEditModal(variable)}
-                        className="text-blue-600 hover:text-blue-900 mr-4"
+                        className="text-blue-600 hover:text-blue-900 mr-4 cursor-pointer"
                         title="编辑"
                       >
                         <FiEdit2 className="inline" />
                       </button>
                       <button
                         onClick={() => openDeleteModal(variable)}
-                        className="text-red-600 hover:text-red-900"
+                        className="text-red-600 hover:text-red-900 cursor-pointer"
                         title="删除"
                       >
                         <FiTrash2 className="inline" />

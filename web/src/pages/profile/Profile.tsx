@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { FiUser, FiPackage } from 'react-icons/fi';
 import { ProfileInfo, PackagesList } from './components';
 import { Button } from '@/components/ui/Button';
+import { useAuthStore } from '@/store';
 
 type TabType = 'account' | 'packages';
 
@@ -9,9 +10,11 @@ const Profile: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<TabType>('account');
 
+  const { isAdmin } = useAuthStore();
+
   const tabs = [
-    { id: 'account' as TabType, name: '账号设置', icon: FiUser },
-    { id: 'packages' as TabType, name: '升级计划', icon: FiPackage },
+    { id: 'account' as TabType, name: '账号设置', icon: FiUser, adminOnly: false },
+    { id: 'packages' as TabType, name: '升级计划(Pro)', icon: FiPackage, adminOnly: true },
   ];
 
   const renderContent = () => {
@@ -34,7 +37,7 @@ const Profile: React.FC = () => {
           {/* 左侧菜单 */}
           <div className="fixed left-0 top-0 py-24 h-full w-48 bg-white border-r border-gray-200 flex-shrink-0 overflow-y-auto">
             <nav className="space-y-1">
-              {tabs.map((tab) => {
+              {tabs.filter((tab) => !tab.adminOnly || isAdmin()).map((tab) => {
                 const Icon = tab.icon;
                 return (
                   <button
