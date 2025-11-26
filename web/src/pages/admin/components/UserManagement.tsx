@@ -135,7 +135,7 @@ const UserManagement: React.FC = () => {
                 className="w-64"
               />
             </div>
-            <Button onClick={handleSearch} disabled={loading}>
+            <Button onClick={handleSearch} disabled={loading} variant="primary">
               搜索
             </Button>
             {searchKeyword && (

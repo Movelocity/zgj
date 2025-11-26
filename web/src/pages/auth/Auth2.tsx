@@ -65,10 +65,10 @@ const Auth2: React.FC = () => {
   // 从 URL 参数中获取邀请码并自动填充
   const inviteFromUrl = searchParams.get('invite');
   useEffect(() => {
-    if (inviteFromUrl && activeTab === 'signup') {
+    if (inviteFromUrl) {
       setFormData(prev => ({ ...prev, invitationCode: inviteFromUrl }));
     }
-  }, [inviteFromUrl, activeTab]);
+  }, [inviteFromUrl]);
 
   // 手机号验证
   const validatePhone = (phone: string) => {
@@ -155,20 +155,39 @@ const Auth2: React.FC = () => {
 
     try {
       setLoading(true);
-      // 使用 auth 方法（自动注册，不需要邀请码）
-      const response = await auth({
-        phone: formData.phone,
-        sms_code: formData.verificationCode
-      });
-      console.log("response", response);
-      // 检查是否返回了生成的密码（新用户自动注册时）
-      if (response?.generated_password) {
-        setGeneratedPassword(response.generated_password);
-        setShowPasswordModal(true);
-        autoNavigateRef.current = false;
-        // 不立即跳转，等待用户确认或跳过密码修改
+      
+      // 如果URL中有邀请码，走注册接口
+      if (inviteFromUrl) {
+        const registerData: any = {
+          phone: formData.phone,
+          sms_code: formData.verificationCode,
+          invitation_code: formData.invitationCode
+        };
+        
+        const response = await register(registerData);
+        
+        // 如果后端返回了提示消息（如"已有账号，直接登录"），显示toast提示
+        if (response?.message) {
+          showInfo(response.message);
+        } else {
+          showSuccess('注册成功！');
+        }
       } else {
-        showSuccess('登录成功！');
+        // 使用 auth 方法（自动注册，不需要邀请码）
+        const response = await auth({
+          phone: formData.phone,
+          sms_code: formData.verificationCode
+        });
+        console.log("response", response);
+        // 检查是否返回了生成的密码（新用户自动注册时）
+        if (response?.generated_password) {
+          setGeneratedPassword(response.generated_password);
+          setShowPasswordModal(true);
+          autoNavigateRef.current = false;
+          // 不立即跳转，等待用户确认或跳过密码修改
+        } else {
+          showSuccess('登录成功！');
+        }
       }
     } catch (error: any) {
       const message = error.response?.data?.msg || error.response?.data?.message || error.message;
@@ -524,6 +543,22 @@ const Auth2: React.FC = () => {
                         </Button>
                       </div>
                     </div>
+
+                    {/* 邀请码（URL中携带时显示） */}
+                    {inviteFromUrl && (
+                      <div className="space-y-2 text-xs text-slate-600">
+                        {/* <Input
+                          id="invitationCode"
+                          name="invitationCode"
+                          type="text"
+                          placeholder="使用链接中的邀请码"
+                          value={formData.invitationCode}
+                          onChange={handleInputChange}
+                          disabled={!!inviteFromUrl || loading}
+                        /> */}
+                        检测到邀请码，注册后额外赠送权益
+                      </div>
+                    )}
                     
                     {/* 用户协议 */}
                     <div className="flex items-center space-x-2">
@@ -551,10 +586,10 @@ const Auth2: React.FC = () => {
                       {loading ? (
                         <>
                           <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          登录中...
+                          {inviteFromUrl ? '注册中...' : '登录中...'}
                         </>
                       ) : (
-                        '登录'
+                        inviteFromUrl ? '注册' : '登录'
                       )}
                     </Button>
 
@@ -869,7 +904,7 @@ const Auth2: React.FC = () => {
         <div className="p-6 space-y-4">
           <Alert className="bg-blue-50 border-blue-200">
             <AlertDescription className="text-blue-800">
-              我们为您生成了一个安全密码，请妥善保管。
+              我们为您生成了一个安全密码，请妥善保管或修改为您熟悉的密码。
             </AlertDescription>
           </Alert>
 
@@ -901,14 +936,11 @@ const Auth2: React.FC = () => {
                 )}
               </Button>
             </div>
-            <p className="text-xs text-gray-500">
-              请将此密码保存在安全的地方，或修改为您熟悉的密码。
-            </p>
           </div>
 
           {/* 修改密码表单 */}
           <div className="border-t pt-4 space-y-4">
-            <h4 className="text-sm font-medium text-gray-900">修改密码（可选）</h4>
+            <h4 className="text-sm font-medium text-gray-900">设置新密码（可选）</h4>
             
             <div className="space-y-2">
               {/* <label className="text-sm text-gray-700">新密码</label> */}
@@ -961,7 +993,7 @@ const Auth2: React.FC = () => {
 
             <div className="flex gap-3 pt-2">
               <Button
-                variant="primary"
+                variant="outline"
                 onClick={handleClosePasswordModal}
                 className="flex-1"
               >

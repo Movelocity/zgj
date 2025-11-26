@@ -30,7 +30,7 @@ const BillingPackageManagement: React.FC = () => {
     is_active: false,
     is_visible: false,
     sort_order: 0,
-    display_order: 0,
+    display_order: 100,
   });
 
   useEffect(() => {
@@ -66,7 +66,7 @@ const BillingPackageManagement: React.FC = () => {
       credits_amount: 10,
       validity_days: 0,
       is_active: true,
-      is_visible: true,
+      is_visible: false,
       sort_order: 0,
       display_order: 100,
     });

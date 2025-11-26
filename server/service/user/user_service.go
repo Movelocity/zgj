@@ -581,8 +581,8 @@ func (s *userService) UpdateUserProfile(userID string, req UpdateUserProfileRequ
 	return nil
 }
 
-// GetAllUsers 获取所有用户（管理员）- 支持分页
-func (s *userService) GetAllUsers(page, pageSize string) ([]UserInfo, int64, error) {
+// GetAllUsers 获取所有用户（管理员）- 支持分页和模糊搜索
+func (s *userService) GetAllUsers(page, pageSize, keyword string) ([]UserInfo, int64, error) {
 	pageInt, _ := strconv.Atoi(page)
 	pageSizeInt, _ := strconv.Atoi(pageSize)
 
@@ -598,13 +598,23 @@ func (s *userService) GetAllUsers(page, pageSize string) ([]UserInfo, int64, err
 	var users []model.User
 	var total int64
 
+	// 构建查询
+	query := global.DB.Model(&model.User{})
+
+	// 如果提供了搜索关键词，进行模糊搜索（搜索用户名和手机号）
+	if keyword != "" {
+		keyword = strings.TrimSpace(keyword)
+		// 使用 LIKE 进行模糊匹配，支持用户名和手机号
+		query = query.Where("name LIKE ? OR phone LIKE ?", "%"+keyword+"%", "%"+keyword+"%")
+	}
+
 	// 查询总数
-	if err := global.DB.Model(&model.User{}).Count(&total).Error; err != nil {
+	if err := query.Count(&total).Error; err != nil {
 		return nil, 0, errors.New("查询用户总数失败")
 	}
 
 	// 分页查询
-	if err := global.DB.Order("created_at DESC").
+	if err := query.Order("created_at DESC").
 		Limit(pageSizeInt).
 		Offset(offset).
 		Find(&users).Error; err != nil {

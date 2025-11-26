@@ -309,6 +309,7 @@ func UnifiedAuth(c *gin.Context) {
 	// 记录认证事件
 	if isNewUser {
 		global.EventLog.LogUserRegister(userInfo.ID, req.Phone, ipAddress, userAgent)
+
 	} else {
 		global.EventLog.LogUserLogin(userInfo.ID, ipAddress, userAgent)
 	}
@@ -384,14 +385,15 @@ func UploadAvatar(c *gin.Context) {
 	utils.OkWithData(response, c)
 }
 
-// GetAllUsers 获取所有用户（管理员）- 支持分页
+// GetAllUsers 获取所有用户（管理员）- 支持分页和模糊搜索
 // GET /api/admin/user
 func GetAllUsers(c *gin.Context) {
 	page := c.DefaultQuery("page", "1")
 	pageSize := c.DefaultQuery("page_size", "10")
+	keyword := c.Query("keyword") // 支持搜索关键词
 
 	// 调用服务层
-	users, total, err := service.UserService.GetAllUsers(page, pageSize)
+	users, total, err := service.UserService.GetAllUsers(page, pageSize, keyword)
 	if err != nil {
 		utils.FailWithMessage(err.Error(), c)
 		return
