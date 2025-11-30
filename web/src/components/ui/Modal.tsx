@@ -1,4 +1,4 @@
-import React, { type ReactNode } from 'react';
+import React, { type ReactNode, useEffect } from 'react';
 import { FiX } from 'react-icons/fi';
 import { Button } from '@/components/ui';
 import { cn } from '@/lib/utils';
@@ -92,11 +92,9 @@ const Modal: React.FC<ModalProps> = ({
   }, [open, escClosable, onClose]);
 
   // 阻止body滚动
-  React.useEffect(() => {
+  useEffect(() => {
     if (open) {
       document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'unset';
     }
     
     return () => {
