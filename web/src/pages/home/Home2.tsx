@@ -148,14 +148,16 @@ const Home2: React.FC = () => {
       <section id="features" className="py-20 px-4 sm:px-6 lg:px-8 bg-white">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
-            <Badge className="mb-4 bg-emerald-100 text-emerald-700 hover:bg-emerald-100">
+            {/* <Badge className="mb-4 bg-emerald-100 text-emerald-700 hover:bg-emerald-100">
               功能特色
-            </Badge>
-            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">
-              一站式简历优化解决方案
+            </Badge> */}
+            <h2 className="w-fit mx-auto text-5xl font-bold bg-gradient-to-r from-blue-800 to-cyan-400 bg-clip-text text-transparent mb-4">
+              一站式简历优化
             </h2>
             <p className="text-lg lg:text-xl text-slate-600 max-w-3xl mx-auto">
-              我们的 AI 平台提供全面的简历分析，配合可视化反馈，让优化过程直观高效。
+              具有AI简历分析，智能职位匹配，求职信生成，简历差距分析等功能，
+              <br/>
+              配合可视化反馈，让优化过程更加高效
             </p>
           </div>
           
@@ -283,12 +285,17 @@ const Home2: React.FC = () => {
       <section id="testimonials" className="py-20 px-4 sm:px-6 lg:px-8 bg-white/30">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
-            <Badge className="mb-4 bg-blue-100 text-blue-700 hover:bg-blue-100">
+            {/* <Badge className="mb-4 bg-blue-100 text-blue-700 hover:bg-blue-100">
               用户评价
-            </Badge>
-            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">
-              用户怎么说
+            </Badge> */}
+            <h2 className="w-fit mx-auto text-5xl font-bold bg-gradient-to-r from-blue-800 to-cyan-400 bg-clip-text text-transparent mb-4">
+              用户心声
             </h2>
+            <p className="text-lg lg:text-xl text-slate-600 max-w-3xl mx-auto">
+              职管加团队始终坚守客服一线，用心聆听每份反馈，
+              <br/>
+              以用户声音驱动产品持续优化。
+            </p>
           </div>
           
           <div className="grid md:grid-cols-3 gap-8">
@@ -300,15 +307,16 @@ const Home2: React.FC = () => {
                   ))}
                 </div>
                 <blockquote className="text-slate-700 mb-6">
-                  "职管加的职位匹配功能改变了游戏规则。我能清楚地借助AI分析职位描述，针对性改进简历。第一周就获得了 3 次面试！"
+                  "我之前海投了快200份实习，收到的面邀寥寥无几。我还一直觉得是自己学校不够好。用了‘职管加’的AI分析才发现，我的简历里全是‘负责了…参与了…’，干巴巴的，一点成绩都体现不出来。AI帮我把这些经历重新措辞，比如把‘参与公众号运营’改成‘独立负责每周两篇推文撰写，平均阅读量提升30%’，一下就立体了！内推后现在已经拿到两个面试了！"
                 </blockquote>
                 <div className="flex items-center">
-                  <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-emerald-500 rounded-full flex items-center justify-center text-white font-bold mr-4">
+                  {/* <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-emerald-500 rounded-full flex items-center justify-center text-white font-bold mr-4">
                     张
-                  </div>
+                  </div> */}
+                  <img src={"/images/user1.webp"} alt="Annie" className="w-12 h-12 rounded-full mr-4" />
                   <div>
-                    <div className="font-semibold">张明</div>
-                    <div className="text-sm text-slate-600">软件工程师</div>
+                    <div className="font-semibold">Annie</div>
+                    <div className="text-sm text-slate-600">大三在校生</div>
                   </div>
                 </div>
               </CardContent>
@@ -322,15 +330,16 @@ const Home2: React.FC = () => {
                   ))}
                 </div>
                 <blockquote className="text-slate-700 mb-6 flex-1">
-                  "简历优化功能帮助我完美定制申请。我学到了如何用他们的语言表达并展示文化契合度。"
+                  "我之前的简历太长了，研究项目写了一大堆，HR根本没耐心看。但是我又不知道怎么精简，还好职管加帮我提炼出了重点，还把深奥的技术术语转化成业务方也能听懂的价值描述。同时它还能直接告诉HR相对于其他申请者，我的优势和短板在哪里，让我投递时占据了更大优势。"
                 </blockquote>
                 <div className="flex items-center">
-                  <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-bold mr-4">
+                  {/* <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-bold mr-4">
                     李
-                  </div>
+                  </div> */}
+                  <img src={"/images/user2.webp"} alt="Ethan" className="w-12 h-12 rounded-full mr-4" />
                   <div>
-                    <div className="font-semibold">李婷</div>
-                    <div className="text-sm text-slate-600">市场经理</div>
+                    <div className="font-semibold">Ethan</div>
+                    <div className="text-sm text-slate-600">大四在校生</div>
                   </div>
                 </div>
               </CardContent>
@@ -344,15 +353,16 @@ const Home2: React.FC = () => {
                   ))}
                 </div>
                 <blockquote className="text-slate-700 mb-6 flex-1">
-                  "终于有一个工具能实现交互式编辑，点击内容修改简历非常直观。这是其他家产品所没有的，很看好职管加。"
+                  "我考研失败后急着找工作，简历就是拿课程作业和社团经历凑的，自己都知道很单薄。‘职管加’最牛的是，它能根据我想投的‘产品助理’岗位，智能地帮我挖掘和提炼经历里匹配的点，比如把一个普通的校园调研项目，包装成‘用户需求调研与分析’的经验。它还给了我针对这个岗位的技能关键词，让我心里特别有底！"
                 </blockquote>
                 <div className="flex items-center">
-                  <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-full flex items-center justify-center text-white font-bold mr-4">
+                  {/* <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-full flex items-center justify-center text-white font-bold mr-4">
                     王
-                  </div>
+                  </div> */}
+                  <img src={"/images/user3.webp"} alt="Amy" className="w-12 h-12 rounded-full mr-4" />
                   <div>
-                    <div className="font-semibold">王强</div>
-                    <div className="text-sm text-slate-600">产品设计师</div>
+                    <div className="font-semibold">Amy</div>
+                    <div className="text-sm text-slate-600">应届生</div>
                   </div>
                 </div>
               </CardContent>
@@ -364,26 +374,26 @@ const Home2: React.FC = () => {
       {/* 价格方案 */}
       <section id="pricing" className="py-20 px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-16">
-            <Badge className="mb-4 bg-emerald-100 text-emerald-700 hover:bg-emerald-100">
+          <div className="text-center mb-8">
+            {/* <Badge className="mb-4 bg-emerald-100 text-emerald-700 hover:bg-emerald-100">
               价格方案
-            </Badge>
-            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">
+            </Badge> */}
+            <h2 className="w-fit mx-auto text-5xl font-bold bg-gradient-to-r from-blue-800 to-cyan-400 bg-clip-text text-transparent mb-4">
               简单透明的定价
             </h2>
             <p className="text-xl text-slate-600">
-              从免费开始，随时升级。没有隐藏费用，没有意外。
+              从免费开始，按需升级，零隐藏费用
             </p>
           </div>
           
           <Card className="relative bg-gradient-to-br from-blue-50 to-emerald-50 border-2 border-blue-200 shadow-xl">
-            <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+            {/* <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
               <Badge variant="none" className="bg-gradient-to-r from-blue-800 to-cyan-400 text-white px-6 py-2">
                 最受欢迎
               </Badge>
-            </div>
+            </div> */}
             <CardHeader className="text-center pb-4 flex items-end justify-around flex-row">
-              <div className="text-3xl font-bold">免费试用</div>
+              <div className="text-3xl font-bold">限时免费试用</div>
               <div>
                 <span className="text-5xl font-bold text-slate-900">¥0</span>
                 <span className="text-xl text-slate-600">/月</span>
@@ -429,32 +439,46 @@ const Home2: React.FC = () => {
             </CardContent>
           </Card>
           
-          <div className="mt-12 text-center">
+          {/* <div className="mt-12 text-center">
             <p className="text-slate-600 mb-4">寻找团队或企业解决方案？</p>
             <Button variant="outline" size="lg">
               <Link to="/contact">
                 联系销售
               </Link>
             </Button>
-          </div>
+          </div> */}
         </div>
       </section>
 
       {/* 常见问题 */}
       <section id="faq" className="py-20 px-4 sm:px-6 lg:px-8 bg-white/30">
         <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-16">
-            <Badge className="mb-4 bg-blue-100 text-blue-700 hover:bg-blue-100">
+          <div className="text-center mb-16 cursor-pointer" onClick={() => {
+            const faqContent = document.getElementById('faq-content');
+            if (faqContent) {
+              if (faqContent.style.display === 'block') {
+                faqContent.style.display = 'none';
+                return;
+              } else {
+                faqContent.style.display = 'block';
+                faqContent.scrollIntoView({ behavior: 'smooth' });
+              }
+            }
+          }}>
+            {/* <Badge className="mb-4 bg-blue-100 text-blue-700 hover:bg-blue-100">
               FAQ
-            </Badge>
-            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">
+            </Badge> */}
+            <h2 className="w-fit mx-auto text-5xl font-bold bg-gradient-to-r from-blue-800 to-cyan-400 bg-clip-text text-transparent mb-4">
               常见问题解答
             </h2>
+            <p className="text-lg lg:text-xl text-slate-600 max-w-3xl mx-auto">
+              您想问的，或许就在这里（点击展开）
+            </p>
           </div>
           
-          <div className="space-y-8">
+          <div className="space-y-4 hidden" id="faq-content">
             <Card className="bg-white border-0 shadow-sm">
-              <CardContent className="pt-6">
+              <CardContent>
                 <h3 className="text-xl font-semibold mb-3">AI 分析的准确性如何？</h3>
                 <p className="text-slate-600">
                   我们的 Agent 使用先进的自然语言处理和机器学习模型，基于数千份成功简历和职位描述进行提示词总结。分析准确性会根据用户反馈和实际招聘结果持续改进。
@@ -463,7 +487,7 @@ const Home2: React.FC = () => {
             </Card>
             
             <Card className="bg-white border-0 shadow-sm">
-              <CardContent className="pt-6">
+              <CardContent>
                 <h3 className="text-xl font-semibold mb-3">支持哪些文件格式？</h3>
                 <p className="text-slate-600">
                   我们支持 PDF、Microsoft Word（DOC/DOCX）和图片文件（JPG、PNG）。我们的 OCR 技术可以从基于图像的简历中提取文本，进行全面分析。
@@ -472,7 +496,7 @@ const Home2: React.FC = () => {
             </Card>
             
             <Card className="bg-white border-0 shadow-sm">
-              <CardContent className="pt-6">
+              <CardContent>
                 <h3 className="text-xl font-semibold mb-3">我的简历数据安全和隐私如何？</h3>
                 <p className="text-slate-600">
                   是的，绝对安全。我们使用企业级加密和安全措施。您的简历数据永远不会与第三方共享，您可以随时删除数据。本产品完全符合 GDPR 规定。
@@ -481,7 +505,7 @@ const Home2: React.FC = () => {
             </Card>
             
             <Card className="bg-white border-0 shadow-sm">
-              <CardContent className="pt-6">
+              <CardContent>
                 <h3 className="text-xl font-semibold mb-3">可视化标注系统如何工作？</h3>
                 <p className="text-slate-600">
                   我们的系统分析您的简历内容，并在文档上直接叠加色彩编码的标注。绿色高亮显示优势，黄色表示需要改进的地方，红色标记缺失元素。这使得重点改进一目了然。
@@ -490,7 +514,7 @@ const Home2: React.FC = () => {
             </Card>
             
             <Card className="bg-white border-0 shadow-sm">
-              <CardContent className="pt-6">
+              <CardContent>
                 <h3 className="text-xl font-semibold mb-3">我可以同时改多份不同岗位的简历吗？</h3>
                 <p className="text-slate-600">
                   当然可以！您可以针对多个职位描述分析简历，并为每个职位获得定制反馈。我们的职位匹配功能就是为此而生的。
@@ -502,10 +526,10 @@ const Home2: React.FC = () => {
       </section>
 
       {/* 行动号召 */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-r from-blue-600 to-emerald-600">
+      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-r from-blue-800 to-cyan-400">
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
-            准备好改变你的职业生涯了吗？
+            职管加陪你一起迈好求职第一步
           </h2>
           <p className="text-xl text-blue-100 mb-8">
             成为数千名即将通过职管加提升面试率的求职者之一

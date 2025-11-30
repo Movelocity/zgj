@@ -145,39 +145,39 @@ func (s *userService) RegisterWithInvitation(phone, name, invitationCode, passwo
 		global.DB.Model(&existUser).Update("last_login", time.Now())
 
 		// 处理邀请码逻辑（如果提供了邀请码）
-		if invitationCode != "" {
-			// 检查用户是否已有邀请码使用记录
-			var existingUse model.InvitationUse
-			if err := global.DB.Where("used_by = ?", existUser.ID).First(&existingUse).Error; err != nil {
-				if errors.Is(err, gorm.ErrRecordNotFound) {
-					// 用户没有邀请码使用记录，记录新邀请码
-					// 验证邀请码
-					var invitation model.InvitationCode
-					if err := global.DB.Where("code = ?", invitationCode).First(&invitation).Error; err == nil {
-						// 邀请码存在且有效，创建使用记录
-						if invitation.IsValid() {
-							tx := global.DB.Begin()
-							invitationUse := model.InvitationUse{
-								InvitationCode: invitationCode,
-								UsedBy:         existUser.ID,
-								UsedAt:         time.Now(),
-								IPAddress:      ipAddress,
-								UserAgent:      userAgent,
-							}
-							if err := tx.Create(&invitationUse).Error; err == nil {
-								// 更新邀请码使用次数
-								tx.Model(&invitation).Update("used_count", gorm.Expr("used_count + ?", 1))
-								tx.Commit()
-							} else {
-								tx.Rollback()
-							}
-						}
-					}
-					// 忽略邀请码验证失败的情况，因为用户已存在
-				}
-				// 如果用户已有邀请码使用记录，忽略新邀请码
-			}
-		}
+		// if invitationCode != "" {
+		// 	// 检查用户是否已有邀请码使用记录
+		// 	var existingUse model.InvitationUse
+		// 	if err := global.DB.Where("used_by = ?", existUser.ID).First(&existingUse).Error; err != nil {
+		// 		if errors.Is(err, gorm.ErrRecordNotFound) {
+		// 			// 用户没有邀请码使用记录，记录新邀请码
+		// 			// 验证邀请码
+		// 			var invitation model.InvitationCode
+		// 			if err := global.DB.Where("code = ?", invitationCode).First(&invitation).Error; err == nil {
+		// 				// 邀请码存在且有效，创建使用记录
+		// 				if invitation.IsValid() {
+		// 					tx := global.DB.Begin()
+		// 					invitationUse := model.InvitationUse{
+		// 						InvitationCode: invitationCode,
+		// 						UsedBy:         existUser.ID,
+		// 						UsedAt:         time.Now(),
+		// 						IPAddress:      ipAddress,
+		// 						UserAgent:      userAgent,
+		// 					}
+		// 					if err := tx.Create(&invitationUse).Error; err == nil {
+		// 						// 更新邀请码使用次数
+		// 						tx.Model(&invitation).Update("used_count", gorm.Expr("used_count + ?", 1))
+		// 						tx.Commit()
+		// 					} else {
+		// 						tx.Rollback()
+		// 					}
+		// 				}
+		// 			}
+		// 			// 忽略邀请码验证失败的情况，因为用户已存在
+		// 		}
+		// 		// 如果用户已有邀请码使用记录，忽略新邀请码
+		// 	}
+		// }
 
 		// 生成JWT token
 		token, err := utils.GenerateToken(existUser.ID, existUser.Name, existUser.Role)
