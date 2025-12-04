@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import AppRouter from '@/router';
 import ErrorBoundary from '@/components/common/ErrorBoundary';
+import OnlineStatusIndicator from '@/components/common/OnlineStatusIndicator';
 import { ToastContainer } from '@/components/ui';
 import { useAuthStore } from '@/store';
 import { initToast } from '@/utils/toast';
@@ -17,6 +18,7 @@ function App() {
 
   return (
     <ErrorBoundary>
+      <OnlineStatusIndicator />
       <AppRouter />
       <ToastContainer />
     </ErrorBoundary>

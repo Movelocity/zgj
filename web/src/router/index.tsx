@@ -1,10 +1,12 @@
 import { Suspense } from 'react';
-import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+import { createBrowserRouter, RouterProvider, useRouteError } from 'react-router-dom';
 import Layout from '@/components/layout/Layout';
 import Loading from '@/components/ui/Loading';
 import ProtectedRoute from '@/components/common/ProtectedRoute';
 import AdminRoute from '@/components/common/AdminRoute';
+import ChunkLoadError from '@/pages/error/ChunkLoadError';
 import { lazy } from 'react';
+// import { lazyWithRetry } from '@/utils/lazyWithRetry'; // 可选：使用带重试的懒加载
 
 // 懒加载页面组件
 const Home = lazy(() => import('@/pages/home/Home2'));
@@ -21,6 +23,12 @@ const Administrator = lazy(() => import('@/pages/admin/Administrator'));
 const Contact = lazy(() => import('@/pages/contact/Contact'));
 const NotFound = lazy(() => import('@/pages/error/NotFound'));
 const ServerError = lazy(() => import('@/pages/error/ServerError'));
+
+// 路由错误处理组件
+function RouteErrorBoundary() {
+  const error = useRouteError() as Error;
+  return <ChunkLoadError error={error} />;
+}
 
 // 路由配置
 export const routes = [
@@ -114,6 +122,7 @@ const router = createBrowserRouter([
   {
     path: '/',
     element: <Layout />,
+    errorElement: <RouteErrorBoundary />,
     children: routes.map(route => {
       let element = route.element;
       
@@ -137,6 +146,7 @@ const router = createBrowserRouter([
             {element}
           </Suspense>
         ),
+        errorElement: <RouteErrorBoundary />,
       };
     }),
   },
