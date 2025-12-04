@@ -59,6 +59,7 @@ func InitDB() {
 		&model.User{},
 		&model.UserProfile{},
 		&model.Conversation{},
+		&model.ChatMessage{},
 		&model.Workflow{},
 		&model.ResumeRecord{},
 		&model.WorkflowExecution{},

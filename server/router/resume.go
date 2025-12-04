@@ -19,6 +19,8 @@ func InitResumeRouter(privateGroup *gin.RouterGroup, publicGroup *gin.RouterGrou
 		ResumeRouter.POST("/file_to_text/:id", resume.ResumeFileToText)      // 将简历文件转换为文本
 		ResumeRouter.POST("/structure_data/:id", resume.StructureTextToJSON) // 将简历文本转换为JSON
 		ResumeRouter.POST("/create_text", resume.CreateTextResume)           // 创建纯文本简历
+		ResumeRouter.POST("/:id/pending", resume.SavePendingContent)         // 保存待处理内容
+		ResumeRouter.DELETE("/:id/pending", resume.ClearPendingContent)      // 清除待处理内容
 	}
 
 	// 管理员路由 - 简历管理

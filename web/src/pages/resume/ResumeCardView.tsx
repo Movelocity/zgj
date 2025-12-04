@@ -128,9 +128,9 @@ const ResumeCardView: React.FC = () => {
     }
   };
 
-  // 查看简历详情
+  // 查看简历详情 - 总是打开最新版本
   const handleViewResume = (resumeId: string) => {
-    navigate(`/resume/${resumeId}`);
+    navigate(`/editor/v2/${resumeId}`);
   };
 
   // 格式化日期

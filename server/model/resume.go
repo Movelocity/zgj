@@ -15,6 +15,7 @@ type ResumeRecord struct {
 	FileID           *string   `gorm:"type:varchar(20);index" json:"file_id"`          // 关联文件ID，引用files表，可为空（纯文本简历）
 	TextContent      string    `gorm:"type:text" json:"text_content"`                  // 纯文本内容
 	StructuredData   JSON      `gorm:"type:jsonb" json:"structured_data"`              // 结构化数据
+	PendingContent   JSON      `gorm:"type:jsonb" json:"pending_content"`              // 待保存的AI生成内容（未接收时临时存储）
 	PortraitImg      string    `gorm:"size:512" json:"portrait_img"`                   // 证件照URL
 	Status           string    `gorm:"size:20;default:'active'" json:"status"`         // 状态 (active/deleted)
 	CreatedAt        time.Time `json:"created_at"`

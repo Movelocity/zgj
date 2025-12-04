@@ -39,6 +39,7 @@ export interface ResumeDetail {
   file_id: string;
   text_content: string;
   structured_data: any;
+  pending_content?: any; // 待保存的AI生成内容
   status: string;
   created_at: string;
   updated_at: string;
@@ -78,7 +79,8 @@ export interface ResumeUpdateRequest {
   name?: string;
   text_content?: string;
   structured_data?: any;
-  new_version?: boolean; // 是否创建新版本而不是覆盖原简历
+  pending_content?: any; // 待保存的AI生成内容
+  new_version?: boolean; // 是否创建新版本而不是覆盖原简历，默认true
 }
 
 // 简历更新响应（创建新版本时）

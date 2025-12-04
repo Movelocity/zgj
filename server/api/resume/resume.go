@@ -215,3 +215,37 @@ func ReorganizeResumeVersions(c *gin.Context) {
 
 	utils.OkWithData(result, c)
 }
+
+// SavePendingContent 保存待处理的AI生成内容
+// POST /api/user/resumes/:id/pending
+func SavePendingContent(c *gin.Context) {
+	userID := c.GetString("userID")
+	resumeID := c.Param("id")
+
+	var req resume.SavePendingContentRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		utils.FailWithMessage("请求参数错误", c)
+		return
+	}
+
+	if err := resume.ResumeService.SavePendingContent(userID, resumeID, req.PendingContent); err != nil {
+		utils.FailWithMessage(err.Error(), c)
+		return
+	}
+
+	utils.OkWithMessage("待处理内容保存成功", c)
+}
+
+// ClearPendingContent 清除待处理内容
+// DELETE /api/user/resumes/:id/pending
+func ClearPendingContent(c *gin.Context) {
+	userID := c.GetString("userID")
+	resumeID := c.Param("id")
+
+	if err := resume.ResumeService.ClearPendingContent(userID, resumeID); err != nil {
+		utils.FailWithMessage(err.Error(), c)
+		return
+	}
+
+	utils.OkWithMessage("待处理内容清除成功", c)
+}

@@ -23,6 +23,7 @@ func InitRoutes(r *gin.Engine) {
 	InitUserRouter(PrivateGroup, PublicGroup, AdminGroup)
 	InitWorkflowRouter(PrivateGroup, PublicGroup, AdminGroup)
 	InitConversationRouter(PrivateGroup, PublicGroup, AdminGroup)
+	InitChatMessageRouter(PrivateGroup, PublicGroup, AdminGroup)
 	InitResumeRouter(PrivateGroup, PublicGroup, AdminGroup)
 	InitFileRouter(PrivateGroup, PublicGroup, AdminGroup)
 	InitSystemRouter(PrivateGroup, PublicGroup, AdminGroup)

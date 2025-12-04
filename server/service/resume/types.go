@@ -25,6 +25,7 @@ type ResumeDetailInfo struct {
 	FileID           *string     `json:"file_id"`
 	TextContent      string      `json:"text_content"`
 	StructuredData   interface{} `json:"structured_data"`
+	PendingContent   interface{} `json:"pending_content"` // 待保存的AI生成内容
 	Status           string      `json:"status"`
 	CreatedAt        time.Time   `json:"created_at"`
 	UpdatedAt        time.Time   `json:"updated_at"`
@@ -35,7 +36,8 @@ type UpdateResumeRequest struct {
 	Name           string      `json:"name"`
 	TextContent    string      `json:"text_content"`
 	StructuredData interface{} `json:"structured_data"`
-	NewVersion     bool        `json:"new_version"` // 是否创建新版本而不是覆盖原简历
+	PendingContent interface{} `json:"pending_content"` // 待保存的AI生成内容
+	NewVersion     bool        `json:"new_version"`     // 是否创建新版本而不是覆盖原简历
 }
 
 // UploadResumeResponse 上传简历响应
@@ -84,4 +86,9 @@ type ReorganizeResult struct {
 	ProcessedResumes int      `json:"processed_resumes"` // 处理的简历数
 	UpdatedVersions  int      `json:"updated_versions"`  // 更新的版本号数量
 	Errors           []string `json:"errors"`            // 错误信息列表
+}
+
+// SavePendingContentRequest 保存待处理内容请求
+type SavePendingContentRequest struct {
+	PendingContent interface{} `json:"pending_content" binding:"required"` // 待保存的AI生成内容
 }

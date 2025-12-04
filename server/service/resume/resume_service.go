@@ -134,6 +134,12 @@ func (s *resumeService) GetResumeByID(userID, resumeID string) (*ResumeDetailInf
 		json.Unmarshal(resume.StructuredData, &structuredData)
 	}
 
+	// 解析待保存内容
+	var pendingContent interface{}
+	if len(resume.PendingContent) > 0 {
+		json.Unmarshal(resume.PendingContent, &pendingContent)
+	}
+
 	resumeDetail := &ResumeDetailInfo{
 		ID:               resume.ID,
 		ResumeNumber:     resume.ResumeNumber,
@@ -143,6 +149,7 @@ func (s *resumeService) GetResumeByID(userID, resumeID string) (*ResumeDetailInf
 		FileID:           resume.FileID,
 		TextContent:      resume.TextContent,
 		StructuredData:   structuredData,
+		PendingContent:   pendingContent,
 		Status:           resume.Status,
 		CreatedAt:        resume.CreatedAt,
 		UpdatedAt:        resume.UpdatedAt,
@@ -186,6 +193,13 @@ func (s *resumeService) UpdateResume(userID, resumeID string, req UpdateResumeRe
 			return nil, errors.New("结构化数据格式错误")
 		}
 		updates["structured_data"] = model.JSON(dataJSON)
+	}
+	if req.PendingContent != nil {
+		pendingJSON, err := json.Marshal(req.PendingContent)
+		if err != nil {
+			return nil, errors.New("待保存内容格式错误")
+		}
+		updates["pending_content"] = model.JSON(pendingJSON)
 	}
 
 	if len(updates) > 0 {
@@ -719,6 +733,57 @@ func (s *resumeService) reorganizeUserResumes(userID string, result *ReorganizeR
 				}
 			}
 		}
+	}
+
+	return nil
+}
+
+// SavePendingContent 保存待处理的AI生成内容（不创建新版本）
+// 用于AI对话过程中临时保存内容，用户未接收时不创建新版本
+func (s *resumeService) SavePendingContent(userID, resumeID string, pendingContent interface{}) error {
+	// 检查简历是否存在且属于用户
+	var resume model.ResumeRecord
+	if err := global.DB.Where("id = ? AND user_id = ? AND status = ?", resumeID, userID, "active").First(&resume).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return errors.New("简历不存在")
+		}
+		return errors.New("查询简历失败")
+	}
+
+	// 序列化待保存内容
+	pendingJSON, err := json.Marshal(pendingContent)
+	if err != nil {
+		return errors.New("待保存内容格式错误")
+	}
+
+	// 更新pending_content字段
+	if err := global.DB.Model(&resume).Updates(map[string]interface{}{
+		"pending_content": model.JSON(pendingJSON),
+		"updated_at":      time.Now(),
+	}).Error; err != nil {
+		return errors.New("保存待处理内容失败")
+	}
+
+	return nil
+}
+
+// ClearPendingContent 清除待保存内容（用户接收后清除）
+func (s *resumeService) ClearPendingContent(userID, resumeID string) error {
+	// 检查简历是否存在且属于用户
+	var resume model.ResumeRecord
+	if err := global.DB.Where("id = ? AND user_id = ? AND status = ?", resumeID, userID, "active").First(&resume).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return errors.New("简历不存在")
+		}
+		return errors.New("查询简历失败")
+	}
+
+	// 清除pending_content字段
+	if err := global.DB.Model(&resume).Updates(map[string]interface{}{
+		"pending_content": nil,
+		"updated_at":      time.Now(),
+	}).Error; err != nil {
+		return errors.New("清除待处理内容失败")
 	}
 
 	return nil

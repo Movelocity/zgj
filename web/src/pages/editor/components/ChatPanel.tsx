@@ -7,6 +7,10 @@ import type { ResumeV2Data } from '@/types/resumeV2';
 import { workflowAPI } from '@/api/workflow';
 import { parseAndFixResumeJson } from '@/utils/helpers';
 import { generateAIResponse, generateSuggestions, truncate } from './utils';
+import { resumeAPI } from '@/api/resume';
+import { chatMessageAPI } from '@/api/chatMessage';
+import type { ChatMessage as BackendChatMessage } from '@/types/chatMessage';
+import { useAuthStore } from '@/store';
 import cn from 'classnames';
 
 interface Message {
@@ -15,6 +19,7 @@ interface Message {
   content: string;
   timestamp: Date;
   suggestions?: string[];
+  isHistorical?: boolean; // 标记是否为历史消息
 }
 
 interface ChatPanelProps {
@@ -22,7 +27,8 @@ interface ChatPanelProps {
   onResumeDataChange: (data: ResumeV2Data, require_commit: boolean) => void;
   initialMessages?: Message[];
   onMessagesChange?: (messages: Message[]) => void;
-  isJD: boolean
+  isJD: boolean;
+  resumeId?: string; // 简历ID，用于保存pending_content
 }
 
 // 导出Message接口供外部使用
@@ -35,8 +41,12 @@ export default function ChatPanel({
   onResumeDataChange,
   initialMessages,
   onMessagesChange,
-  isJD
+  isJD,
+  resumeId
 }: ChatPanelProps) {
+  const { user } = useAuthStore();
+  const userName = user?.name || user?.phone || '用户';
+  
   const [messages, setMessages] = useState<Message[]>(initialMessages || [
     {
       id: '1',
@@ -54,6 +64,15 @@ export default function ChatPanel({
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [isResponding, setIsResponding] = useState(false);
   const [isFormatting, setIsFormatting] = useState(false);
+  
+  // 使用ref跟踪最新的简历数据，用于保存pending_content
+  const latestResumeDataRef = useRef<ResumeV2Data>(resumeData);
+  
+  // Chat message loading state
+  // const [isLoadingMessages, setIsLoadingMessages] = useState(false);
+  const [hasMoreMessages, setHasMoreMessages] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const messagesLoadedRef = useRef(false);
 
   const lastScrollTop = useRef(0);
   const lastAbortScrollMessageId = useRef('');
@@ -76,6 +95,61 @@ export default function ChatPanel({
   useEffect(() => {
     onMessagesChange?.(messages);
   }, [messages, onMessagesChange]);
+
+  // 同步 resumeData prop 的变化到 ref
+  useEffect(() => {
+    latestResumeDataRef.current = resumeData;
+  }, [resumeData]);
+
+  // Load chat messages from backend when component mounts
+  useEffect(() => {
+    const loadChatMessages = async () => {
+      if (!resumeId || messagesLoadedRef.current) return;
+      
+      try {
+        // setIsLoadingMessages(true);
+        const response = await chatMessageAPI.getMessages({
+          resume_id: resumeId,
+          page: 1,
+          page_size: 20,
+        });
+        
+        if (response.code === 0 && response.data.messages.length > 0) {
+          // Convert backend messages to frontend format
+          const loadedMessages: Message[] = response.data.messages
+            .reverse() // Backend returns newest first, we want oldest first
+            .map((msg: BackendChatMessage) => ({
+              id: msg.id,
+              type: msg.sender_name.includes('AI') || msg.sender_name === '简历专家' ? 'assistant' as const : 'user' as const,
+              content: msg.message.content,
+              timestamp: new Date(msg.created_at),
+              isHistorical: true, // 标记为历史消息
+            }));
+          
+          setMessages(loadedMessages);
+          setHasMoreMessages(response.data.has_more);
+          console.log('[ChatPanel] 加载历史消息成功:', loadedMessages.length);
+        } else {
+          // No messages, use default welcome message
+          setMessages([{
+            id: '1',
+            type: 'assistant',
+            content: "您好，我是简历专家，您可以随时与我对话，我会根据您的需求进一步优化简历",
+            timestamp: new Date(),
+          }]);
+        }
+        
+        messagesLoadedRef.current = true;
+      } catch (error) {
+        console.error('[ChatPanel] 加载历史消息失败:', error);
+        // On error, keep default message
+      } finally {
+        // setIsLoadingMessages(false);
+      }
+    };
+    
+    loadChatMessages();
+  }, [resumeId]);
 
   // 监听屏幕宽度变化
   useEffect(() => {
@@ -157,6 +231,8 @@ export default function ChatPanel({
       console.log(`[ChatPanel] 处理更新块: ${blockId}`, data);
       
       if (data && data.blocks && data.blocks.length > 0) {
+        // 更新ref以跟踪最新数据
+        latestResumeDataRef.current = data;
         onResumeDataChange(data, true);
         console.log(`[ChatPanel] 简历数据已更新`);
       }
@@ -184,6 +260,8 @@ export default function ChatPanel({
       console.log(`[ChatPanel] 处理格式化块: ${blockId}`, data);
       
       if (data && data.blocks && data.blocks.length > 0) {
+        // 更新ref以跟踪最新数据
+        latestResumeDataRef.current = data;
         onResumeDataChange(data, true);
         console.log(`[ChatPanel] 格式化后的简历数据已更新`);
       }
@@ -223,6 +301,24 @@ export default function ChatPanel({
     });
     if (msg.content) {
       setIsTyping(false);
+    }
+  };
+  
+  // Save message to backend
+  const saveMessageToBackend = async (message: Message) => {
+    if (!resumeId) return;
+    
+    try {
+      await chatMessageAPI.createMessage({
+        resume_id: resumeId,
+        sender_name: message.type === 'user' ? userName : 'AI助手',
+        message: {
+          content: message.content,
+        },
+      });
+      console.log('[ChatPanel] 消息已保存到后端:', message.id);
+    } catch (error) {
+      console.error('[ChatPanel] 保存消息失败:', error);
     }
   };
 
@@ -327,6 +423,9 @@ export default function ChatPanel({
     setInputValue('');
     setSuggestions([])
     
+    // Save user message to backend
+    saveMessageToBackend(userMessage);
+    
     // 重置 textarea 高度
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
@@ -369,6 +468,24 @@ export default function ChatPanel({
           setIsTyping(false);
           setIsResponding(false);
           console.log(`[${aiResponse.id}] 工作流完成`);
+          
+          // Save AI message to backend when workflow is finished
+          if (aiResponse.content.trim()) {
+            saveMessageToBackend(aiResponse);
+          }
+          
+          // Auto-save: 工作流完成时自动保存pending_content和messages
+          if (resumeId) {
+            const pendingData = {
+              newResumeData: latestResumeDataRef.current,
+              lastUpdate: new Date().toISOString()
+            };
+            resumeAPI.savePendingContent(resumeId, pendingData).then(() => {
+              console.log('[ChatPanel] AI对话完成，自动保存至pending_content，数据:', latestResumeDataRef.current);
+            }).catch((error) => {
+              console.error('[ChatPanel] 保存pending_content失败:', error);
+            });
+          }
           break;
         
         case 'error':
@@ -410,7 +527,7 @@ export default function ChatPanel({
           id: "",
           name: "common-analysis",
           inputs: {
-            origin_resume: JSON.stringify(resumeData),
+            origin_resume: JSON.stringify(latestResumeDataRef.current),
           },
           onMessage: onMessage,
           onError: onError,
@@ -422,7 +539,7 @@ export default function ChatPanel({
         const inputs: any = {
           __query: query,
           __conversation_id: conversationIdRef.current,
-          resume: JSON.stringify(resumeData),
+          resume: JSON.stringify(latestResumeDataRef.current),
         }
         if (isJD) {
           inputs.job_detail = localStorage.getItem('job_description');
@@ -460,7 +577,7 @@ export default function ChatPanel({
       // const lightResume = parseResumeSummary(resumeData as ResumeData);
       // 2. 调用阻塞式api，得到结构化的简历内容
       const uploadData = {
-        current_resume: JSON.stringify(resumeData),
+        current_resume: JSON.stringify(latestResumeDataRef.current),
         resume_edit: content
       }
       const structuredResumeResult = await workflowAPI.executeWorkflow("smart-format-2", uploadData, true);
@@ -474,6 +591,8 @@ export default function ChatPanel({
       if (structuredResumeData && typeof structuredResumeData === 'string') {
         // 使用 parseAndFixResumeJson 确保数据安全性和格式正确性
         const finalResumeData = parseAndFixResumeJson(structuredResumeData as string);
+        // 更新ref以跟踪最新数据
+        latestResumeDataRef.current = finalResumeData;
         onResumeDataChange(finalResumeData, true);
       }
     } catch (error) {
@@ -484,9 +603,10 @@ export default function ChatPanel({
   };
 
 
-  // 滚动特效
+  // Load more messages when scrolling to top
   const handleScroll = useCallback(() => {
     if (scrollRef.current && scrollGradientTopRef.current && scrollGradientBottomRef.current) {
+      // Gradient effects
       if(scrollRef.current.scrollTop > 100) {
         scrollGradientTopRef.current.style.height = '24px';
       } else {
@@ -498,8 +618,69 @@ export default function ChatPanel({
       } else {
         scrollGradientBottomRef.current.style.height = '0';
       }
+      
+      // Load more messages when scrolled to top
+      if (scrollRef.current.scrollTop < 50 && hasMoreMessages && !isLoadingMore && resumeId) {
+        loadMoreMessages();
+      }
     }
-  }, []);
+  }, [hasMoreMessages, isLoadingMore, resumeId]);
+  
+  // Load older messages
+  const loadMoreMessages = useCallback(async () => {
+    if (!resumeId || !hasMoreMessages || isLoadingMore) return;
+    
+    try {
+      setIsLoadingMore(true);
+      
+      // Get the oldest message's timestamp
+      const oldestMessage = messages[0];
+      if (!oldestMessage) return;
+      
+      const beforeTime = oldestMessage.timestamp.toISOString();
+      
+      const response = await chatMessageAPI.getMessages({
+        resume_id: resumeId,
+        page: 1,
+        page_size: 20,
+        before_time: beforeTime,
+      });
+      
+      if (response.code === 0 && response.data.messages.length > 0) {
+          const olderMessages: Message[] = response.data.messages
+          .reverse()
+          .map((msg: BackendChatMessage) => ({
+            id: msg.id,
+            isHistorical: true, // 标记为历史消息
+            type: msg.sender_name.includes('AI') || msg.sender_name === '简历专家' ? 'assistant' as const : 'user' as const,
+            content: msg.message.content,
+            timestamp: new Date(msg.created_at),
+          }));
+        
+        // Save current scroll position
+        const scrollElement = scrollRef.current;
+        const previousScrollHeight = scrollElement?.scrollHeight || 0;
+        
+        // Prepend older messages
+        setMessages(prev => [...olderMessages, ...prev]);
+        setHasMoreMessages(response.data.has_more);
+        
+        // Restore scroll position after new messages are added
+        setTimeout(() => {
+          if (scrollElement) {
+            const newScrollHeight = scrollElement.scrollHeight;
+            scrollElement.scrollTop = newScrollHeight - previousScrollHeight;
+          }
+        }, 0);
+        
+        console.log('[ChatPanel] 加载更多历史消息成功:', olderMessages.length);
+      }
+    } catch (error) {
+      console.error('[ChatPanel] 加载更多消息失败:', error);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  }, [resumeId, messages, hasMoreMessages, isLoadingMore]);
 
   return (
     <>
@@ -548,6 +729,23 @@ export default function ChatPanel({
               onScroll={handleScroll}
               ref={scrollRef}
             >
+              {/* Loading indicator for loading more messages */}
+              {isLoadingMore && (
+                <div className="flex justify-center py-2">
+                  <div className="flex items-center space-x-2 text-gray-500 text-sm">
+                    <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                    <span>加载更多消息...</span>
+                  </div>
+                </div>
+              )}
+              
+              {/* Show message when no more messages */}
+              {!hasMoreMessages && messages.length > 5 && (
+                <div className="flex justify-center py-2">
+                  <div className="text-gray-400 text-xs">没有更多消息了</div>
+                </div>
+              )}
+              
               {messages.map((message) => (
                 <div key={message.id} className="space-y-2">
                   {message.type === 'user' ? (
@@ -564,6 +762,7 @@ export default function ChatPanel({
                       messageId={message.id}
                       className="text-sm leading-relaxed text-gray-800"
                       resumeData={resumeData}
+                      isHistorical={message.isHistorical} // 传递历史消息标记
                     />
                   )}
                 </div>

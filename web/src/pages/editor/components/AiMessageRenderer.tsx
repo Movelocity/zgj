@@ -11,6 +11,7 @@ interface AiMessageRendererProps {
   messageId: string;
   className?: string;
   resumeData: ResumeV2Data;
+  isHistorical?: boolean; // 是否为历史消息，历史消息不触发事件
 }
 
 interface ResumeUpdateBlock {
@@ -27,7 +28,8 @@ export default function AiMessageRenderer({
   content, 
   messageId,
   className,
-  resumeData
+  resumeData,
+  isHistorical = false // 默认为非历史消息
 }: AiMessageRendererProps) {
   const [processedContent, setProcessedContent] = useState<string>('');
   const [updateBlocks, setUpdateBlocks] = useState<ResumeUpdateBlock[]>([]);
@@ -40,6 +42,12 @@ export default function AiMessageRenderer({
    * 优化：直接更新 Map 中的状态，避免复杂的 state 更新
    */
   const formatBlock = async (blockId: string, content: string): Promise<void> => {
+    // 历史消息不触发格式化
+    if (isHistorical) {
+      console.log(`[Resume Update] 块 ${blockId} 是历史消息，跳过格式化`);
+      return;
+    }
+    
     try {
       console.log(`[Resume Update] 开始格式化块 ${blockId}...`);
 
@@ -160,17 +168,21 @@ export default function AiMessageRenderer({
               // 解析成功
               blockStatus = 'completed';
               
-              // 触发标准事件
-              const event = new CustomEvent('resume-update-detected', {
-                detail: {
-                  blockId,
-                  content: currentBlockContent,
-                  data: resumeUpdateData,
-                  messageId
-                }
-              });
-              window.dispatchEvent(event);
-              console.log(`[Resume Update] 块 ${blockId} 解析成功，已触发标准事件`);
+              // 只有非历史消息才触发标准事件
+              if (!isHistorical) {
+                const event = new CustomEvent('resume-update-detected', {
+                  detail: {
+                    blockId,
+                    content: currentBlockContent,
+                    data: resumeUpdateData,
+                    messageId
+                  }
+                });
+                window.dispatchEvent(event);
+                console.log(`[Resume Update] 块 ${blockId} 解析成功，已触发标准事件`);
+              } else {
+                console.log(`[Resume Update] 块 ${blockId} 是历史消息，跳过事件触发`);
+              }
             } else if (currentBlockContent.trim().length > 0) {
               // 解析失败但内容不为空，需要格式化
               blockStatus = 'formatting';
@@ -261,6 +273,25 @@ export default function AiMessageRenderer({
         const block = updateBlocks[blockIndex];
         
         if (!block) return null;
+
+        // 历史消息不显示动画效果，直接显示为已完成
+        if (isHistorical) {
+          return (
+            <div 
+              key={`block-${index}`}
+              className="my-3 px-4"
+            >
+              <div className="bg-gradient-to-r from-gray-50 to-gray-100 border-1 border-gray-200 rounded-lg px-4 py-3 shadow-sm">
+                <div className="flex items-center space-x-3">
+                  <FiCheckSquare className="w-5 h-5 text-gray-500" />
+                  <div className="flex-1">
+                    <h4 className="text-sm font-medium text-gray-700">历史消息中的简历更新</h4>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        }
 
         return (
           <div 

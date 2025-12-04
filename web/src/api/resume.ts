@@ -79,4 +79,14 @@ export const resumeAPI = {
     }
     return apiClient.post(`/api/user/resumes/structure_data/v2/${id}`);
   },
+
+  // 保存待处理内容（AI生成内容未接收时临时保存）
+  savePendingContent: (id: string, pendingContent: any): Promise<ApiResponse> => {
+    return apiClient.post(`/api/user/resumes/${id}/pending`, { pending_content: pendingContent });
+  },
+
+  // 清除待处理内容（用户接收后清除）
+  clearPendingContent: (id: string): Promise<ApiResponse> => {
+    return apiClient.delete(`/api/user/resumes/${id}/pending`);
+  },
 };

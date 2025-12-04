@@ -8,6 +8,7 @@ import ChatPanel, { type Message } from './components/ChatPanel';
 import ResumeEditorV2 from './components/ResumeEditor';
 import FontSettingsDropdown from './components/FontSettingsDropdown';
 import ExportSplitButton from './components/ExportSplitButton';
+import VersionSelector from './components/VersionSelector';
 import { type FontSettings } from './components/FontSettingsPanel';
 import LoadingIndicator, { type LoadingStage } from '@/components/LoadingIndicator';
 import type { ResumeV2Data } from '@/types/resumeV2';
@@ -38,6 +39,8 @@ export default function ResumeDetails() {
   const [newResumeData, setNewResumeData] = useState<ResumeV2Data>(defaultResumeV2Data);  // AI优化后的内容，需人工确认后合并
   // const [text_content, setTextContent] = useState<string>('');
   const [resumeName, setResumeName] = useState<string>('');
+  const [resumeNumber, setResumeNumber] = useState<string>('');
+  const [resumeVersion, setResumeVersion] = useState<number>(1);
   const [chatMessages, setChatMessages] = useState<Message[]>([
     {
       id: '1',
@@ -283,8 +286,18 @@ export default function ResumeDetails() {
         throw new Error('获取简历详情失败');
       }
 
-      const { name, text_content, structured_data, file_id } = response.data;
+      const { name, text_content, structured_data, file_id, pending_content, resume_number, version } = response.data;
       setResumeName(name);
+      setResumeNumber(resume_number);
+      setResumeVersion(version);
+      
+      // 恢复pending_content中的聊天记录和简历数据
+      if (pending_content) {
+        console.log('[ResumeDetails] 发现pending_content，恢复数据:', pending_content);
+        if (pending_content.newResumeData) {
+          setNewResumeData(pending_content.newResumeData);
+        }
+      }
 
       // 步骤1：没有文件时，解析文件
       if (!text_content && file_id) {
@@ -390,12 +403,22 @@ export default function ResumeDetails() {
     if (!id) return;
     try {
       setSaving(true);
-      await resumeAPI.updateResume(id, {
+      // 默认创建新版本（new_version: true）
+      const response = await resumeAPI.updateResume(id, {
         name: resumeName,
         // text_content: text_content,
         structured_data: resumeData,
+        new_version: true, // 创建新版本而不是覆盖原简历
       });
-      showSuccess('保存成功');
+      
+      // 如果创建了新版本，导航到新版本页面
+      if (response.code === 0 && response.data?.new_resume_id) {
+        showSuccess('保存成功，已创建新版本');
+        // 导航到新版本
+        navigate(`/editor/v2/${response.data.new_resume_id}`);
+      } else {
+        showSuccess('保存成功');
+      }
     } catch (error) {
       showError(error instanceof Error ? error.message : '保存失败');
     } finally {
@@ -435,6 +458,13 @@ export default function ResumeDetails() {
   // Go back
   const handleGoBack = () => {
     navigate('/resumes');
+  };
+  
+  // Handle version change
+  const handleVersionChange = (newResumeId: string, newVersion: number) => {
+    console.log('Switching to version:', newVersion, 'ID:', newResumeId);
+    navigate(`/editor/v2/${newResumeId}`);
+    // 页面会重新加载，自动加载新版本的数据
   };
 
   // Handle resume data change
@@ -488,6 +518,13 @@ export default function ResumeDetails() {
           </div>
 
           <div className="flex items-center space-x-2">
+            <VersionSelector
+              currentResumeId={id || ''}
+              currentVersion={resumeVersion}
+              resumeNumber={resumeNumber}
+              onVersionChange={handleVersionChange}
+            />
+            
             <FontSettingsDropdown
               fontSettings={fontSettings}
               onFontSettingsChange={setFontSettings}
@@ -542,6 +579,7 @@ export default function ResumeDetails() {
               resumeData={resumeData}
               onResumeDataChange={(data, require_commit) => handleResumeDataChange(data as ResumeV2Data, require_commit)}
               isJD={isJD}
+              resumeId={id}
             />
           </>
         )}
