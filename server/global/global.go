@@ -36,10 +36,81 @@ type EventLogServiceType interface {
 	LogResumeExport(userID, resumeID, ip, userAgent string)
 }
 
+// TOSServiceInterface TOS文件存储服务接口
+type TOSServiceInterface interface {
+	GetSTSCredentials(ctx context.Context) (*TOSSTSCredentials, error)
+	GeneratePresignedURL(ctx context.Context, req *TOSPresignRequest) (*TOSPresignResponse, error)
+	GenerateDownloadURL(ctx context.Context, key string) (*TOSDownloadResponse, error)
+	RecordUpload(ctx context.Context, upload *model.TOSUpload) error
+	ListUploads(ctx context.Context, userID string, page, pageSize int) (*TOSUploadListResponse, error)
+}
+
+// TOS service types (to avoid import cycles)
+type TOSSTSCredentials struct {
+	AccessKeyID     string `json:"access_key_id"`
+	SecretAccessKey string `json:"secret_access_key"`
+	SessionToken    string `json:"session_token"`
+	Expiration      string `json:"expiration"`
+	Region          string `json:"region"`
+	Endpoint        string `json:"endpoint"`
+	Bucket          string `json:"bucket"`
+}
+
+type TOSPresignRequest struct {
+	Key         string            `json:"key"`
+	ContentType string            `json:"content_type,omitempty"`
+	Metadata    map[string]string `json:"metadata,omitempty"`
+}
+
+type TOSPresignResponse struct {
+	URL       string `json:"url"`
+	Key       string `json:"key"`
+	ExpiresIn int    `json:"expires_in"`
+}
+
+type TOSDownloadResponse struct {
+	URL       string `json:"url"`
+	ExpiresIn int    `json:"expires_in"`
+}
+
+type TOSUploadListResponse struct {
+	Total   int64             `json:"total"`
+	Page    int               `json:"page"`
+	PerPage int               `json:"per_page"`
+	Items   []model.TOSUpload `json:"items"`
+}
+
+// ASRServiceInterface ASR语音识别服务接口
+type ASRServiceInterface interface {
+	SubmitTask(ctx context.Context, req *ASRSubmitTaskRequest) (*model.ASRTask, error)
+	GetTask(ctx context.Context, taskID string) (*model.ASRTask, error)
+	PollTask(ctx context.Context, taskID string) (*model.ASRTask, error)
+	ListTasks(ctx context.Context, userID string, page, pageSize int) (*ASRTaskListResponse, error)
+	DeleteTask(ctx context.Context, taskID string) error
+	RetryTask(ctx context.Context, taskID string) (*model.ASRTask, error)
+}
+
+// ASR service types
+type ASRSubmitTaskRequest struct {
+	UserID      string                 `json:"user_id"`
+	AudioURL    string                 `json:"audio_url"`
+	AudioFormat string                 `json:"audio_format"`
+	Options     map[string]interface{} `json:"options,omitempty"`
+}
+
+type ASRTaskListResponse struct {
+	Total   int64           `json:"total"`
+	Page    int             `json:"page"`
+	PerPage int             `json:"per_page"`
+	Items   []model.ASRTask `json:"items"`
+}
+
 var (
-	CONFIG   *config.Config
-	DB       *gorm.DB
-	Cache    *MemoryCache
-	LOG      *zap.Logger
-	EventLog EventLogServiceType
+	CONFIG     *config.Config
+	DB         *gorm.DB
+	Cache      *MemoryCache
+	LOG        *zap.Logger
+	EventLog   EventLogServiceType
+	TOSService TOSServiceInterface
+	ASRService ASRServiceInterface
 )

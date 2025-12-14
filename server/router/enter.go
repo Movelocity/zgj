@@ -31,4 +31,6 @@ func InitRoutes(r *gin.Engine) {
 	InitSiteVariableRouter(PrivateGroup, PublicGroup, AdminGroup)
 	InitEventLogRouter(AdminGroup)
 	InitBillingRouter(PrivateGroup, PublicGroup, AdminGroup)
+	InitTOSRouter(PrivateGroup, PublicGroup, AdminGroup)
+	InitASRRouter(PrivateGroup, PublicGroup, AdminGroup)
 }

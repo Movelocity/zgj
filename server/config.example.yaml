@@ -59,3 +59,29 @@ log:
   director: "log"
   show-line: true
   encode-level: "LowercaseColorLevelEncoder" # LowercaseLevelEncoder/LowercaseColorLevelEncoder/CapitalLevelEncoder/CapitalColorLevelEncoder
+
+# 火山引擎 TOS 对象存储配置
+tos:
+  sts:
+    access_key: ""           # 火山引擎IAM用户的AccessKey
+    secret_key: ""           # 火山引擎IAM用户的SecretKey
+    role_trn: ""             # IAM角色的TRN (格式: trn:iam::account-id:role/role-name)
+    session_name: "resume-polisher-session" # STS会话名称
+    duration_seconds: 900    # STS凭证有效期(秒)，默认15分钟
+    endpoint: "https://sts.volcengineapi.com" # STS服务端点
+    region: "cn-beijing"     # 区域
+    policy: ""               # 可选：IAM策略JSON，用于进一步限制权限
+  tos:
+    endpoint: "https://tos-cn-beijing.volces.com" # TOS服务端点
+    region: "cn-beijing"     # TOS区域
+    bucket: ""               # TOS Bucket名称
+    key_prefix: "uploads/"   # 文件存储路径前缀
+    presign_expires: 900     # 预签名URL有效期(秒)，默认15分钟
+
+# 火山引擎 ASR 语音识别配置
+asr:
+  app_key: ""                # ASR应用的APP Key
+  access_key: ""             # ASR Access Token
+  resource_id: ""            # 可选：资源ID
+  base_url: "https://openspeech.bytedance.com" # ASR API基础URL
+  timeout: 60                # HTTP请求超时时间(秒)
