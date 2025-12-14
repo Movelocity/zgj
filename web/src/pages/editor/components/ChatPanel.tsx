@@ -7,6 +7,7 @@ import type { ResumeV2Data } from '@/types/resumeV2';
 import { workflowAPI } from '@/api/workflow';
 import { parseAndFixResumeJson } from '@/utils/helpers';
 import { generateAIResponse, generateSuggestions, truncate } from './utils';
+import { previewPrintContent } from '@/utils/pdfExport';
 import { resumeAPI } from '@/api/resume';
 import { chatMessageAPI } from '@/api/chatMessage';
 import type { ChatMessage as BackendChatMessage } from '@/types/chatMessage';
@@ -405,6 +406,30 @@ export default function ChatPanel({
       setDebugType('current_data');
       setDebugData(JSON.stringify(resumeData, null, 2));
       setDebugModalOpen(true);
+      return;
+    }
+
+    if (command === "debug-preview") {
+      // 查找简历编辑器元素并预览打印内容
+      const editorElement = document.querySelector('[data-resume-editor]') as HTMLElement;
+      if (editorElement) {
+        previewPrintContent(editorElement, '简历打印预览');
+        const aiResponse: Message = {
+          id: (Date.now() + 1).toString(),
+          type: 'assistant',
+          content: "已打开打印预览弹窗，您可以检查打印样式是否正常。按 `Esc` 键或点击关闭按钮退出预览。",
+          timestamp: new Date(),
+        };
+        updateMessages(aiResponse);
+      } else {
+        const aiResponse: Message = {
+          id: (Date.now() + 1).toString(),
+          type: 'assistant',
+          content: "❌ 未找到简历编辑器元素，请确保在简历编辑页面使用此命令。",
+          timestamp: new Date(),
+        };
+        updateMessages(aiResponse);
+      }
       return;
     }
   }

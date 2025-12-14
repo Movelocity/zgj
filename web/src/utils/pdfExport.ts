@@ -174,6 +174,177 @@ export async function exportElementToPDF(
 }
 
 /**
+ * 预览打印内容（调试用）
+ * 使用弹窗预览相同的打印内容，方便排查打印样式异常
+ * @param element 要预览的DOM元素
+ * @param title 预览窗口标题
+ */
+export function previewPrintContent(
+  element: HTMLElement,
+  title: string = '打印预览'
+): void {
+  // 1. 克隆元素
+  const clonedElement = element.cloneNode(true) as HTMLElement;
+  
+  // 2. 创建预览弹窗
+  const overlay = document.createElement('div');
+  overlay.id = 'pdf-preview-overlay';
+  overlay.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    z-index: 99999;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    overflow: auto;
+  `;
+  
+  // 3. 创建标题栏
+  const header = document.createElement('div');
+  header.style.cssText = `
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    max-width: 210mm;
+    margin-bottom: 16px;
+    color: white;
+    font-family: system-ui, -apple-system, sans-serif;
+  `;
+  
+  const titleElement = document.createElement('h2');
+  titleElement.textContent = `🔍 ${title} - 打印样式预览`;
+  titleElement.style.cssText = `
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+  `;
+  
+  const buttonGroup = document.createElement('div');
+  buttonGroup.style.cssText = `
+    display: flex;
+    gap: 8px;
+  `;
+  
+  // 打印按钮
+  const printButton = document.createElement('button');
+  printButton.textContent = '打印此内容';
+  printButton.style.cssText = `
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    background: #3b82f6;
+    color: white;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: background 0.2s;
+  `;
+  printButton.onmouseover = () => printButton.style.background = '#2563eb';
+  printButton.onmouseout = () => printButton.style.background = '#3b82f6';
+  printButton.onclick = () => {
+    // 使用预览内容触发打印
+    exportElementToPDF(element, `${title}.pdf`);
+  };
+  
+  // 关闭按钮
+  const closeButton = document.createElement('button');
+  closeButton.textContent = '关闭预览';
+  closeButton.style.cssText = `
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    background: #ef4444;
+    color: white;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: background 0.2s;
+  `;
+  closeButton.onmouseover = () => closeButton.style.background = '#dc2626';
+  closeButton.onmouseout = () => closeButton.style.background = '#ef4444';
+  closeButton.onclick = () => overlay.remove();
+  
+  buttonGroup.appendChild(printButton);
+  buttonGroup.appendChild(closeButton);
+  header.appendChild(titleElement);
+  header.appendChild(buttonGroup);
+  
+  // 4. 创建预览容器（模拟A4纸张）
+  const previewContainer = document.createElement('div');
+  previewContainer.style.cssText = `
+    background: white;
+    width: 210mm;
+    min-height: 297mm;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    position: relative;
+    padding: 2rem;
+    box-sizing: border-box;
+  `;
+  
+  // 5. 添加说明信息
+  const infoBar = document.createElement('div');
+  infoBar.style.cssText = `
+    width: 100%;
+    max-width: 210mm;
+    padding: 12px 16px;
+    background: #fef3c7;
+    border-radius: 6px;
+    margin-bottom: 16px;
+    font-size: 13px;
+    color: #92400e;
+    font-family: system-ui, -apple-system, sans-serif;
+  `;
+  infoBar.innerHTML = `
+    <strong>💡 调试提示：</strong>此预览展示的是打印时的内容布局。
+    纸张尺寸：A4 (210mm × 297mm)，内边距：2rem。
+    按 <kbd style="background:#e5e7eb;padding:2px 6px;border-radius:3px;">Esc</kbd> 或点击关闭按钮退出预览。
+  `;
+  
+  // 6. 处理克隆元素的样式
+  // 移除 .hide-when-print 元素
+  const hideElements = clonedElement.querySelectorAll('.hide-when-print');
+  hideElements.forEach(el => (el as HTMLElement).style.display = 'none');
+  
+  previewContainer.appendChild(clonedElement);
+  
+  overlay.appendChild(header);
+  overlay.appendChild(infoBar);
+  overlay.appendChild(previewContainer);
+  
+  // 7. 添加ESC键关闭功能
+  const handleKeyDown = (e: KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      overlay.remove();
+      document.removeEventListener('keydown', handleKeyDown);
+    }
+  };
+  document.addEventListener('keydown', handleKeyDown);
+  
+  // 8. 点击遮罩层关闭
+  overlay.onclick = (e) => {
+    if (e.target === overlay) {
+      overlay.remove();
+      document.removeEventListener('keydown', handleKeyDown);
+    }
+  };
+  
+  // 9. 添加到页面
+  document.body.appendChild(overlay);
+  
+  console.log('📋 打印预览已打开，可检查以下内容：');
+  console.log('  - 元素布局是否正确');
+  console.log('  - 颜色和背景是否显示');
+  console.log('  - 字体大小和间距是否符合预期');
+  console.log('  - .hide-when-print 元素是否已隐藏');
+}
+
+/**
  * 从简历数据导出PDF（便捷方法）
  * @param resumeName 简历名称
  */
@@ -187,6 +358,21 @@ export async function exportResumeToPDF(resumeName: string = '简历'): Promise<
   
   const filename = `${resumeName}_${new Date().toISOString().slice(0, 10)}.pdf`;
   await exportElementToPDF(editorElement, filename);
+}
+
+/**
+ * 预览简历打印内容（调试用）
+ * @param resumeName 简历名称
+ */
+export function previewResumePrintContent(resumeName: string = '简历'): void {
+  // 查找简历编辑器元素
+  const editorElement = document.querySelector('[data-resume-editor]') as HTMLElement;
+  
+  if (!editorElement) {
+    throw new Error('未找到简历编辑器元素');
+  }
+  
+  previewPrintContent(editorElement, resumeName);
 }
 
 /**
