@@ -124,7 +124,7 @@ export const EditableText = ({
   }
 
   const content = currentDisplayValue || placeholder;
-  const baseClasses = multiline ? 'min-h-[2rem] block' : 'min-h-[1.5rem] inline-block';
+  const baseClasses = multiline ? 'min-h-[2rem] flex flex-col' : 'min-h-[1.5rem] inline-block';
 
   // Display with new content (AI optimized)
   if (hasNewContent) {
@@ -207,7 +207,7 @@ export const EditableText = ({
         <ReactMarkdown
           components={{
             p: ({ children, ...props }) => (
-              <p className="inline" {...props}>{children}</p>
+              <p className="" {...props}>{children}</p>
             ),
             strong: ({ children, ...props }) => (
               <strong className="font-semibold" {...props}>{children}</strong>
@@ -216,14 +216,17 @@ export const EditableText = ({
               <em className="italic" {...props}>{children}</em>
             ),
             ul: ({ children, ...props }) => (
-              <ul className="list-disc list-inside" {...props}>{children}</ul>
+              <ul className="list-disc list-inside flex flex-col" {...props}>{children}</ul>
             ),
             ol: ({ children, ...props }) => (
-              <ol className="list-decimal list-inside" {...props}>{children}</ol>
+              <ol className="list-decimal list-inside flex flex-col" {...props}>{children}</ol>
             ),
             li: ({ children, ...props }) => (
               <li className="" {...props}>{children}</li>
             ),
+            blockquote: ({ children, ...props }) => (
+              <blockquote className="flex flex-col border-l-2 border-l-gray-200 pl-2" {...props}>{children}</blockquote>
+            )
           }}
         >
           {content}
