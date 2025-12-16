@@ -16,6 +16,15 @@ const InvitationManagement: React.FC = () => {
     total: 0,
   });
 
+  // 邀请码统计数据
+  const [stats, setStats] = useState<{
+    total_codes: number;
+    active_codes: number;
+    inactive_codes: number;
+    total_uses: number;
+    unique_users: number;
+  } | null>(null);
+
   // 创建邀请码的表单
   const [createForm, setCreateForm] = useState({
     max_uses: 1,
@@ -47,6 +56,20 @@ const InvitationManagement: React.FC = () => {
     note: '',
   });
   const [editLoading, setEditLoading] = useState(false);
+
+  // 加载邀请码统计数据
+  const loadInvitationStats = async () => {
+    try {
+      const response = await invitationAPI.getInvitationStats();
+      if (response.code === 0) {
+        setStats(response.data);
+      } else {
+        showError(response.msg || '加载邀请码统计失败');
+      }
+    } catch (error) {
+      console.error('加载邀请码统计失败:', error);
+    }
+  };
 
   // 加载邀请码列表
   const loadInvitations = async (page = 1) => {
@@ -91,6 +114,7 @@ const InvitationManagement: React.FC = () => {
         setShowCreateForm(false);
         setCreateForm({ max_uses: 1, expires_in_days: null, note: '' });
         await loadInvitations(pagination.current);
+        await loadInvitationStats(); // 重新加载统计
       } else {
         showError(response.msg || '创建邀请码失败');
       }
@@ -140,6 +164,7 @@ const InvitationManagement: React.FC = () => {
         setBatchUpdateForm({ max_uses: null, expires_in_days: null });
         setSelectedCodes([]);
         await loadInvitations(pagination.current);
+        await loadInvitationStats(); // 重新加载统计
       } else {
         showError(response.msg || '批量更新失败');
       }
@@ -251,6 +276,7 @@ const InvitationManagement: React.FC = () => {
       showSuccess(`批量创建完成：成功 ${successCount} 个，失败 ${failCount} 个`);
       setShowBatchCreateModal(false);
       await loadInvitations(1);
+      await loadInvitationStats(); // 重新加载统计
     } catch (error) {
       console.error('批量创建邀请码失败:', error);
       showError('批量创建邀请码失败，请重试');
@@ -270,6 +296,7 @@ const InvitationManagement: React.FC = () => {
       if (response.code === 0) {
         showSuccess(`邀请码已${isActive ? '禁用' : '激活'}`);
         await loadInvitations(pagination.current);
+        await loadInvitationStats(); // 重新加载统计
       } else {
         showError(response.msg || `邀请码${isActive ? '禁用' : '激活'}失败`);
       }
@@ -355,6 +382,7 @@ const InvitationManagement: React.FC = () => {
         setEditingInvitation(null);
         setEditForm({ max_uses: null, expires_in_days: null, note: '' });
         await loadInvitations(pagination.current);
+        await loadInvitationStats(); // 重新加载统计
       } else {
         showError(response.msg || '更新邀请码失败');
       }
@@ -403,6 +431,7 @@ const InvitationManagement: React.FC = () => {
 
   useEffect(() => {
     loadInvitations();
+    loadInvitationStats(); // 加载统计数据
   }, []);
 
   return (
@@ -452,27 +481,33 @@ const InvitationManagement: React.FC = () => {
 
         {/* 邀请码统计 */}
         <div className="bg-gray-50 p-4 rounded-lg mb-6">
-          <div className="grid grid-cols-4 gap-4">
+          <div className="grid grid-cols-5 gap-4">
             <div>
               <div className="text-sm text-gray-600">总邀请码数</div>
-              <div className="text-2xl font-bold text-gray-900">{pagination.total}</div>
+              <div className="text-2xl font-bold text-gray-900">{stats?.total_codes || 0}</div>
             </div>
             <div>
               <div className="text-sm text-gray-600">激活中</div>
               <div className="text-2xl font-bold text-green-600">
-                {invitations.filter(inv => inv.is_active).length}
+                {stats?.active_codes || 0}
               </div>
             </div>
             <div>
               <div className="text-sm text-gray-600">已禁用</div>
               <div className="text-2xl font-bold text-red-600">
-                {invitations.filter(inv => !inv.is_active).length}
+                {stats?.inactive_codes || 0}
               </div>
             </div>
             <div>
               <div className="text-sm text-gray-600">总使用次数</div>
               <div className="text-2xl font-bold text-blue-600">
-                {invitations.reduce((sum, inv) => sum + inv.used_count, 0)}
+                {stats?.total_uses || 0}
+              </div>
+            </div>
+            <div>
+              <div className="text-sm text-gray-600">使用用户数</div>
+              <div className="text-2xl font-bold text-purple-600">
+                {stats?.unique_users || 0}
               </div>
             </div>
           </div>

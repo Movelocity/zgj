@@ -109,6 +109,25 @@ export const adminAPI = {
     return apiClient.get('/api/admin/system/logs', { params });
   },
 
+  // 获取每日用户增长统计
+  getDailyUserGrowth: (params?: { start_date?: string; end_date?: string; days?: number }): Promise<ApiResponse<{
+    stats: Array<{ date: string; count: number }>;
+    total_users: number;
+  }>> => {
+    return apiClient.get('/api/admin/system/daily-user-growth', { params });
+  },
+
+  // 获取每日工作流使用统计
+  getDailyWorkflowUsage: (params?: { start_date?: string; end_date?: string; days?: number; workflow_id?: string }): Promise<ApiResponse<{
+    stats: Array<{ date: string; count: number }>;
+    total_executions: number;
+    success_count: number;
+    failed_count: number;
+    success_rate: number;
+  }>> => {
+    return apiClient.get('/api/admin/system/daily-workflow-usage', { params });
+  },
+
   // 数据迁移
   migrateResumeData: (): Promise<ApiResponse> => {
     return apiClient.post('/api/admin/migration/resume');

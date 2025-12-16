@@ -322,6 +322,42 @@ func (s *invitationService) GetInvitationList(page, limit string) (*InvitationLi
 	return response, nil
 }
 
+// GetInvitationStats 获取邀请码统计信息
+func (s *invitationService) GetInvitationStats() (*InvitationStatsResponse, error) {
+	var stats InvitationStatsResponse
+
+	// 统计总邀请码数
+	if err := global.DB.Model(&model.InvitationCode{}).Count(&stats.TotalCodes).Error; err != nil {
+		return nil, errors.New("查询邀请码总数失败")
+	}
+
+	// 统计激活的邀请码数
+	if err := global.DB.Model(&model.InvitationCode{}).Where("is_active = ?", true).Count(&stats.ActiveCodes).Error; err != nil {
+		return nil, errors.New("查询激活邀请码数失败")
+	}
+
+	// 统计已禁用的邀请码数
+	if err := global.DB.Model(&model.InvitationCode{}).Where("is_active = ?", false).Count(&stats.InactiveCodes).Error; err != nil {
+		return nil, errors.New("查询已禁用邀请码数失败")
+	}
+
+	// 统计总使用次数（所有邀请码的used_count之和）
+	var totalUses struct {
+		Total int64
+	}
+	if err := global.DB.Model(&model.InvitationCode{}).Select("COALESCE(SUM(used_count), 0) as total").Scan(&totalUses).Error; err != nil {
+		return nil, errors.New("查询总使用次数失败")
+	}
+	stats.TotalUses = totalUses.Total
+
+	// 统计使用邀请码的唯一用户数
+	if err := global.DB.Model(&model.InvitationUse{}).Distinct("used_by").Count(&stats.UniqueUsers).Error; err != nil {
+		return nil, errors.New("查询唯一用户数失败")
+	}
+
+	return &stats, nil
+}
+
 // DeactivateInvitation 禁用邀请码（管理员）
 func (s *invitationService) DeactivateInvitation(code string) error {
 	// 查询邀请码

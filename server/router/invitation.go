@@ -27,9 +27,12 @@ func InitInvitationRouter(privateGroup *gin.RouterGroup, publicGroup *gin.Router
 	// 管理员路由 - 邀请码管理
 	AdminInvitationRouter := adminGroup.Group("/api/invitations")
 	{
-		AdminInvitationRouter.POST("/admin-create", invitation.AdminCreateInvitation)    // 管理员为指定用户创建邀请码
-		AdminInvitationRouter.POST("/batch-update", invitation.BatchUpdateInvitation)    // 批量更新邀请码
-		AdminInvitationRouter.GET("", invitation.GetInvitationList)                      // 获取邀请码列表
+		AdminInvitationRouter.POST("/admin-create", invitation.AdminCreateInvitation) // 管理员为指定用户创建邀请码
+		AdminInvitationRouter.POST("/batch-update", invitation.BatchUpdateInvitation) // 批量更新邀请码
+		// 注意：具体路径必须在参数化路径之前定义，否则会被/:code匹配
+		AdminInvitationRouter.GET("/stats", invitation.GetInvitationStats) // 获取邀请码统计信息
+		AdminInvitationRouter.GET("", invitation.GetInvitationList)        // 获取邀请码列表
+		// 参数化路径放在最后
 		AdminInvitationRouter.GET("/:code", invitation.GetInvitationDetail)              // 获取邀请码详情
 		AdminInvitationRouter.PUT("/:code", invitation.UpdateInvitation)                 // 更新邀请码
 		AdminInvitationRouter.POST("/:code/deactivate", invitation.DeactivateInvitation) // 禁用邀请码

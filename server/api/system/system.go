@@ -45,3 +45,39 @@ func GetSystemLogs(c *gin.Context) {
 
 	utils.OkWithData(logs, c)
 }
+
+// GetDailyUserGrowth 获取每日用户增长统计
+func GetDailyUserGrowth(c *gin.Context) {
+	var req systemService.DailyUserGrowthRequest
+	if err := c.ShouldBindQuery(&req); err != nil {
+		utils.FailWithMessage("请求参数错误", c)
+		return
+	}
+
+	// 调用服务层
+	stats, err := service.SystemService.GetDailyUserGrowth(req)
+	if err != nil {
+		utils.FailWithMessage(err.Error(), c)
+		return
+	}
+
+	utils.OkWithData(stats, c)
+}
+
+// GetDailyWorkflowUsage 获取每日工作流使用统计
+func GetDailyWorkflowUsage(c *gin.Context) {
+	var req systemService.DailyWorkflowUsageRequest
+	if err := c.ShouldBindQuery(&req); err != nil {
+		utils.FailWithMessage("请求参数错误", c)
+		return
+	}
+
+	// 调用服务层
+	stats, err := service.SystemService.GetDailyWorkflowUsage(req)
+	if err != nil {
+		utils.FailWithMessage(err.Error(), c)
+		return
+	}
+
+	utils.OkWithData(stats, c)
+}

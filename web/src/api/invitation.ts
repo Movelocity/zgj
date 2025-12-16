@@ -77,5 +77,16 @@ export const invitationAPI = {
   batchUpdateInvitations: (data: BatchUpdateInvitationRequest): Promise<ApiResponse<null>> => {
     return apiClient.post('/api/invitations/batch-update', data);
   },
+
+  // 获取邀请码统计信息（管理员）
+  getInvitationStats: (): Promise<ApiResponse<{
+    total_codes: number;
+    active_codes: number;
+    inactive_codes: number;
+    total_uses: number;
+    unique_users: number;
+  }>> => {
+    return apiClient.get('/api/invitations/stats');
+  },
 };
 

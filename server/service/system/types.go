@@ -34,3 +34,39 @@ type SystemLogsResponse struct {
 	PageSize   int        `json:"page_size"`
 	TotalPages int        `json:"total_pages"`
 }
+
+// DailyStatItem 每日统计数据项
+type DailyStatItem struct {
+	Date  string `json:"date"`  // 日期 (YYYY-MM-DD)
+	Count int64  `json:"count"` // 数量
+}
+
+// DailyUserGrowthRequest 每日用户增长请求
+type DailyUserGrowthRequest struct {
+	StartDate string `form:"start_date"` // 开始日期 (YYYY-MM-DD)
+	EndDate   string `form:"end_date"`   // 结束日期 (YYYY-MM-DD)
+	Days      int    `form:"days"`       // 最近N天，与start_date/end_date二选一
+}
+
+// DailyUserGrowthResponse 每日用户增长响应
+type DailyUserGrowthResponse struct {
+	Stats      []DailyStatItem `json:"stats"`       // 每日统计数据
+	TotalUsers int64           `json:"total_users"` // 当前总用户数
+}
+
+// DailyWorkflowUsageRequest 每日工作流使用请求
+type DailyWorkflowUsageRequest struct {
+	StartDate  string `form:"start_date"`  // 开始日期 (YYYY-MM-DD)
+	EndDate    string `form:"end_date"`    // 结束日期 (YYYY-MM-DD)
+	Days       int    `form:"days"`        // 最近N天，与start_date/end_date二选一
+	WorkflowID string `form:"workflow_id"` // 指定工作流ID，空表示所有工作流
+}
+
+// DailyWorkflowUsageResponse 每日工作流使用响应
+type DailyWorkflowUsageResponse struct {
+	Stats           []DailyStatItem `json:"stats"`            // 每日统计数据
+	TotalExecutions int64           `json:"total_executions"` // 总执行次数
+	SuccessCount    int64           `json:"success_count"`    // 成功次数
+	FailedCount     int64           `json:"failed_count"`     // 失败次数
+	SuccessRate     float64         `json:"success_rate"`     // 成功率（%）
+}

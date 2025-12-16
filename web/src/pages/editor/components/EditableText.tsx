@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useHover } from '@/utils/hover';
 import cn from 'classnames';
+import ReactMarkdown from 'react-markdown';
 import type { EditorState } from './useEditing';
 
 // EditableText component with AI optimization support
@@ -195,14 +196,41 @@ export const EditableText = ({
   return (
     <div 
       className={cn(
-        'cursor-pointer hover:bg-gray-100 px-1 py-0.5 rounded transition-colors whitespace-pre-line',
+        'cursor-pointer hover:bg-gray-100 px-1 py-0.5 rounded transition-colors',
         baseClasses, 
         className, 
         !value ? 'text-gray-400 italic' : ''
       )}
       onClick={() => startEditing(fieldId, value)}
     >
-      {content}
+      {value ? (
+        <ReactMarkdown
+          components={{
+            p: ({ children, ...props }) => (
+              <p className="inline" {...props}>{children}</p>
+            ),
+            strong: ({ children, ...props }) => (
+              <strong className="font-semibold" {...props}>{children}</strong>
+            ),
+            em: ({ children, ...props }) => (
+              <em className="italic" {...props}>{children}</em>
+            ),
+            ul: ({ children, ...props }) => (
+              <ul className="list-disc list-inside" {...props}>{children}</ul>
+            ),
+            ol: ({ children, ...props }) => (
+              <ol className="list-decimal list-inside" {...props}>{children}</ol>
+            ),
+            li: ({ children, ...props }) => (
+              <li className="" {...props}>{children}</li>
+            ),
+          }}
+        >
+          {content}
+        </ReactMarkdown>
+      ) : (
+        <span>{content}</span>
+      )}
     </div>
   );
 };

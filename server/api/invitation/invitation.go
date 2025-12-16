@@ -262,3 +262,15 @@ func GetOrCreateNormalInvitation(c *gin.Context) {
 
 	utils.OkWithData(response, c)
 }
+
+// GetInvitationStats 获取邀请码统计信息（管理员）
+func GetInvitationStats(c *gin.Context) {
+	// 调用服务层
+	stats, err := service.InvitationService.GetInvitationStats()
+	if err != nil {
+		utils.FailWithMessage(err.Error(), c)
+		return
+	}
+
+	utils.OkWithData(stats, c)
+}

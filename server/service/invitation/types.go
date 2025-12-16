@@ -80,3 +80,12 @@ type UserInvitationUseResponse struct {
 	InvitationCode string     `json:"invitation_code,omitempty"` // 使用的邀请码
 	UsedAt         *time.Time `json:"used_at,omitempty"`         // 使用时间
 }
+
+// InvitationStatsResponse 邀请码统计响应
+type InvitationStatsResponse struct {
+	TotalCodes    int64 `json:"total_codes"`    // 总邀请码数
+	ActiveCodes   int64 `json:"active_codes"`   // 激活中的邀请码数
+	InactiveCodes int64 `json:"inactive_codes"` // 已禁用的邀请码数
+	TotalUses     int64 `json:"total_uses"`     // 总使用次数
+	UniqueUsers   int64 `json:"unique_users"`   // 使用邀请码的唯一用户数
+}
