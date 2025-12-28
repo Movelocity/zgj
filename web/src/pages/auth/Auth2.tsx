@@ -486,11 +486,11 @@ const Auth2: React.FC = () => {
                   </Alert>
                 )}
                 
-                {success && (
+                {/* {success && (
                   <Alert className="bg-green-50 border-green-200 text-green-800">
                     <AlertDescription>{success}</AlertDescription>
                   </Alert>
-                )}
+                )} */}
                 
                 {/* 手机号登录表单 */}
                 {loginMethod === 'phone' && (
@@ -531,7 +531,7 @@ const Auth2: React.FC = () => {
                           variant="outline"
                           onClick={handleSendCode}
                           disabled={sendingCode || countdown > 0 || !formData.phone}
-                          className="whitespace-nowrap"
+                          className="whitespace-nowrap min-w-12"
                         >
                           {sendingCode ? (
                             <Loader2 className="w-4 h-4 animate-spin" />

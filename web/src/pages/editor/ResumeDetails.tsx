@@ -505,7 +505,8 @@ export default function ResumeDetails() {
               <ChevronLeft className="w-5 h-5" />
             </Button>
             <div className="hidden sm:flex items-center space-x-2 mr-4">
-              <h1 className="text-lg font-semibold">📝 简历编辑</h1>
+              <img src="/images/agent256.webp" alt="logo" className="h-8" />
+              <h1 className="text-lg font-semibold">简历编辑</h1>
             </div>
             <input
               id="resumeName"

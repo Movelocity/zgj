@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import {Button, Modal} from '@/components/ui';
 import AiMessageRenderer from './AiMessageRenderer';
-import { Send, Bot, Lightbulb, Sparkles, X } from 'lucide-react';
+import { Send, Lightbulb, Sparkles, X } from 'lucide-react';
 import { FiMessageSquare, FiFileText } from 'react-icons/fi';
 import type { ResumeV2Data } from '@/types/resumeV2';
 import { workflowAPI } from '@/api/workflow';
@@ -729,9 +729,10 @@ export default function ChatPanel({
           )}
           style={{ height: 'calc(100vh - 48px)' }}
         >
-          <div className="px-4 py-2 border-b border-gray-200 flex items-center justify-between gap-1">
+          <div className="px-4 py-1 border-b border-gray-200 flex items-center justify-between gap-1">
             <div className="flex gap-1 items-center text-lg font-medium">
-              <Bot className="w-5 h-5 text-blue-600" />
+              {/* <Bot className="w-5 h-5 text-blue-600" /> */}
+              <img src="/images/icon_128x128.webp" alt="logo" className="h-8" />
               简历专家
             </div>
             <div className="flex gap-1 items-center">
