@@ -206,10 +206,10 @@ app.post('/generate', async (req, res) => {
       format: 'A4',
       printBackground: true,
       margin: {
-        top: '20mm',
-        right: '15mm',
-        bottom: '20mm',
-        left: '15mm',
+        top: '12mm',    // 适合简历的上边距
+        right: '12mm',  // 适合简历的右边距
+        bottom: '12mm', // 适合简历的下边距
+        left: '12mm',   // 适合简历的左边距
       },
     });
 

@@ -467,8 +467,8 @@ export default function ResumeDetails() {
       setIsExporting(true);
       showInfo('正在生成PDF，请稍候...');
 
-      // 1. 创建导出任务
-      const createRes: any = await createExportTask(id);
+      // 1. 创建导出任务（传递当前编辑的简历数据作为快照）
+      const createRes: any = await createExportTask(id, resumeData);
       if (createRes.code !== 0) {
         throw new Error(createRes.msg || '创建导出任务失败');
       }

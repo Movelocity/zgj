@@ -18,6 +18,7 @@ interface ResumeEditorV2Props {
   onResumeDataChange?: (data: ResumeV2Data) => void;
   onNewResumeDataChange?: (data: ResumeV2Data) => void;
   fontSettings?: FontSettings;
+  tightLayout?: boolean;
 }
 
 export default function ResumeEditorV2({ 
@@ -26,6 +27,7 @@ export default function ResumeEditorV2({
   onResumeDataChange = () => {}, 
   onNewResumeDataChange = () => {},
   fontSettings = { titleSize: 'medium', labelSize: 'medium', contentSize: 'medium' },
+  tightLayout = false,
 }: ResumeEditorV2Props) {
   
   const editorState = useEditing(
@@ -412,7 +414,7 @@ export default function ResumeEditorV2({
 
   return (
     <div className="h-full bg-white">
-      <div className="py-8 px-6 max-w-4xl mx-auto" data-resume-editor>
+      <div className={cn("mx-auto", tightLayout ? '' : 'py-8 px-6 max-w-4xl')} data-resume-editor>
         {/* Blocks Section */}
         <div className="">
           {personalInfoBlock && personalInfoBlockIndex >= 0 && (

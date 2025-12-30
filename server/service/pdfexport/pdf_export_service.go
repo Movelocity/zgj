@@ -20,33 +20,58 @@ import (
 )
 
 // CreateExportTask 创建PDF导出任务
-func CreateExportTask(userID, resumeID string) (string, error) {
-	// 1. 查询简历记录
-	var resume model.ResumeRecord
-	if err := global.DB.Where("id = ? AND user_id = ?", resumeID, userID).First(&resume).Error; err != nil {
-		return "", errors.New("简历不存在或无权限访问")
+// resumeDataSnapshot: 可选的简历数据快照，如果提供则使用该数据，否则从数据库查询
+func CreateExportTask(userID, resumeID string, resumeDataSnapshot map[string]interface{}) (string, error) {
+	// 1. 获取简历数据
+	var resumeDataBytes []byte
+	var err error
+
+	if len(resumeDataSnapshot) > 0 {
+		// 使用前端传递的当前编辑内容作为快照
+		log.Printf("使用前端传递的简历数据快照，resume_id=%s", resumeID)
+		resumeDataBytes, err = json.Marshal(resumeDataSnapshot)
+		if err != nil {
+			return "", fmt.Errorf("序列化简历数据失败: %w", err)
+		}
+	} else {
+		// 从数据库查询简历数据作为快照
+		log.Printf("从数据库查询简历数据快照，resume_id=%s", resumeID)
+		var resume model.ResumeRecord
+		if err := global.DB.Where("id = ? AND user_id = ?", resumeID, userID).First(&resume).Error; err != nil {
+			return "", errors.New("简历不存在或无权限访问")
+		}
+		resumeDataBytes = resume.StructuredData
 	}
 
-	// 2. 生成任务ID和token
+	// 2. 验证简历数据快照是否为空
+	if len(resumeDataBytes) == 0 {
+		return "", errors.New("简历数据为空，无法创建导出任务")
+	}
+
+	// 3. 生成任务ID和token
 	taskID := utils.GenerateTLID()
 	token := uuid.New().String()
 
-	// 3. 创建任务记录 (status=pending)
+	// 4. 创建任务记录 (status=pending)，保存简历数据快照
 	task := model.PdfExportTask{
-		ID:        taskID,
-		UserID:    userID,
-		ResumeID:  resumeID,
-		Status:    model.PdfExportStatusPending,
-		Token:     token,
-		TokenUsed: false,
-		CreatedAt: time.Now(),
+		ID:         taskID,
+		UserID:     userID,
+		ResumeID:   resumeID,
+		ResumeData: resumeDataBytes, // 保存简历数据快照
+		Status:     model.PdfExportStatusPending,
+		Token:      token,
+		TokenUsed:  false,
+		CreatedAt:  time.Now(),
 	}
 
 	if err := global.DB.Create(&task).Error; err != nil {
 		return "", fmt.Errorf("创建任务记录失败: %w", err)
 	}
 
-	// 4. 异步调用PDF生成
+	log.Printf("PDF导出任务创建成功: task_id=%s, resume_id=%s, 数据大小=%d bytes",
+		taskID, resumeID, len(resumeDataBytes))
+
+	// 5. 异步调用PDF生成
 	go GeneratePdfAsync(taskID)
 
 	return taskID, nil
@@ -215,17 +240,18 @@ func VerifyTokenAndGetResume(taskID, token string) (map[string]interface{}, erro
 	// 4. 不再标记token为已使用，因为Puppeteer需要多次访问同一页面
 	// token有效期通过时间限制来控制（10分钟）
 
-	// 6. 获取简历数据
-	var resume model.ResumeRecord
-	if err := global.DB.Where("id = ?", task.ResumeID).First(&resume).Error; err != nil {
-		return nil, errors.New("简历不存在")
+	// 5. 检查任务中是否保存了简历数据快照
+	if len(task.ResumeData) == 0 {
+		return nil, errors.New("任务中没有保存简历数据快照")
 	}
 
-	// 7. 解析简历数据
+	// 6. 解析简历数据快照（从任务记录中读取，而不是从 ResumeRecord 表读取）
 	var resumeData map[string]interface{}
-	if err := json.Unmarshal(resume.StructuredData, &resumeData); err != nil {
-		return nil, fmt.Errorf("解析简历数据失败: %w", err)
+	if err := json.Unmarshal(task.ResumeData, &resumeData); err != nil {
+		return nil, fmt.Errorf("解析简历数据快照失败: %w", err)
 	}
+
+	log.Printf("从任务快照获取简历数据: task_id=%s, 数据大小=%d bytes", taskID, len(task.ResumeData))
 
 	return resumeData, nil
 }

@@ -12,7 +12,8 @@ import (
 func CreateExportTask(c *gin.Context) {
 	// 1. 解析请求
 	var req struct {
-		ResumeID string `json:"resume_id" binding:"required"`
+		ResumeID   string                 `json:"resume_id" binding:"required"`
+		ResumeData map[string]interface{} `json:"resume_data"` // 可选：前端传递的当前简历数据快照
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -33,8 +34,8 @@ func CreateExportTask(c *gin.Context) {
 		return
 	}
 
-	// 3. 调用服务层创建任务
-	taskID, err := pdfexport.CreateExportTask(userID, req.ResumeID)
+	// 3. 调用服务层创建任务（传递简历数据快照）
+	taskID, err := pdfexport.CreateExportTask(userID, req.ResumeID, req.ResumeData)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"code": 500,

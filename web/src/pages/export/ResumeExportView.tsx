@@ -98,7 +98,7 @@ export default function ResumeExportView() {
         }
       `}</style>
       
-      <div className="max-w-[210mm] mx-auto p-8">
+      <div className="mx-auto">
         <ResumeEditorV2
           resumeData={resumeData}
           newResumeData={resumeData}
@@ -109,6 +109,7 @@ export default function ResumeExportView() {
             labelSize: 'medium',
             contentSize: 'medium',
           }}
+          tightLayout={true}
         />
       </div>
     </div>

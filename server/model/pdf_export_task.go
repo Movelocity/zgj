@@ -15,7 +15,8 @@ type PdfExportTask struct {
 	ID           string     `gorm:"primaryKey;type:varchar(20)" json:"id"`
 	UserID       string     `gorm:"type:varchar(20);not null" json:"user_id"`
 	ResumeID     string     `gorm:"type:varchar(20);not null" json:"resume_id"`
-	Status       string     `gorm:"size:20;default:'pending'" json:"status"` // pending/processing/completed/failed
+	ResumeData   []byte     `gorm:"type:json" json:"resume_data"`             // 简历数据快照（JSON格式）
+	Status       string     `gorm:"size:20;default:'pending'" json:"status"`  // pending/processing/completed/failed
 	Token        string     `gorm:"type:varchar(64);index" json:"token"`      // 一次性验证token
 	TokenUsed    bool       `gorm:"default:false" json:"token_used"`          // token是否已使用
 	PdfFilePath  string     `gorm:"size:512" json:"pdf_file_path"`
