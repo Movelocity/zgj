@@ -109,6 +109,12 @@ func RecordUploadComplete(c *gin.Context) {
 		return
 	}
 
+	// 处理 metadata：如果为空字符串，设置为 null（空的 JSON）
+	metadata := req.Metadata
+	if metadata == "" {
+		metadata = "null"
+	}
+
 	// 创建上传记录
 	upload := &model.TOSUpload{
 		UserID:      userID,
@@ -117,7 +123,7 @@ func RecordUploadComplete(c *gin.Context) {
 		ContentType: req.ContentType,
 		Size:        req.Size,
 		Status:      "success",
-		Metadata:    req.Metadata,
+		Metadata:    metadata,
 	}
 
 	// 记录到数据库

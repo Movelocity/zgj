@@ -24,6 +24,8 @@ const Administrator = lazy(() => import('@/pages/admin/Administrator'));
 const Contact = lazy(() => import('@/pages/contact/Contact'));
 const NotFound = lazy(() => import('@/pages/error/NotFound'));
 const ServerError = lazy(() => import('@/pages/error/ServerError'));
+const TOSTest = lazy(() => import('@/pages/test/TOSTest'));
+const ASRTest = lazy(() => import('@/pages/test/ASRTest'));
 
 // 路由错误处理组件
 function RouteErrorBoundary() {
@@ -90,6 +92,14 @@ export const routes = [
     element: <Contact />,
   },
   {
+    path: '/test/tos',
+    element: <TOSTest />,
+  },
+  {
+    path: '/test/asr',
+    element: <ASRTest />,
+  },
+  {
     path: '/500',
     element: <ServerError />,
   },
@@ -111,6 +121,8 @@ const protectedRoutes = [
   '/editor/v2/:id',
   '/profile',
   '/api-test', // API测试页面需要登录才能访问
+  '/test/tos', // TOS服务测试页面需要登录
+  '/test/asr', // ASR服务测试页面需要登录
 ];
 
 const adminRoutes = [

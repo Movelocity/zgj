@@ -38,10 +38,11 @@ type ASRServiceInterface interface {
 
 // asrService ASR服务实现
 type asrService struct {
-	client  *http.Client
-	baseURL string
-	appKey  string
-	token   string
+	client     *http.Client
+	baseURL    string
+	appKey     string
+	accessKey  string
+	resourceID string
 }
 
 // NewASRService 创建ASR服务实例
@@ -58,9 +59,10 @@ func NewASRService() (ASRServiceInterface, error) {
 		client: &http.Client{
 			Timeout: time.Duration(timeout) * time.Second,
 		},
-		baseURL: config.BaseURL,
-		appKey:  config.AppKey,
-		token:   config.AccessKey,
+		baseURL:    config.BaseURL,
+		appKey:     config.AppKey,
+		accessKey:  config.AccessKey,
+		resourceID: config.ResourceID,
 	}, nil
 }
 
@@ -94,6 +96,7 @@ func (s *asrService) SubmitTask(ctx context.Context, req *global.ASRSubmitTaskRe
 		Status:      model.ASRTaskStatusPending,
 		Progress:    0,
 		Options:     string(optionsJSON),
+		Result:      "null", // 初始化为有效的 JSON 值，避免 jsonb 字段报错
 	}
 
 	// 保存到数据库
@@ -109,17 +112,24 @@ func (s *asrService) SubmitTask(ctx context.Context, req *global.ASRSubmitTaskRe
 
 // submitToASRAPI 提交到ASR API（异步）
 func (s *asrService) submitToASRAPI(taskID, audioURL, audioFormat string, options map[string]interface{}) {
-	// 构造请求体
+	// 构造请求体 - 使用字节跳动ASR API的标准格式
 	requestBody := map[string]interface{}{
-		"app_id":       s.appKey,
-		"audio_url":    audioURL,
-		"audio_format": audioFormat,
-		"task_id":      taskID,
+		"user": map[string]interface{}{
+			"uid": "resume-polisher",
+		},
+		"audio": map[string]interface{}{
+			"format": audioFormat,
+			"url":    audioURL,
+		},
+		"request": map[string]interface{}{
+			"model_name": "bigmodel",
+		},
 	}
 
-	// 合并选项
+	// 合并选项到request字段中
+	requestMap := requestBody["request"].(map[string]interface{})
 	for k, v := range options {
-		requestBody[k] = v
+		requestMap[k] = v
 	}
 
 	jsonData, err := json.Marshal(requestBody)
@@ -129,14 +139,19 @@ func (s *asrService) submitToASRAPI(taskID, audioURL, audioFormat string, option
 	}
 
 	// 发送HTTP请求
-	req, err := http.NewRequest("POST", s.baseURL+"/api/v1/asr/submit", bytes.NewBuffer(jsonData))
+	req, err := http.NewRequest("POST", s.baseURL+"/submit", bytes.NewBuffer(jsonData))
 	if err != nil {
 		s.updateTaskError(taskID, fmt.Sprintf("failed to create request: %v", err))
 		return
 	}
 
+	// 设置字节跳动ASR API要求的请求头
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+s.token)
+	req.Header.Set("X-Api-App-Key", s.appKey)
+	req.Header.Set("X-Api-Access-Key", s.accessKey)
+	req.Header.Set("X-Api-Resource-Id", s.resourceID)
+	req.Header.Set("X-Api-Request-Id", taskID)
+	req.Header.Set("X-Api-Sequence", "-1")
 
 	resp, err := s.client.Do(req)
 	if err != nil {
@@ -147,19 +162,20 @@ func (s *asrService) submitToASRAPI(taskID, audioURL, audioFormat string, option
 
 	body, _ := io.ReadAll(resp.Body)
 
-	if resp.StatusCode != http.StatusOK {
-		s.updateTaskError(taskID, fmt.Sprintf("ASR API error: %s", string(body)))
+	// 检查响应头中的状态码
+	statusCode := resp.Header.Get("X-Api-Status-Code")
+	message := resp.Header.Get("X-Api-Message")
+
+	if statusCode != "20000000" {
+		errMsg := fmt.Sprintf("ASR API error: status=%s, message=%s", statusCode, message)
+		if len(body) > 0 {
+			errMsg += fmt.Sprintf(", body=%s", string(body))
+		}
+		s.updateTaskError(taskID, errMsg)
 		return
 	}
 
-	// 解析响应
-	var result map[string]interface{}
-	if err := json.Unmarshal(body, &result); err != nil {
-		s.updateTaskError(taskID, fmt.Sprintf("failed to parse response: %v", err))
-		return
-	}
-
-	// 更新任务状态为processing
+	// 提交成功，更新任务状态为processing
 	global.DB.Model(&model.ASRTask{}).
 		Where("id = ?", taskID).
 		Updates(map[string]interface{}{
@@ -191,12 +207,17 @@ func (s *asrService) PollTask(ctx context.Context, taskID string) (*model.ASRTas
 	}
 
 	// 查询ASR API获取最新状态
-	req, err := http.NewRequest("GET", fmt.Sprintf("%s/api/v1/asr/query?task_id=%s", s.baseURL, taskID), nil)
+	req, err := http.NewRequest("POST", s.baseURL+"/query", bytes.NewReader([]byte("{}")))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
-	req.Header.Set("Authorization", "Bearer "+s.token)
+	// 设置字节跳动ASR API要求的请求头
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Api-App-Key", s.appKey)
+	req.Header.Set("X-Api-Access-Key", s.accessKey)
+	req.Header.Set("X-Api-Resource-Id", s.resourceID)
+	req.Header.Set("X-Api-Request-Id", taskID)
 
 	resp, err := s.client.Do(req)
 	if err != nil {
@@ -206,44 +227,46 @@ func (s *asrService) PollTask(ctx context.Context, taskID string) (*model.ASRTas
 
 	body, _ := io.ReadAll(resp.Body)
 
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("ASR API error: %s", string(body))
-	}
-
-	// 解析响应
-	var result map[string]interface{}
-	if err := json.Unmarshal(body, &result); err != nil {
-		return nil, fmt.Errorf("failed to parse response: %w", err)
-	}
-
-	// 更新任务状态
-	status := result["status"].(string)
-	progress := 50 // 默认进度
+	// 检查响应头中的状态码
+	statusCode := resp.Header.Get("X-Api-Status-Code")
+	message := resp.Header.Get("X-Api-Message")
 
 	updates := map[string]interface{}{
 		"updated_at": time.Now(),
 	}
 
-	switch status {
-	case "processing":
-		updates["status"] = model.ASRTaskStatusProcessing
-		if p, ok := result["progress"].(float64); ok {
-			progress = int(p)
-		}
-		updates["progress"] = progress
-	case "completed":
+	// 状态码参考:
+	// 20000000 - 成功/已完成
+	// 20000001 - 处理中（尚未完成）
+	// 其他 - 错误
+	switch statusCode {
+	case "20000000":
+		// 任务完成，保存识别结果
 		updates["status"] = model.ASRTaskStatusCompleted
 		updates["progress"] = 100
-		// 保存识别结果
-		if resultData, ok := result["result"]; ok {
-			resultJSON, _ := json.Marshal(resultData)
-			updates["result"] = string(resultJSON)
+		if len(body) > 0 {
+			// 解析响应体
+			var result interface{}
+			if err := json.Unmarshal(body, &result); err != nil {
+				// 如果无法解析为JSON，则保存为字符串
+				updates["result"] = string(body)
+			} else {
+				resultJSON, _ := json.Marshal(result)
+				updates["result"] = string(resultJSON)
+			}
 		}
-	case "failed":
+	case "20000001":
+		// 仍在处理中
+		updates["status"] = model.ASRTaskStatusProcessing
+		updates["progress"] = 50
+	default:
+		// 错误
 		updates["status"] = model.ASRTaskStatusFailed
-		if errMsg, ok := result["error"].(string); ok {
-			updates["error_message"] = errMsg
+		errMsg := fmt.Sprintf("ASR error: status=%s, message=%s", statusCode, message)
+		if len(body) > 0 {
+			errMsg += fmt.Sprintf(", body=%s", string(body))
 		}
+		updates["error_message"] = errMsg
 	}
 
 	// 更新数据库

@@ -82,8 +82,27 @@ export const asrAPI = {
   parseResult: (task: ASRTask): ASRResult | null => {
     if (!task.result) return null;
     try {
-      return JSON.parse(task.result);
-    } catch {
+      const parsed = JSON.parse(task.result);
+      
+      // 火山引擎 ASR 响应格式：{ result: { text: "...", utterances: [...] }, audio_info: {...} }
+      // 需要提取嵌套的 result 对象
+      const volcResult = parsed.result;
+      if (!volcResult) return null;
+
+      // 转换 utterances 为 segments 格式
+      const segments = volcResult.utterances?.map((utterance: any) => ({
+        text: utterance.text || '',
+        start_time: utterance.start_time / 1000, // 转换为秒
+        end_time: utterance.end_time / 1000, // 转换为秒
+        speaker: utterance.speaker,
+      }));
+
+      return {
+        text: volcResult.text || '',
+        segments,
+      };
+    } catch (error) {
+      console.error('Failed to parse ASR result:', error);
       return null;
     }
   },
