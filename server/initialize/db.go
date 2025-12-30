@@ -73,6 +73,7 @@ func InitDB() {
 		&model.UserBillingPackage{},
 		&model.TOSUpload{},
 		&model.ASRTask{},
+		&model.PdfExportTask{},
 	); err != nil {
 		panic(fmt.Errorf("failed to migrate database: %s", err))
 	}

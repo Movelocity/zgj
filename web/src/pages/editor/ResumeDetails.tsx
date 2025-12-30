@@ -14,10 +14,11 @@ import LoadingIndicator, { type LoadingStage } from '@/components/LoadingIndicat
 import type { ResumeV2Data } from '@/types/resumeV2';
 import { defaultResumeV2Data } from '@/types/resumeV2';
 import { resumeAPI } from '@/api/resume';
-import { showError, showSuccess } from '@/utils/toast';
+import { showError, showSuccess, showInfo } from '@/utils/toast';
 import { isV1Format, isV2Format, convertV1ToV2 } from '@/utils/resumeConverter';
 import { exportResumeToPDF, exportResumeToPDFViaCanvas } from '@/utils/pdfExport';
 import { workflowAPI } from '@/api/workflow';
+import { createExportTask, getExportTaskStatus, downloadExportPdf } from '@/api/pdfExport';
 import type { ProcessingStage, StepResult } from './types';
 import { TimeBasedProgressUpdater, RESUME_PROCESSING_STEPS } from '@/utils/progress';
 import { parseAndFixResumeJson, fixResumeBlockFormat } from '@/utils/helpers';
@@ -455,6 +456,68 @@ export default function ResumeDetails() {
     }
   };
 
+  // 服务端PDF导出
+  const handleServerExport = async () => {
+    if (!id) {
+      showError('简历ID不存在');
+      return;
+    }
+
+    try {
+      setIsExporting(true);
+      showInfo('正在生成PDF，请稍候...');
+
+      // 1. 创建导出任务
+      const createRes: any = await createExportTask(id);
+      if (createRes.code !== 0) {
+        throw new Error(createRes.msg || '创建导出任务失败');
+      }
+
+      const taskId = createRes.data.task_id;
+      console.log('导出任务已创建:', taskId);
+
+      // 2. 轮询任务状态（简单版本）
+      const maxAttempts = 60; // 最多轮询60次（120秒）
+      let attempts = 0;
+
+      const checkStatus = async (): Promise<void> => {
+        attempts++;
+        
+        try {
+          const statusRes: any = await getExportTaskStatus(taskId);
+          const status = statusRes.data.status;
+
+          if (status === 'completed') {
+            showSuccess('PDF生成完成！');
+            // 自动下载，使用简历标题作为文件名
+            const filename = `${resumeName || '简历'}.pdf`;
+            await downloadExportPdf(taskId, filename);
+            setIsExporting(false);
+          } else if (status === 'failed') {
+            showError('PDF生成失败：' + (statusRes.data.error_message || '未知错误'));
+            setIsExporting(false);
+          } else if (attempts >= maxAttempts) {
+            showError('PDF生成超时，请稍后重试');
+            setIsExporting(false);
+          } else {
+            // 继续轮询
+            setTimeout(checkStatus, 2000);
+          }
+        } catch (error) {
+          showError(error instanceof Error ? error.message : '查询任务状态失败');
+          setIsExporting(false);
+        }
+      };
+
+      // 开始轮询
+      setTimeout(checkStatus, 2000);
+
+    } catch (error) {
+      showError(error instanceof Error ? error.message : '导出失败，请重试');
+      setIsExporting(false);
+    }
+  };
+
   // Go back
   const handleGoBack = () => {
     navigate('/resumes');
@@ -534,6 +597,7 @@ export default function ResumeDetails() {
             <ExportSplitButton
               onTextPdfExport={handleTextPdfExport}
               onImagePdfExport={handleImagePdfExport}
+              onServerExport={handleServerExport}
               isExporting={isExporting}
             />
 

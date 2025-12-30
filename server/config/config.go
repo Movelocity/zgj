@@ -101,15 +101,21 @@ type ASRConfig struct {
 	Timeout    int    `mapstructure:"timeout" json:"timeout" yaml:"timeout"` // in seconds
 }
 
+type PdfExportConfig struct {
+	NodeServiceURL string `mapstructure:"node_service_url" json:"node_service_url" yaml:"node_service_url"` // Node.js服务地址
+	RenderBaseURL  string `mapstructure:"render_base_url" json:"render_base_url" yaml:"render_base_url"`    // 前端渲染页面基础URL
+}
+
 type Config struct {
-	Server  Server    `mapstructure:"server" json:"server" yaml:"server"`
-	CORS    CORS      `mapstructure:"cors" json:"cors" yaml:"cors"`
-	Pgsql   Pgsql     `mapstructure:"pgsql" json:"pgsql" yaml:"pgsql"`
-	SpugSMS SpugSMS   `mapstructure:"spug-sms" json:"spug-sms" yaml:"spug-sms"`
-	JWT     JWT       `mapstructure:"jwt" json:"jwt" yaml:"jwt"`
-	Local   Local     `mapstructure:"local" json:"local" yaml:"local"`
-	Upload  Upload    `mapstructure:"upload" json:"upload" yaml:"upload"`
-	Log     Log       `mapstructure:"log" json:"log" yaml:"log"`
-	TOS     TOSConfig `mapstructure:"tos" json:"tos" yaml:"tos"`
-	ASR     ASRConfig `mapstructure:"asr" json:"asr" yaml:"asr"`
+	Server    Server          `mapstructure:"server" json:"server" yaml:"server"`
+	CORS      CORS            `mapstructure:"cors" json:"cors" yaml:"cors"`
+	Pgsql     Pgsql           `mapstructure:"pgsql" json:"pgsql" yaml:"pgsql"`
+	SpugSMS   SpugSMS         `mapstructure:"spug-sms" json:"spug-sms" yaml:"spug-sms"`
+	JWT       JWT             `mapstructure:"jwt" json:"jwt" yaml:"jwt"`
+	Local     Local           `mapstructure:"local" json:"local" yaml:"local"`
+	Upload    Upload          `mapstructure:"upload" json:"upload" yaml:"upload"`
+	Log       Log             `mapstructure:"log" json:"log" yaml:"log"`
+	TOS       TOSConfig       `mapstructure:"tos" json:"tos" yaml:"tos"`
+	ASR       ASRConfig       `mapstructure:"asr" json:"asr" yaml:"asr"`
+	PdfExport PdfExportConfig `mapstructure:"pdf_export" json:"pdf_export" yaml:"pdf_export"`
 }

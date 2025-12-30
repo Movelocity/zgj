@@ -18,6 +18,7 @@ const ResumeList = lazy(() => import('@/pages/resume/ResumeList'));
 const ResumeCardView = lazy(() => import('@/pages/resume/ResumeCardView'));
 const ResumeDetail = lazy(() => import('@/pages/resume/ResumeDetail'));
 const ResumeEditor = lazy(() => import('@/pages/editor/ResumeDetails'));
+const ResumeExportView = lazy(() => import('@/pages/export/ResumeExportView'));
 const Profile = lazy(() => import('@/pages/profile/Profile'));
 const Administrator = lazy(() => import('@/pages/admin/Administrator'));
 const Contact = lazy(() => import('@/pages/contact/Contact'));
@@ -119,6 +120,17 @@ const adminRoutes = [
 
 // 创建路由器
 const router = createBrowserRouter([
+  // 导出渲染页面（不需要Layout，独立路由）
+  {
+    path: '/export/:taskId',
+    element: (
+      <Suspense fallback={<Loading />}>
+        <ResumeExportView />
+      </Suspense>
+    ),
+    errorElement: <RouteErrorBoundary />,
+  },
+  // 主应用路由
   {
     path: '/',
     element: <Layout />,

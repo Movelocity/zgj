@@ -1,0 +1,21 @@
+{
+  "name": "resume-pdf-export-service",
+  "version": "1.0.0",
+  "description": "PDF export service using Puppeteer",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js"
+  },
+  "keywords": ["pdf", "puppeteer", "export"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "puppeteer": "^21.0.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.0"
+  }
+}
+

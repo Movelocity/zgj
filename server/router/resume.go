@@ -23,6 +23,20 @@ func InitResumeRouter(privateGroup *gin.RouterGroup, publicGroup *gin.RouterGrou
 		ResumeRouter.DELETE("/:id/pending", resume.ClearPendingContent)      // 清除待处理内容
 	}
 
+	// PDF导出路由（私有）
+	ExportRouter := privateGroup.Group("/api/resume/export")
+	{
+		ExportRouter.POST("/create", resume.CreateExportTask)           // 创建导出任务
+		ExportRouter.GET("/status/:taskId", resume.GetExportTaskStatus) // 查询任务状态
+		ExportRouter.GET("/download/:taskId", resume.DownloadExportPdf) // 下载PDF
+	}
+
+	// PDF渲染页面验证（公开，使用token验证）
+	RenderRouter := publicGroup.Group("/api/resume/export")
+	{
+		RenderRouter.GET("/verify/:taskId", resume.VerifyTokenAndGetResume) // 验证token并获取简历数据
+	}
+
 	// 管理员路由 - 简历管理
 	AdminResumeRouter := adminGroup.Group("/api/admin")
 	{

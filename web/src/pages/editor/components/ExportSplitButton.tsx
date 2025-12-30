@@ -1,17 +1,19 @@
 import { useState } from 'react';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
-import { FiChevronDown, FiFileText, FiImage, FiCheck } from 'react-icons/fi';
+import { FiChevronDown, FiFileText, FiImage, FiCheck, FiServer } from 'react-icons/fi';
 import {Button} from '@/components/ui';
 
 interface ExportSplitButtonProps {
   onTextPdfExport: () => void;
   onImagePdfExport: () => void;
+  onServerExport?: () => void;
   isExporting?: boolean;
 }
 
 export default function ExportSplitButton({
   onTextPdfExport,
   onImagePdfExport,
+  onServerExport,
   isExporting = false,
 }: ExportSplitButtonProps) {
   const [open, setOpen] = useState(false);
@@ -30,6 +32,11 @@ export default function ExportSplitButton({
   const handleImagePdfClick = () => {
     setOpen(false);
     onImagePdfExport();
+  };
+
+  const handleServerExportClick = () => {
+    setOpen(false);
+    onServerExport?.();
   };
 
   return (
@@ -96,6 +103,23 @@ export default function ExportSplitButton({
                   <FiCheck className="w-4 h-4 text-blue-600 ml-2" />
                 )}
               </DropdownMenu.Item>
+
+              {/* 服务端导出选项 */}
+              {onServerExport && (
+                <>
+                  <DropdownMenu.Separator className="h-px bg-gray-200 my-1" />
+                  <DropdownMenu.Item
+                    className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-md hover:bg-gray-100 focus:bg-gray-100 focus:outline-none cursor-pointer"
+                    onSelect={handleServerExportClick}
+                  >
+                    <FiServer className="w-4 h-4 mr-3 text-purple-600" />
+                    <div className="flex-1">
+                      <div className="font-medium">服务端导出</div>
+                      <div className="text-xs text-gray-500">后端生成，效果一致</div>
+                    </div>
+                  </DropdownMenu.Item>
+                </>
+              )}
             </DropdownMenu.Content>
           </DropdownMenu.Portal>
         </DropdownMenu.Root>

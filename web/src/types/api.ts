@@ -46,3 +46,15 @@ export interface AdminAPI {
   deleteWorkflow: (id: string) => Promise<ApiResponse>;
   getFileStats: () => Promise<ApiResponse<{ total_files: number; total_size: number; file_types: Record<string, number> }>>;
 }
+
+// PDF导出任务
+export interface PdfExportTask {
+  id: string;
+  user_id: string;
+  resume_id: string;
+  status: 'pending' | 'processing' | 'completed' | 'failed';
+  pdf_file_path?: string;
+  error_message?: string;
+  created_at: string;
+  completed_at?: string;
+}

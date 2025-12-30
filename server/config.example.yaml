@@ -85,3 +85,8 @@ asr:
   resource_id: ""            # 可选：资源ID
   base_url: "https://openspeech.bytedance.com" # ASR API基础URL
   timeout: 60                # HTTP请求超时时间(秒)
+
+# PDF导出服务配置
+pdf_export:
+  node_service_url: "http://localhost:8889"      # Node.js PDF生成服务地址
+  render_base_url: "http://localhost:8888"       # 前端渲染页面基础URL（开发环境：web_socket err，生产环境：8888）
