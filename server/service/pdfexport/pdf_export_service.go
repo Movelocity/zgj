@@ -22,7 +22,21 @@ import (
 // CreateExportTask 创建PDF导出任务
 // resumeDataSnapshot: 可选的简历数据快照，如果提供则使用该数据，否则从数据库查询
 func CreateExportTask(userID, resumeID string, resumeDataSnapshot map[string]interface{}) (string, error) {
-	// 1. 获取简历数据
+	// 1. 检查速率限制：同一用户15秒内不能创建多个任务
+	var lastTask model.PdfExportTask
+	if err := global.DB.Where("user_id = ?", userID).
+		Order("created_at DESC").
+		First(&lastTask).Error; err == nil {
+		// 找到了最近的任务，检查时间间隔
+		timeSinceLastTask := time.Since(lastTask.CreatedAt)
+		if timeSinceLastTask < 15*time.Second {
+			remainingTime := 15*time.Second - timeSinceLastTask
+			return "", fmt.Errorf("操作过于频繁，请在 %d 秒后重试", int(remainingTime.Seconds())+1)
+		}
+	}
+	// 如果没有找到记录（err != nil），说明是首次创建，直接继续
+
+	// 2. 获取简历数据
 	var resumeDataBytes []byte
 	var err error
 
@@ -43,16 +57,16 @@ func CreateExportTask(userID, resumeID string, resumeDataSnapshot map[string]int
 		resumeDataBytes = resume.StructuredData
 	}
 
-	// 2. 验证简历数据快照是否为空
+	// 3. 验证简历数据快照是否为空
 	if len(resumeDataBytes) == 0 {
 		return "", errors.New("简历数据为空，无法创建导出任务")
 	}
 
-	// 3. 生成任务ID和token
+	// 4. 生成任务ID和token
 	taskID := utils.GenerateTLID()
 	token := uuid.New().String()
 
-	// 4. 创建任务记录 (status=pending)，保存简历数据快照
+	// 5. 创建任务记录 (status=pending)，保存简历数据快照
 	task := model.PdfExportTask{
 		ID:         taskID,
 		UserID:     userID,
@@ -71,7 +85,7 @@ func CreateExportTask(userID, resumeID string, resumeDataSnapshot map[string]int
 	log.Printf("PDF导出任务创建成功: task_id=%s, resume_id=%s, 数据大小=%d bytes",
 		taskID, resumeID, len(resumeDataBytes))
 
-	// 5. 异步调用PDF生成
+	// 6. 异步调用PDF生成
 	go GeneratePdfAsync(taskID)
 
 	return taskID, nil
