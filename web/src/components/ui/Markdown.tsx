@@ -30,7 +30,7 @@ const processTextWithButtons = (text: string | React.ReactNode): React.ReactNode
     parts.push(
       <button
         key={match.index}
-        className="inline-flex items-center px-2 py-0.5 mx-0.5 text-xs font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-md hover:bg-blue-100 hover:border-blue-300 transition-colors cursor-pointer"
+        className="inline-flex items-center px-1 py-0.5 mx-0.5 text-xs font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-sm hover:bg-blue-100 hover:border-blue-300 transition-colors cursor-pointer"
         onClick={(e) => {
           e.preventDefault();
           e.stopPropagation();
@@ -116,10 +116,11 @@ export default function MarkdownRenderer({ content, className = '' }: MarkdownRe
           ),
           // 代码块样式
           code: (props) => {
-            const { inline, children } = props as any;
+            let { inline, children } = props as any;
+            inline = true; // 识别有误，先写死true
             if (inline) {
               return (
-                <code className="bg-gray-200 px-1 py-0.5 rounded text-xs font-mono break-all">
+                <code className="bg-gray-100 text-blue-700 px-1 py-0.5 rounded text-xs font-mono break-all">
                   {children}
                 </code>
               );

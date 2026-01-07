@@ -66,7 +66,7 @@ export default function TargetSelector({ currentTarget, onTargetChange }: Target
               hover:shadow-md hover:scale-[1.02] cursor-pointer
               ${
                 selectedTarget === option.value
-                  ? 'border-blue-400 bg-blue-50 shadow-md'
+                  ? 'border-blue-200 bg-blue-50/50 shadow-md'
                   : 'border-gray-200 bg-white hover:border-blue-300'
               }
             `}

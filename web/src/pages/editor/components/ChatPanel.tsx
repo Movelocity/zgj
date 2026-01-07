@@ -73,7 +73,6 @@ export default function ChatPanel({
   const { user } = useAuthStore();
   const userName = user?.name || user?.phone || '用户';
   const chatConfig = getChatConfig(currentTarget);
-  console.log('[ChatPanel] chatConfig:', chatConfig);
   
   const [messages, setMessages] = useState<Message[]>(initialMessages || [
     {
@@ -592,6 +591,7 @@ export default function ChatPanel({
           __query: query,
           __conversation_id: conversationIdRef.current,
           resume: JSON.stringify(latestResumeDataRef.current),
+          scene: currentTarget,
         }
         if (isJD) {
           inputs.job_detail = localStorage.getItem('job_description');
