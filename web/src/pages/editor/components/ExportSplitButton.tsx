@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
-import { FiChevronDown, FiFileText, FiImage, FiCheck, FiServer } from 'react-icons/fi';
+import { FiChevronDown, FiFileText, FiCheck, FiServer } from 'react-icons/fi';
 import {Button} from '@/components/ui';
 
 interface ExportSplitButtonProps {
@@ -12,7 +12,6 @@ interface ExportSplitButtonProps {
 
 export default function ExportSplitButton({
   onTextPdfExport,
-  onImagePdfExport,
   onServerExport,
   isExporting = false,
 }: ExportSplitButtonProps) {
@@ -29,10 +28,10 @@ export default function ExportSplitButton({
     onTextPdfExport();
   };
 
-  const handleImagePdfClick = () => {
-    setOpen(false);
-    onImagePdfExport();
-  };
+  // const handleImagePdfClick = () => {
+  //   setOpen(false);
+  //   onImagePdfExport();
+  // };
 
   const handleServerExportClick = () => {
     setOpen(false);
@@ -78,19 +77,16 @@ export default function ExportSplitButton({
               >
                 <FiFileText className="w-4 h-4 mr-3 text-blue-600" />
                 <div className="flex-1">
-                  <div className="font-medium">文字PDF</div>
-                  <div className="text-xs text-gray-500">浏览器原生打印</div>
+                  <div className="font-medium">本地导出</div>
+                  <div className="text-xs text-gray-500">通过打印导出pdf</div>
                 </div>
                 {defaultMethod === 'text' && (
                   <FiCheck className="w-4 h-4 text-blue-600 ml-2" />
                 )}
               </DropdownMenu.Item>
 
-              {/* 分隔线 */}
-              <DropdownMenu.Separator className="h-px bg-gray-200 my-1" />
-
               {/* 图片PDF选项 */}
-              <DropdownMenu.Item
+              {/* <DropdownMenu.Item
                 className="flex items-center px-3 py-2 text-sm text-gray-700 rounded-md hover:bg-gray-100 focus:bg-gray-100 focus:outline-none cursor-pointer"
                 onSelect={handleImagePdfClick}
               >
@@ -102,7 +98,7 @@ export default function ExportSplitButton({
                 {defaultMethod === 'image' && (
                   <FiCheck className="w-4 h-4 text-blue-600 ml-2" />
                 )}
-              </DropdownMenu.Item>
+              </DropdownMenu.Item> */}
 
               {/* 服务端导出选项 */}
               {onServerExport && (
@@ -114,8 +110,8 @@ export default function ExportSplitButton({
                   >
                     <FiServer className="w-4 h-4 mr-3 text-purple-600" />
                     <div className="flex-1">
-                      <div className="font-medium">服务端导出</div>
-                      <div className="text-xs text-gray-500">后端生成，效果一致</div>
+                      <div className="font-medium">远程导出</div>
+                      <div className="text-xs text-gray-500">服务器生成pdf</div>
                     </div>
                   </DropdownMenu.Item>
                 </>

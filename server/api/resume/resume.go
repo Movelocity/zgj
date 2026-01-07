@@ -148,8 +148,9 @@ func CreateTextResume(c *gin.Context) {
 	userID := c.GetString("userID")
 
 	var req struct {
-		Name        string `json:"name" binding:"required"`
-		TextContent string `json:"text_content" binding:"required"`
+		Name        string      `json:"name" binding:"required"`
+		TextContent string      `json:"text_content" binding:"required"`
+		Metadata    interface{} `json:"metadata"`
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -157,7 +158,7 @@ func CreateTextResume(c *gin.Context) {
 		return
 	}
 
-	response, err := resume.ResumeService.CreateTextResume(userID, req.Name, req.TextContent)
+	response, err := resume.ResumeService.CreateTextResume(userID, req.Name, req.TextContent, req.Metadata)
 	if err != nil {
 		utils.FailWithMessage(err.Error(), c)
 		return

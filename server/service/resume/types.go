@@ -26,6 +26,7 @@ type ResumeDetailInfo struct {
 	TextContent      string      `json:"text_content"`
 	StructuredData   interface{} `json:"structured_data"`
 	PendingContent   interface{} `json:"pending_content"` // 待保存的AI生成内容
+	Metadata         interface{} `json:"metadata"`         // 元数据，存储页面状态信息
 	Status           string      `json:"status"`
 	CreatedAt        time.Time   `json:"created_at"`
 	UpdatedAt        time.Time   `json:"updated_at"`
@@ -37,7 +38,8 @@ type UpdateResumeRequest struct {
 	TextContent    string      `json:"text_content"`
 	StructuredData interface{} `json:"structured_data"`
 	PendingContent interface{} `json:"pending_content"` // 待保存的AI生成内容
-	NewVersion     bool        `json:"new_version"`     // 是否创建新版本而不是覆盖原简历
+	Metadata       interface{} `json:"metadata"`         // 元数据，存储页面状态信息
+	NewVersion     bool        `json:"new_version"`      // 是否创建新版本而不是覆盖原简历
 }
 
 // UploadResumeResponse 上传简历响应

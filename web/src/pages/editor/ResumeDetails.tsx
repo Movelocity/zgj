@@ -9,6 +9,7 @@ import ResumeEditorV2 from './components/ResumeEditor';
 import FontSettingsDropdown from './components/FontSettingsDropdown';
 import ExportSplitButton from './components/ExportSplitButton';
 import VersionSelector from './components/VersionSelector';
+import TargetSelector, { type TargetType } from './components/TargetSelector';
 import { type FontSettings } from './components/FontSettingsPanel';
 import LoadingIndicator, { type LoadingStage } from '@/components/LoadingIndicator';
 import type { ResumeV2Data } from '@/types/resumeV2';
@@ -33,12 +34,11 @@ export default function ResumeDetails() {
   }, []);
 
   const [isJD, setIsJD] = useState(false);
-  const appTypeRef = useRef<'jd' | 'new-resume' | 'normal'>('normal');
+  const currentTargetRef = useRef<TargetType>('normal');
 
   // Resume data state
   const [resumeData, setResumeData] = useState<ResumeV2Data>(defaultResumeV2Data);
   const [newResumeData, setNewResumeData] = useState<ResumeV2Data>(defaultResumeV2Data);  // AI优化后的内容，需人工确认后合并
-  // const [text_content, setTextContent] = useState<string>('');
   const [resumeName, setResumeName] = useState<string>('');
   const [resumeNumber, setResumeNumber] = useState<string>('');
   const [resumeVersion, setResumeVersion] = useState<number>(1);
@@ -199,7 +199,7 @@ export default function ResumeDetails() {
 
       let analysisResult;
 
-      if (appTypeRef.current === "jd") {
+      if (currentTargetRef.current === "jd") {
         // 1. 调用阻塞式 API common-analysis
         const job_description = localStorage.getItem('job_description');
         if (!job_description) {
@@ -212,11 +212,6 @@ export default function ResumeDetails() {
         analysisResult = await workflowAPI.executeWorkflow("job-description-fitter", {
           job_description: job_description,
           resume_text: JSON.stringify(processedData)
-        }, true);
-      } else if (appTypeRef.current === "new-resume") {
-        console.log('开始新简历分析优化...');
-        analysisResult = await workflowAPI.executeWorkflow("common-analysis", {
-          origin_resume: JSON.stringify(processedData)
         }, true);
       } else {
         return { success: false, error: '没有匹配的分析优化方式' };
@@ -287,10 +282,20 @@ export default function ResumeDetails() {
         throw new Error('获取简历详情失败');
       }
 
-      const { name, text_content, structured_data, file_id, pending_content, resume_number, version } = response.data;
+      const { name, text_content, structured_data, file_id, pending_content, metadata, resume_number, version } = response.data;
       setResumeName(name);
       setResumeNumber(resume_number);
       setResumeVersion(version);
+      
+      // 恢复元数据中的页面状态（currentTarget）
+      if (metadata?.currentTarget) {
+        console.log('[ResumeDetails] 从metadata恢复currentTarget:', metadata.currentTarget);
+        currentTargetRef.current = metadata.currentTarget;
+        if (metadata.currentTarget === 'jd') {
+          setIsJD(true);
+          document.title = `简历JD优化 - 职管加`;
+        }
+      }
       
       // 恢复pending_content中的聊天记录和简历数据
       if (pending_content) {
@@ -351,9 +356,78 @@ export default function ResumeDetails() {
 
         // 步骤3：检查是否需要AI分析优化
         const hash = window.location.hash;
-        if (hash === '#jd-new') {
+        
+        // 检查是否是从 SimpleResume.tsx 上传的新简历需要初始化分析
+        if (metadata?.isNewResume === true) {
+          console.log('[ResumeDetails] 检测到新简历，运行初始化分析...');
+          document.title = `简历分析优化 - 职管加`;
+          
+          try {
+            // Run common-analysis workflow directly
+            console.log('开始新简历分析优化...');
+            setLoading(true);
+            setCurrentStage('analyzing');
+            const updater = initProgressUpdater();
+            updater.startStep(2);
+            
+            const processedData = structured_data as ResumeV2Data;
+            const analysisResult = await workflowAPI.executeWorkflow("common-analysis", {
+              origin_resume: JSON.stringify(processedData)
+            }, true);
+            
+            if (analysisResult.code !== 0) {
+              throw new Error('简历分析失败');
+            }
+            
+            const analysisContent = analysisResult.data.data.outputs?.reply;
+            console.log('分析结果:', analysisContent);
+            addChatMessage(analysisContent, 'assistant');
+            
+            if (!analysisContent || typeof analysisContent !== 'string') {
+              throw new Error('分析结果格式错误');
+            }
+            
+            // Format result
+            console.log('格式化优化后的简历...');
+            setCurrentStage('exporting');
+            updater.startStep(3);
+            const formatResult = await workflowAPI.executeWorkflow("smart-format-2", {
+              current_resume: JSON.stringify(processedData),
+              resume_edit: analysisContent
+            }, true);
+            
+            if (formatResult.code !== 0) {
+              throw new Error('简历格式化失败');
+            }
+            
+            const formattedResult = formatResult.data.data.outputs?.reply;
+            if (!formattedResult) {
+              throw new Error('格式化结果为空');
+            }
+            
+            const formattedResumeData = parseAndFixResumeJson(formattedResult);
+            setNewResumeData(formattedResumeData);
+            
+            // Mark initialization complete
+            await resumeAPI.updateResume(id, {
+              metadata: { ...metadata, isNewResume: false },
+              pending_content: {
+                newResumeData: formattedResumeData,
+              }
+            });
+            
+            updater.completeCurrentStep();
+            console.log('新简历分析完成');
+            showSuccess('新简历分析完成');
+          } catch (error) {
+            console.error('[ResumeDetails] 新简历分析失败:', error);
+            showError(error instanceof Error ? error.message : '简历分析优化失败');
+          } finally {
+            cleanupProgressState();
+          }
+        } else if (hash === '#jd-new') {
           setIsJD(true);
-          appTypeRef.current = "jd";
+          currentTargetRef.current = "jd";
           document.title = `简历JD优化 - 职管加`;
           window.history.replaceState(null, '', window.location.pathname + window.location.search + '#jd');
           
@@ -362,18 +436,8 @@ export default function ResumeDetails() {
             showError(result.error || 'jd简历分析优化失败');
             console.warn(result.error);
           }
-        } else if (hash === '#new_resume') {
-          appTypeRef.current = "new-resume";
-          document.title = `简历分析优化 - 职管加`;
-          window.history.replaceState(null, '', window.location.pathname + window.location.search);
-          
-          const result = await executeStep3_AnalyzeResume(id, structured_data as ResumeV2Data, text_content);
-          if (!result.success) {
-            showError(result.error || '简历分析优化失败');
-            console.warn(result.error);
-          }
         } else if (hash === '#jd') {
-          appTypeRef.current = "jd";
+          currentTargetRef.current = "jd";
           setIsJD(true);
           document.title = `简历JD优化 - 职管加`;
         }
@@ -409,6 +473,9 @@ export default function ResumeDetails() {
         name: resumeName,
         // text_content: text_content,
         structured_data: resumeData,
+        metadata: {
+          currentTarget: currentTargetRef.current, // 保存当前编辑目标类型
+        },
         new_version: true, // 创建新版本而不是覆盖原简历
       });
       
@@ -539,6 +606,29 @@ export default function ResumeDetails() {
     }
   };
 
+  // Handle target change
+  const handleTargetChange = useCallback(async (newTarget: TargetType) => {
+    console.log('[ResumeDetails] 切换目标类型:', newTarget);
+    currentTargetRef.current = newTarget;
+    
+    // 更新 isJD 状态
+    setIsJD(newTarget === 'jd');
+    
+    // 保存目标类型到 metadata
+    if (id) {
+      try {
+        await resumeAPI.updateResume(id, {
+          metadata: {
+            currentTarget: newTarget,
+          },
+        });
+        showSuccess(`已切换到${newTarget === 'jd' ? '职位匹配' : newTarget === 'foreign' ? '英文简历' : '常规优化'}模式`);
+      } catch (error) {
+        console.error('[ResumeDetails] 保存目标类型失败:', error);
+      }
+    }
+  }, [id]);
+
   useEffect(() => {
     // 设置标签页标题
     document.title = `简历优化 - 职管加`;
@@ -645,6 +735,13 @@ export default function ResumeDetails() {
               onResumeDataChange={(data, require_commit) => handleResumeDataChange(data as ResumeV2Data, require_commit)}
               isJD={isJD}
               resumeId={id}
+              currentTarget={currentTargetRef.current}
+              emptyComponent={
+                <TargetSelector
+                  currentTarget={currentTargetRef.current}
+                  onTargetChange={handleTargetChange}
+                />
+              }
             />
           </>
         )}

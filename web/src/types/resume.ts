@@ -29,6 +29,13 @@ export interface ResumeInfo {
   updated_at: string;
 }
 
+// 简历元数据 - 存储页面状态信息
+export interface ResumeMetadata {
+  currentTarget?: 'jd' | 'normal' | 'foreign'; // 当前编辑目标类型
+  isNewResume?: boolean; // 标记是否已完成初始分析（true=分析中，false=已完成，undefined=需要初始化）
+  [key: string]: any; // 支持未来扩展的其他字段
+}
+
 // 简历详细信息 - 包含文本内容和结构化数据
 export interface ResumeDetail {
   id: string;
@@ -40,6 +47,7 @@ export interface ResumeDetail {
   text_content: string;
   structured_data: any;
   pending_content?: any; // 待保存的AI生成内容
+  metadata?: ResumeMetadata; // 元数据，存储页面状态信息
   status: string;
   created_at: string;
   updated_at: string;
@@ -55,6 +63,7 @@ export interface ResumeUploadData {
 export interface CreateTextResumeData {
   name: string;
   text_content: string;
+  metadata?: ResumeMetadata; // 元数据，存储页面状态信息
 }
 
 // 简历上传响应
@@ -80,6 +89,7 @@ export interface ResumeUpdateRequest {
   text_content?: string;
   structured_data?: any;
   pending_content?: any; // 待保存的AI生成内容
+  metadata?: ResumeMetadata; // 元数据，存储页面状态信息
   new_version?: boolean; // 是否创建新版本而不是覆盖原简历，默认true
 }
 

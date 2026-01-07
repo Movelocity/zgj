@@ -30,6 +30,8 @@ interface ChatPanelProps {
   onMessagesChange?: (messages: Message[]) => void;
   isJD: boolean;
   resumeId?: string; // 简历ID，用于保存pending_content
+  currentTarget?: 'jd' | 'normal' | 'foreign'; // 当前任务类型
+  emptyComponent?: React.ReactNode; // 无消息时显示的组件
 }
 
 // 导出Message接口供外部使用
@@ -37,22 +39,47 @@ export type { Message };
 
 // TOOD: 消息内容 markdown 渲染
 
+// 根据任务类型获取标题和欢迎消息
+const getChatConfig = (currentTarget?: string) => {
+  switch (currentTarget) {
+    case 'jd':
+      return {
+        title: '职位匹配',
+        welcomeMessage: '您好，我是职位匹配专家，我会根据您提供的职位描述优化您的简历，让简历更符合职位要求'
+      };
+    case 'foreign':
+      return {
+        title: '英文简历',
+        welcomeMessage: '您好，我是英文简历专家，我会帮助您优化英文简历的表达和格式，让简历更符合国际标准'
+      };
+    default:
+      return {
+        title: '简历专家',
+        welcomeMessage: '您好，我是简历专家，您可以随时与我对话，我会根据您的需求进一步优化简历'
+      };
+  }
+};
+
 export default function ChatPanel({ 
   resumeData, 
   onResumeDataChange,
   initialMessages,
   onMessagesChange,
   isJD,
-  resumeId
+  resumeId,
+  currentTarget,
+  emptyComponent
 }: ChatPanelProps) {
   const { user } = useAuthStore();
   const userName = user?.name || user?.phone || '用户';
+  const chatConfig = getChatConfig(currentTarget);
+  console.log('[ChatPanel] chatConfig:', chatConfig);
   
   const [messages, setMessages] = useState<Message[]>(initialMessages || [
     {
       id: '1',
       type: 'assistant',
-      content: "您好，我是简历专家，您可以随时与我对话，我会根据您的需求进一步优化简历",
+      content: chatConfig.welcomeMessage,
       timestamp: new Date(),
     }
   ]);
@@ -115,7 +142,7 @@ export default function ChatPanel({
           page_size: 20,
         });
         
-        if (response.code === 0 && response.data.messages.length > 0) {
+        if (response.code === 0 && response.data.messages?.length > 0) {
           // Convert backend messages to frontend format
           const loadedMessages: Message[] = response.data.messages
             .reverse() // Backend returns newest first, we want oldest first
@@ -129,13 +156,13 @@ export default function ChatPanel({
           
           setMessages(loadedMessages);
           setHasMoreMessages(response.data.has_more);
-          console.log('[ChatPanel] 加载历史消息成功:', loadedMessages.length);
+          console.log('[ChatPanel] 加载历史消息成功:', loadedMessages?.length);
         } else {
           // No messages, use default welcome message
           setMessages([{
             id: '1',
             type: 'assistant',
-            content: "您好，我是简历专家，您可以随时与我对话，我会根据您的需求进一步优化简历",
+            content: chatConfig.welcomeMessage,
             timestamp: new Date(),
           }]);
         }
@@ -677,7 +704,7 @@ export default function ChatPanel({
           .map((msg: BackendChatMessage) => ({
             id: msg.id,
             isHistorical: true, // 标记为历史消息
-            type: msg.sender_name.includes('AI') || msg.sender_name === '简历专家' ? 'assistant' as const : 'user' as const,
+            type: msg.sender_name.includes('AI') || msg.sender_name === '简历专家' || msg.sender_name === chatConfig.title ? 'assistant' as const : 'user' as const,
             content: msg.message.content,
             timestamp: new Date(msg.created_at),
           }));
@@ -733,7 +760,7 @@ export default function ChatPanel({
             <div className="flex gap-1 items-center text-lg font-medium">
               {/* <Bot className="w-5 h-5 text-blue-600" /> */}
               <img src="/images/icon_128x128.webp" alt="logo" className="h-8" />
-              简历专家
+              {chatConfig.title}
             </div>
             <div className="flex gap-1 items-center">
               <button
@@ -755,6 +782,13 @@ export default function ChatPanel({
               onScroll={handleScroll}
               ref={scrollRef}
             >
+              {/* Empty component when no messages or only welcome message */}
+              {emptyComponent && messages.length <= 1 && (
+                <div className="flex items-center justify-center h-full">
+                  {emptyComponent}
+                </div>
+              )}
+              
               {/* Loading indicator for loading more messages */}
               {isLoadingMore && (
                 <div className="flex justify-center py-2">
@@ -772,7 +806,7 @@ export default function ChatPanel({
                 </div>
               )}
               
-              {messages.map((message) => (
+              {(!emptyComponent || messages.length > 1) && messages.map((message) => (
                 <div key={message.id} className="space-y-2">
                   {message.type === 'user' ? (
                     // 用户消息保持气泡样式

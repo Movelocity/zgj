@@ -16,6 +16,7 @@ type ResumeRecord struct {
 	TextContent      string    `gorm:"type:text" json:"text_content"`                  // 纯文本内容
 	StructuredData   JSON      `gorm:"type:jsonb" json:"structured_data"`              // 结构化数据
 	PendingContent   JSON      `gorm:"type:jsonb" json:"pending_content"`              // 待保存的AI生成内容（未接收时临时存储）
+	Metadata         JSON      `gorm:"type:jsonb" json:"metadata"`                     //（新增）元数据，记录各种页面状态信息，如修改频次，当前核心任务类型，归档任务等
 	PortraitImg      string    `gorm:"size:512" json:"portrait_img"`                   // 证件照URL
 	Status           string    `gorm:"size:20;default:'active'" json:"status"`         // 状态 (active/deleted)
 	CreatedAt        time.Time `json:"created_at"`

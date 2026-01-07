@@ -140,6 +140,12 @@ func (s *resumeService) GetResumeByID(userID, resumeID string) (*ResumeDetailInf
 		json.Unmarshal(resume.PendingContent, &pendingContent)
 	}
 
+	// 解析元数据
+	var metadata interface{}
+	if len(resume.Metadata) > 0 {
+		json.Unmarshal(resume.Metadata, &metadata)
+	}
+
 	resumeDetail := &ResumeDetailInfo{
 		ID:               resume.ID,
 		ResumeNumber:     resume.ResumeNumber,
@@ -150,6 +156,7 @@ func (s *resumeService) GetResumeByID(userID, resumeID string) (*ResumeDetailInf
 		TextContent:      resume.TextContent,
 		StructuredData:   structuredData,
 		PendingContent:   pendingContent,
+		Metadata:         metadata,
 		Status:           resume.Status,
 		CreatedAt:        resume.CreatedAt,
 		UpdatedAt:        resume.UpdatedAt,
@@ -200,6 +207,13 @@ func (s *resumeService) UpdateResume(userID, resumeID string, req UpdateResumeRe
 			return nil, errors.New("待保存内容格式错误")
 		}
 		updates["pending_content"] = model.JSON(pendingJSON)
+	}
+	if req.Metadata != nil {
+		metadataJSON, err := json.Marshal(req.Metadata)
+		if err != nil {
+			return nil, errors.New("元数据格式错误")
+		}
+		updates["metadata"] = model.JSON(metadataJSON)
 	}
 
 	if len(updates) > 0 {
@@ -255,6 +269,13 @@ func (s *resumeService) createNewResumeVersion(userID string, originalResume *mo
 			return "", errors.New("结构化数据格式错误")
 		}
 		newResume.StructuredData = model.JSON(dataJSON)
+	}
+	if req.Metadata != nil {
+		metadataJSON, err := json.Marshal(req.Metadata)
+		if err != nil {
+			return "", errors.New("元数据格式错误")
+		}
+		newResume.Metadata = model.JSON(metadataJSON)
 	}
 
 	// 保存新版本简历
@@ -472,7 +493,7 @@ func (s *resumeService) StructureTextToJSON(userId string, resumeId string) erro
 }
 
 // CreateTextResume 创建纯文本简历
-func (s *resumeService) CreateTextResume(userID, name, textContent string) (*UploadResumeResponse, error) {
+func (s *resumeService) CreateTextResume(userID, name, textContent string, metadata interface{}) (*UploadResumeResponse, error) {
 	if name == "" {
 		return nil, errors.New("简历名称不能为空")
 	}
@@ -493,6 +514,15 @@ func (s *resumeService) CreateTextResume(userID, name, textContent string) (*Upl
 		FileID:       nil, // 纯文本简历，无文件
 		TextContent:  textContent,
 		Status:       "active",
+	}
+
+	// 设置元数据（如果提供）
+	if metadata != nil {
+		metadataJSON, err := json.Marshal(metadata)
+		if err != nil {
+			return nil, errors.New("元数据格式错误")
+		}
+		resume.Metadata = model.JSON(metadataJSON)
 	}
 
 	if err := global.DB.Create(&resume).Error; err != nil {

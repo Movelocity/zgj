@@ -297,6 +297,13 @@ const SimpleResume: React.FC = () => {
         }
         
         resumeId = uploadResponse.data?.id || '';
+        
+        // 标记为新简历，需要初始化分析
+        if (resumeId) {
+          await resumeAPI.updateResume(resumeId, {
+            metadata: { isNewResume: true }
+          });
+        }
       } else {
         // 如果是已有简历，直接使用其ID
         resumeId = selectedFile.id;
@@ -304,7 +311,7 @@ const SimpleResume: React.FC = () => {
 
       if (resumeId) {
         // 直接跳转到编辑页面
-        navigate(`/editor/v2/${resumeId}#new_resume`);
+        navigate(`/editor/v2/${resumeId}`);
       } else {
         throw new Error('获取简历ID失败');
       }
