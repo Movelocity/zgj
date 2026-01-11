@@ -37,93 +37,154 @@ The system SHALL parse four types of action markers from AI message content:
 
 ### Requirement: Action Marker Visual Rendering
 
-The system SHALL render each action marker as a single-line diff-style visual element with appropriate styling based on action type.
+The system SHALL render action markers in two distinct visual styles: full-width gray boxes for actionable markers (ADD_PART, NEW_SECTION, EDIT) and inline blue boxes for informational markers (DISPLAY).
 
 #### Scenario: Render ADD_PART marker
 
 - **WHEN** displaying an ADD_PART marker
 - **THEN** the system SHALL show:
-  - Green left border
-  - Plus icon (+) in green
+  - Full-width rounded gray border
   - Section and title information
-  - Content preview
+  - Collapsible content preview
+  - When collapsed: estimated character count
+  - When expanded: full content text
   - Accept and Reject buttons
 
 #### Scenario: Render NEW_SECTION marker
 
 - **WHEN** displaying a NEW_SECTION marker
 - **THEN** the system SHALL show:
-  - Blue left border
-  - Asterisk icon (*) in blue
+  - Full-width rounded gray border
   - Section name
-  - Content preview
+  - Collapsible content preview
+  - When collapsed: estimated character count
+  - When expanded: full content text
   - Accept and Reject buttons
 
 #### Scenario: Render EDIT marker
 
 - **WHEN** displaying an EDIT marker
 - **THEN** the system SHALL show:
-  - Yellow left border
-  - Tilde icon (~) in yellow
+  - Full-width rounded gray border
   - Section and title information
-  - Text change preview (from → to)
+  - Collapsible parameters display (regex and replacement)
+  - When collapsed: estimated character count of changes
+  - When expanded: full regex pattern and replacement text
   - Accept and Reject buttons
 
 #### Scenario: Render DISPLAY marker
 
 - **WHEN** displaying a DISPLAY marker
 - **THEN** the system SHALL show:
-  - Gray left border
-  - Info icon (i) in gray
+  - Inline (non-full-width) blue border
+  - Blue background with blue text
   - Message content
   - No action buttons
 
-#### Scenario: Historical markers are read-only
+#### Scenario: Historical markers default state
 
 - **WHEN** displaying action markers in historical messages
-- **THEN** the system SHALL render markers in a muted style without Accept/Reject buttons
+- **THEN** the system SHALL render markers in collapsed state by default
+- **AND** Accept/Reject buttons SHALL NOT be shown
+
+#### Scenario: Historical markers expand interaction
+
+- **WHEN** user expands a historical action marker
+- **THEN** the system SHALL show the full parameter details
+- **AND** SHALL show a "Re-trigger" button to allow reapplying the action
 
 ### Requirement: Action Marker Interaction
 
-The system SHALL allow users to accept or reject action markers and trigger corresponding events.
+The system SHALL allow users to accept or reject action markers, manage action queues, and trigger corresponding events.
+
+#### Scenario: Expand/Collapse action marker
+
+- **WHEN** user clicks expand button on a collapsed marker
+- **THEN** the system SHALL show full parameter details
+- **AND** change button to "收起"
 
 #### Scenario: Accept ADD_PART action
 
 - **WHEN** user clicks Accept on an ADD_PART marker
 - **THEN** the system SHALL:
   - Dispatch `action-marker-accepted` event with marker details
-  - Disable the Accept/Reject buttons
-  - Show a success indicator
+  - Change marker state to "accepted"
+  - Show "已应用" indicator
+  - Hide Accept/Reject buttons
 
 #### Scenario: Accept NEW_SECTION action
 
 - **WHEN** user clicks Accept on a NEW_SECTION marker
 - **THEN** the system SHALL:
   - Dispatch `action-marker-accepted` event with marker details
-  - Disable the Accept/Reject buttons
-  - Show a success indicator
+  - Change marker state to "accepted"
+  - Show "已应用" indicator
+  - Hide Accept/Reject buttons
 
 #### Scenario: Accept EDIT action
 
 - **WHEN** user clicks Accept on an EDIT marker
 - **THEN** the system SHALL:
   - Dispatch `action-marker-accepted` event with marker details including regex and replacement
-  - Disable the Accept/Reject buttons
-  - Show a success indicator
+  - Change marker state to "accepted"
+  - Show "已应用" indicator
+  - Hide Accept/Reject buttons
 
 #### Scenario: Reject any action
 
 - **WHEN** user clicks Reject on any marker with action buttons
 - **THEN** the system SHALL:
   - Dispatch `action-marker-rejected` event with marker details
-  - Disable the Accept/Reject buttons
-  - Show a rejection indicator
+  - Change marker state to "rejected"
+  - Show "已忽略" indicator
+  - Hide Accept/Reject buttons
+
+#### Scenario: Multiple actions queue management
+
+- **WHEN** a message contains multiple action markers
+- **THEN** the system SHALL allow users to accept each action independently
+- **AND** each action SHALL be processed and applied individually
+- **AND** no ordering constraints SHALL be enforced
+
+#### Scenario: Re-trigger historical action
+
+- **WHEN** user expands a historical marker and clicks "重新触发"
+- **THEN** the system SHALL dispatch `action-marker-accepted` event as if it were a new action
+- **AND** apply the action to current resume data
 
 #### Scenario: DISPLAY marker has no interaction
 
 - **WHEN** user views a DISPLAY marker
 - **THEN** the system SHALL NOT provide any Accept/Reject buttons
+- **AND** SHALL NOT provide expand/collapse functionality
 - **AND** no interaction events SHALL be triggered
+
+### Requirement: Character Count Display
+
+The system SHALL calculate and display estimated character count when action markers are in collapsed state.
+
+#### Scenario: Calculate ADD_PART character count
+
+- **WHEN** displaying a collapsed ADD_PART marker
+- **THEN** the system SHALL count the length of content parameter
+- **AND** display as "预计添加 N 字"
+
+#### Scenario: Calculate NEW_SECTION character count
+
+- **WHEN** displaying a collapsed NEW_SECTION marker
+- **THEN** the system SHALL count the length of content parameter
+- **AND** display as "预计添加 N 字"
+
+#### Scenario: Calculate EDIT character count
+
+- **WHEN** displaying a collapsed EDIT marker
+- **THEN** the system SHALL count the length of replacement parameter
+- **AND** display as "预计修改 N 字"
+
+#### Scenario: DISPLAY has no character count
+
+- **WHEN** displaying a DISPLAY marker
+- **THEN** the system SHALL NOT show any character count
 
 ### Requirement: Event Data Structure
 
@@ -141,6 +202,7 @@ The system SHALL dispatch custom events with complete action marker information.
   - `regex`: pattern for EDIT
   - `replacement`: replacement text for EDIT
   - `messageId`: ID of the message containing the marker
+  - `isRetrigger`: boolean indicating if this is a re-triggered historical action
 
 #### Scenario: action-marker-rejected event structure
 

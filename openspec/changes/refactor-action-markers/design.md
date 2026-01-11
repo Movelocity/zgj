@@ -84,21 +84,6 @@ This change introduces a structured action marker system inspired by Git diff vi
 - Context API → Overkill for this simple communication
 - Direct function calls → Tight coupling, harder to test
 
-### Decision 5: Visual Design Inspired by Git Diff
-
-**Choice**: Use colored left borders and action icons (+, ~, *, i) similar to Git diff visualization.
-
-**Rationale**:
-- Git diff is a familiar pattern for developers and increasingly for non-developers
-- Color coding provides instant visual feedback (green=add, yellow=modify, blue=new, gray=info)
-- Single-line compact format fits naturally in chat flow
-- Left border draws attention without being intrusive
-
-**Alternatives considered**:
-- Card-based design → Too bulky for inline suggestions
-- Modal dialogs → Interrupts chat flow
-- Inline editing UI → Too complex for this use case
-
 ### Decision 6: Historical Messages are Read-Only
 
 **Choice**: Disable action buttons for markers in historical messages (`isHistorical` flag).

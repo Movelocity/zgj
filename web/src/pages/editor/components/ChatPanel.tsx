@@ -240,18 +240,6 @@ export default function ChatPanel({
     adjustTextareaHeight();
   }, [inputValue, adjustTextareaHeight]);
 
-  // 监听 markdown 按钮点击事件
-  useEffect(() => {
-    const handleMarkdownButtonClick = (event: CustomEvent<{ text: string }>) => {
-      const text = event.detail.text;
-      setInputValue(text);
-    };
-
-    window.addEventListener('markdown-button-click' as any, handleMarkdownButtonClick);
-    return () => {
-      window.removeEventListener('markdown-button-click' as any, handleMarkdownButtonClick);
-    };
-  }, []);
 
   // 监听 resume-update-detected 事件（直接解析成功的情况）
   useEffect(() => {
@@ -310,6 +298,119 @@ export default function ChatPanel({
       window.removeEventListener('resume-update-formatted' as any, handleResumeFormatted);
     };
   }, [onResumeDataChange]);
+
+  // 监听 action-marker-accepted 事件
+  useEffect(() => {
+    const handleActionMarkerAccepted = (event: CustomEvent<{
+      markerId: string;
+      type: string;
+      section: string;
+      title: string | null;
+      content?: string;
+      regex?: string;
+      replacement?: string;
+      messageId: string;
+      isRetrigger: boolean;
+    }>) => {
+      const { type, section, title, content, regex, replacement } = event.detail;
+      console.log('[ChatPanel] Action marker accepted:', event.detail);
+
+      // Clone current resume data
+      const updatedData = JSON.parse(JSON.stringify(latestResumeDataRef.current)) as ResumeV2Data;
+
+      try {
+        if (type === 'ADD_PART') {
+          // Find the section and add a new item
+          const sectionBlock = updatedData.blocks.find(b => b.title === section);
+          if (sectionBlock && sectionBlock.type === 'list' && Array.isArray(sectionBlock.data)) {
+            sectionBlock.data.push({
+              id: Date.now().toString(),
+              name: title || '',
+              description: content || '',
+              time: '',
+              highlight: ''
+            });
+            console.log(`[ChatPanel] Added item to section: ${section}`);
+          } else {
+            console.warn(`[ChatPanel] Section not found or not a list type: ${section}`);
+          }
+        } else if (type === 'NEW_SECTION') {
+          // Create a new section (default to text type for simplicity)
+          updatedData.blocks.push({
+            title: section,
+            type: 'text',
+            data: content || ''
+          });
+          console.log(`[ChatPanel] Created new section: ${section}`);
+        } else if (type === 'EDIT') {
+          // Find the section and item, then apply regex replacement
+          const sectionBlock = updatedData.blocks.find(b => b.title === section);
+          if (sectionBlock) {
+            if (sectionBlock.type === 'list' && Array.isArray(sectionBlock.data)) {
+              const item = sectionBlock.data.find((i: any) => i.id === title);
+              if (item && regex && replacement !== undefined) {
+                try {
+                  const regexObj = new RegExp(regex);
+                  item.description = item.description.replace(regexObj, replacement);
+                  console.log(`[ChatPanel] Edited item in section: ${section}, title: ${title}`);
+                } catch (error) {
+                  console.error('[ChatPanel] Invalid regex:', regex, error);
+                  // Fallback to exact string match
+                  item.description = item.description.replace(regex, replacement);
+                }
+              } else {
+                console.warn(`[ChatPanel] Item not found: ${section} - ${title}`);
+              }
+            } else if (sectionBlock.type === 'text' && typeof sectionBlock.data === 'string') {
+              // For text blocks, apply replacement directly
+              if (regex && replacement !== undefined) {
+                try {
+                  const regexObj = new RegExp(regex);
+                  sectionBlock.data = sectionBlock.data.replace(regexObj, replacement);
+                  console.log(`[ChatPanel] Edited text block: ${section}`);
+                } catch (error) {
+                  console.error('[ChatPanel] Invalid regex:', regex, error);
+                  // Fallback to exact string match
+                  sectionBlock.data = sectionBlock.data.replace(regex, replacement);
+                }
+              }
+            }
+          } else {
+            console.warn(`[ChatPanel] Section not found: ${section}`);
+          }
+        }
+
+        // Update resume data
+        latestResumeDataRef.current = updatedData;
+        onResumeDataChange(updatedData, true);
+        console.log('[ChatPanel] Resume data updated from action marker');
+      } catch (error) {
+        console.error('[ChatPanel] Error processing action marker:', error);
+      }
+    };
+
+    window.addEventListener('action-marker-accepted' as any, handleActionMarkerAccepted);
+    return () => {
+      window.removeEventListener('action-marker-accepted' as any, handleActionMarkerAccepted);
+    };
+  }, [onResumeDataChange]);
+
+  // 监听 action-marker-rejected 事件
+  useEffect(() => {
+    const handleActionMarkerRejected = (event: CustomEvent<{
+      markerId: string;
+      type: string;
+      messageId: string;
+    }>) => {
+      console.log('[ChatPanel] Action marker rejected:', event.detail);
+      // Currently just logging; could add user feedback here
+    };
+
+    window.addEventListener('action-marker-rejected' as any, handleActionMarkerRejected);
+    return () => {
+      window.removeEventListener('action-marker-rejected' as any, handleActionMarkerRejected);
+    };
+  }, []);
 
   // 监听 chat-message-added 事件（从外部添加的新消息）
   useEffect(() => {
@@ -851,6 +952,7 @@ export default function ChatPanel({
                       className="text-sm leading-relaxed text-gray-800"
                       resumeData={resumeData}
                       isHistorical={message.isHistorical} // 传递历史消息标记
+                      onQuestionClick={(question) => setInputValue(question)} // 将问题设置到输入框
                     />
                   )}
                 </div>
