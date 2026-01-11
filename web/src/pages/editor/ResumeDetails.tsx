@@ -3,7 +3,7 @@ import { FiSave } from 'react-icons/fi';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ChevronLeft } from 'lucide-react';
 import { Button } from "@/components/ui";
-import { useGlobalStore } from '@/store';
+import { useAuthStore, useGlobalStore } from '@/store';
 import ChatPanel, { type Message } from './components/ChatPanel';
 import ResumeEditorV2 from './components/ResumeEditor';
 import FontSettingsDropdown from './components/FontSettingsDropdown';
@@ -23,6 +23,8 @@ import { createExportTask, getExportTaskStatus, downloadExportPdf } from '@/api/
 import type { ProcessingStage, StepResult } from './types';
 import { TimeBasedProgressUpdater, RESUME_PROCESSING_STEPS } from '@/utils/progress';
 import { parseAndFixResumeJson, fixResumeBlockFormat } from '@/utils/helpers';
+import { chatMessageAPI } from '@/api/chatMessage';
+
 
 export default function ResumeDetails() {
   const { setShowBanner } = useGlobalStore();
@@ -33,8 +35,52 @@ export default function ResumeDetails() {
     };
   }, []);
 
-  const [isJD, setIsJD] = useState(false);
-  const currentTargetRef = useRef<TargetType>('normal');
+  const { id: resumeId } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+
+  // Metadata state - 所有关键状态都从这里派生
+  const [metadata, setMetadata] = useState<{
+    currentTarget?: TargetType;
+    isNewResume?: boolean;
+    processingStage?: 'not_started' | 'parsed' | 'structured' | 'analyzed' | 'completed';
+    lastUpdated?: string;
+    [key: string]: any;
+  }>({});
+  
+  // 使用 ref 保持最新的 metadata 引用，避免闭包问题
+  const metadataRef = useRef(metadata);
+  useEffect(() => {
+    metadataRef.current = metadata;
+  }, [metadata]);
+
+  // 从 metadata 派生的状态
+  const currentTarget = metadata.currentTarget || 'normal';
+  const isJD = currentTarget === 'jd';
+  
+  // 更新 metadata 的钩子函数，可以传递给子组件使用
+  const updateMetadata = useCallback(async (updates: Partial<typeof metadata>, persistToServer = true) => {
+    const updatedMetadata = {
+      ...metadataRef.current,
+      ...updates,
+      lastUpdated: new Date().toISOString(),
+    };
+    
+    console.log('[ResumeDetails] 更新metadata:', updates);
+    setMetadata(updatedMetadata);
+    
+    // 持久化到服务器
+    if (persistToServer && resumeId) {
+      try {
+        await resumeAPI.updateResume(resumeId, {
+          metadata: updatedMetadata,
+        });
+      } catch (error) {
+        console.error('[ResumeDetails] 保存metadata失败:', error);
+      }
+    }
+    
+    return updatedMetadata;
+  }, [resumeId]); // 只依赖 resumeId
 
   // Resume data state
   const [resumeData, setResumeData] = useState<ResumeV2Data>(defaultResumeV2Data);
@@ -51,8 +97,6 @@ export default function ResumeDetails() {
     }
   ]);
 
-  const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [currentStage, setCurrentStage] = useState<ProcessingStage>('parsing');
   const [progress, setProgress] = useState(0);
@@ -70,9 +114,9 @@ export default function ResumeDetails() {
   // 加载步骤配置
   const loadingStages: LoadingStage[] = useMemo(() => [
     { key: 'parsing', label: '简历文件解析', order: 1 },
-    { key: 'structuring', label: '简历数据结构化', order: 2 },
-    { key: 'analyzing', label: isJD ? 'JD简历优化' : '简历分析', order: 3 },
-    { key: 'exporting', label: 'AI优化内容格式化', order: 4 },
+    { key: 'structuring', label: '简历信息结构化', order: 2 },
+    { key: 'analyzing', label: isJD ? 'JD简历优化' : 'AI简历分析', order: 3 },
+    { key: 'exporting', label: '简历内容优化', order: 4 },
   ], [isJD]);
 
   // 初始化进度更新器
@@ -113,6 +157,27 @@ export default function ResumeDetails() {
     setShowCompleted(false);
   }, []);
 
+  const { user } = useAuthStore();
+  const userName = user?.name || user?.phone || '用户';
+
+  // Save message to backend
+  const saveMessageToBackend = async (message: Message) => {
+    if (!resumeId) return;
+    
+    try {
+      await chatMessageAPI.createMessage({
+        resume_id: resumeId,
+        sender_name: message.type === 'user' ? userName : 'AI助手',
+        message: {
+          content: message.content,
+        },
+      });
+      console.log('[ChatPanel] 消息已保存到后端:', message.id);
+    } catch (error) {
+      console.error('[ChatPanel] 保存消息失败:', error);
+    }
+  };
+
   // Add chat message
   const addChatMessage = useCallback((content: string, type: 'user' | 'assistant' = 'assistant') => {
     const newMessage: Message = {
@@ -137,6 +202,8 @@ export default function ResumeDetails() {
       const response = await resumeAPI.resumeFileToText(resumeId);
       if (response.code === 0) {
         updater.completeCurrentStep();
+        // 更新处理阶段到 metadata
+        await updateMetadata({ processingStage: 'parsed' }, true);
         return { success: true, needsReload: true };
       } else {
         return { success: false, error: '文件解析失败' };
@@ -144,7 +211,7 @@ export default function ResumeDetails() {
     } catch (error) {
       return { success: false, error: error instanceof Error ? error.message : '文件解析失败' };
     }
-  }, [initProgressUpdater]);
+  }, [initProgressUpdater, updateMetadata]);
   
     // 步骤2：结构化文本数据
   const executeStep2_StructureData = useCallback(async (id: string, content: string): Promise<StepResult> => {
@@ -172,128 +239,144 @@ export default function ResumeDetails() {
       if (structuredResumeData && typeof structuredResumeData === 'string') {
         const finalResumeData = parseAndFixResumeJson(structuredResumeData as string);
         setResumeData(finalResumeData);
-        resumeAPI.updateResume(id, {
+        await resumeAPI.updateResume(id, {
           structured_data: finalResumeData
         });
       }
       
       updater.completeCurrentStep();
+      // 更新处理阶段到 metadata
+      await updateMetadata({ processingStage: 'structured', hasStructuredData: true }, true);
       return { success: true, needsReload: true };
     } catch (error) {
       return { success: false, error: error instanceof Error ? error.message : '数据结构化失败' };
     }
-  }, [initProgressUpdater]);
+  }, [initProgressUpdater, updateMetadata]);
   
   // 步骤3：分析优化简历
-  const executeStep3_AnalyzeResume = useCallback(async (
-    _resumeId: string, // 保留用于未来扩展
-    processedData: ResumeV2Data,
-    _text_content: string
-  ): Promise<StepResult> => {
-    try {
-      setCurrentStage('analyzing');
-      setLoading(true);
+  // const executeStep3_AnalyzeResume = useCallback(async (
+  //   _resumeId: string, // 保留用于未来扩展
+  //   processedData: ResumeV2Data,
+  //   _text_content: string
+  // ): Promise<StepResult> => {
+  //   try {
+  //     setCurrentStage('analyzing');
+  //     setLoading(true);
       
-      const updater = initProgressUpdater();
-      updater.startStep(2);
+  //     const updater = initProgressUpdater();
+  //     updater.startStep(2);
 
-      let analysisResult;
+  //     let analysisResult;
 
-      if (currentTargetRef.current === "jd") {
-        // 1. 调用阻塞式 API common-analysis
-        const job_description = localStorage.getItem('job_description');
-        if (!job_description) {
-          throw new Error('职位描述不存在，终止分析优化');
-        }
-        console.log('开始jd分析优化...', {
-          job_description,
-          resume_text: processedData
-        });
-        analysisResult = await workflowAPI.executeWorkflow("job-description-fitter", {
-          job_description: job_description,
-          resume_text: JSON.stringify(processedData)
-        }, true);
-      } else {
-        return { success: false, error: '没有匹配的分析优化方式' };
-      }
+  //     if (currentTarget === "jd") {
+  //       // 1. 调用阻塞式 API common-analysis
+  //       const job_description = localStorage.getItem('job_description');
+  //       if (!job_description) {
+  //         throw new Error('职位描述不存在，终止分析优化');
+  //       }
+  //       console.log('开始jd分析优化...', {
+  //         job_description,
+  //         resume_text: processedData
+  //       });
+  //       analysisResult = await workflowAPI.executeWorkflow("job-description-fitter", {
+  //         job_description: job_description,
+  //         resume_text: JSON.stringify(processedData)
+  //       }, true);
+  //     } else {
+  //       return { success: false, error: '没有匹配的分析优化方式' };
+  //     }
       
-      if (analysisResult.code !== 0) {
-        throw new Error('简历分析失败');
-      }
+  //     if (analysisResult.code !== 0) {
+  //       throw new Error('简历分析失败');
+  //     }
       
-      const analysisContent = analysisResult.data.data.outputs?.reply;
-      console.log('分析结果:', analysisContent);
+  //     const analysisContent = analysisResult.data.data.outputs?.reply;
+  //     console.log('分析结果:', analysisContent);
 
-      // 添加AI优化消息到聊天面板
-      addChatMessage(analysisContent, 'assistant');
+  //     // 添加AI优化消息到聊天面板
+  //     addChatMessage(analysisContent, 'assistant');
       
-      if (!analysisContent || typeof analysisContent !== 'string') {
-        throw new Error('分析结果格式错误');
-      }
+  //     if (!analysisContent || typeof analysisContent !== 'string') {
+  //       throw new Error('分析结果格式错误');
+  //     }
       
-      // 2. 格式化结果
-      console.log('格式化优化后的简历...');
-      setCurrentStage('exporting');
-      updater.startStep(3);
-      const formatResult = await workflowAPI.executeWorkflow("smart-format-2", {
-        current_resume: JSON.stringify(processedData),
-        resume_edit: analysisContent
-      }, true);
+  //     // 2. 格式化结果
+  //     console.log('格式化优化后的简历...');
+  //     setCurrentStage('exporting');
+  //     updater.startStep(3);
+  //     const formatResult = await workflowAPI.executeWorkflow("smart-format-2", {
+  //       current_resume: JSON.stringify(processedData),
+  //       resume_edit: analysisContent
+  //     }, true);
       
-      if (formatResult.code !== 0) {
-        throw new Error('简历格式化失败');
-      }
+  //     if (formatResult.code !== 0) {
+  //       throw new Error('简历格式化失败');
+  //     }
       
-      const structuredResumeData = formatResult.data.data.outputs?.output;
-      console.log('格式化结果:', structuredResumeData);
+  //     const structuredResumeData = formatResult.data.data.outputs?.output;
+  //     console.log('格式化结果:', structuredResumeData);
       
-      if (structuredResumeData && typeof structuredResumeData === 'string') {
-        const finalResumeData = parseAndFixResumeJson(structuredResumeData as string);
+  //     if (structuredResumeData && typeof structuredResumeData === 'string') {
+  //       const finalResumeData = parseAndFixResumeJson(structuredResumeData as string);
         
-        // parseAndFixResumeJson 已经确保了数据的有效性，直接使用
-        // 更新到newResumeData而不是直接更新resumeData
-        setNewResumeData(finalResumeData);
+  //       // parseAndFixResumeJson 已经确保了数据的有效性，直接使用
+  //       // 更新到newResumeData而不是直接更新resumeData
+  //       setNewResumeData(finalResumeData);
         
-        // 原始数据保持不变
-        setResumeData(processedData);
+  //       // 原始数据保持不变
+  //       setResumeData(processedData);
         
-        updater.completeCurrentStep();
-        console.log('简历优化完成');
-        return { success: true };
-      } else {
-        throw new Error('格式化结果格式错误');
-      }
-    } catch (error) {
-      console.error('第三阶段处理失败:', error);
-      return { success: false, error: error instanceof Error ? error.message : '简历分析优化失败' };
-    }
-  }, [initProgressUpdater, addChatMessage]);
+  //       updater.completeCurrentStep();
+  //       console.log('简历优化完成');
+  //       // 更新处理阶段到 metadata
+  //       await updateMetadata({ processingStage: 'analyzed' }, true);
+  //       return { success: true };
+  //     } else {
+  //       throw new Error('格式化结果格式错误');
+  //     }
+  //   } catch (error) {
+  //     console.error('第三阶段处理失败:', error);
+  //     return { success: false, error: error instanceof Error ? error.message : '简历分析优化失败' };
+  //   }
+  // }, [initProgressUpdater, addChatMessage, updateMetadata]);
 
   // Load resume detail
   const loadResumeDetail = useCallback(async () => {
-    if (!id) return;
+    if (!resumeId) return;
     
+    // 防止并发加载
+    if (isLoadingRef.current) {
+      console.log('[ResumeDetails] 检测到并发加载请求，已忽略');
+      return;
+    }
+    
+    isLoadingRef.current = true;
     let shouldCleanup = true; // 用于控制是否清理状态
     
     try {
       setLoading(true);
-      const response = await resumeAPI.getResume(id);
+      const response = await resumeAPI.getResume(resumeId);
       if (response.code !== 0 || !response.data) {
         throw new Error('获取简历详情失败');
       }
 
-      const { name, text_content, structured_data, file_id, pending_content, metadata, resume_number, version } = response.data;
+      const { name, text_content, structured_data, file_id, pending_content, metadata: serverMetadata, resume_number, version } = response.data;
       setResumeName(name);
       setResumeNumber(resume_number);
       setResumeVersion(version);
       
-      // 恢复元数据中的页面状态（currentTarget）
-      if (metadata?.currentTarget) {
-        console.log('[ResumeDetails] 从metadata恢复currentTarget:', metadata.currentTarget);
-        currentTargetRef.current = metadata.currentTarget;
-        if (metadata.currentTarget === 'jd') {
-          setIsJD(true);
+      // 恢复完整的 metadata
+      if (serverMetadata && Object.keys(serverMetadata).length > 0) {
+        console.log('[ResumeDetails] 从服务器恢复metadata:', serverMetadata);
+        setMetadata(serverMetadata);
+        
+        // 同步更新文档标题
+        if (serverMetadata.currentTarget === 'jd') {
           document.title = `简历JD优化 - 职管加`;
+        } else if (serverMetadata.currentTarget === 'foreign') {
+          document.title = `英文简历优化 - 职管加`;
+        } else {
+          document.title = `简历优化 - 职管加`;
         }
       }
       
@@ -307,31 +390,42 @@ export default function ResumeDetails() {
 
       // 步骤1：没有文件时，解析文件
       if (!text_content && file_id) {
-        const result = await executeStep1_ParseFile(id);
-        if (result.success && result.needsReload) {
-          shouldCleanup = false; // 需要重新加载，不清理状态
-          setTimeout(() => loadResumeDetail(), 1000);
-          return;
-        } else if (!result.success) {
-          throw new Error(result.error);
+        // 检查是否已经处理过，避免重复处理
+        const currentMetadata = metadataRef.current;
+        if (currentMetadata.processingStage === 'parsed' || currentMetadata.processingStage === 'structured' || currentMetadata.processingStage === 'analyzed') {
+          console.log('[ResumeDetails] 已处理过步骤1，跳过');
+        } else {
+          const result = await executeStep1_ParseFile(resumeId);
+          if (result.success && result.needsReload) {
+            shouldCleanup = false; // 需要重新加载，不清理状态
+            setTimeout(() => loadResumeDetail(), 1000);
+            return;
+          } else if (!result.success) {
+            throw new Error(result.error);
+          }
         }
       }
       
       // 步骤2：结构化数据
       if (text_content && text_content.length > 20 && (!structured_data || !Object.keys(structured_data).length)) {
-        const result = await executeStep2_StructureData(id, text_content);
-        if (result.success && result.needsReload) {
-          shouldCleanup = false; // 需要重新加载，不清理状态
-          setTimeout(() => loadResumeDetail(), 1000);
-          return;
-        } else if (!result.success) {
-          throw new Error(result.error);
+        // 检查是否已经处理过，避免重复处理
+        const currentMetadata = metadataRef.current;
+        if (currentMetadata.processingStage === 'structured' || currentMetadata.processingStage === 'analyzed') {
+          console.log('[ResumeDetails] 已处理过步骤2，跳过');
+        } else {
+          const result = await executeStep2_StructureData(resumeId, text_content);
+          if (result.success && result.needsReload) {
+            shouldCleanup = false; // 需要重新加载，不清理状态
+            setTimeout(() => loadResumeDetail(), 1000);
+            return;
+          } else if (!result.success) {
+            throw new Error(result.error);
+          }
         }
       }
 
       // 文本太短，使用默认模板
       if (text_content && text_content.length <= 20) {
-        // setEditForm({ name, text_content, structured_data: defaultResumeV2Data });
         setResumeData(defaultResumeV2Data);
         return;
       }
@@ -355,10 +449,10 @@ export default function ResumeDetails() {
         }
 
         // 步骤3：检查是否需要AI分析优化
-        const hash = window.location.hash;
+        const currentMetadata = metadataRef.current;
         
         // 检查是否是从 SimpleResume.tsx 上传的新简历需要初始化分析
-        if (metadata?.isNewResume === true) {
+        if (currentMetadata.isNewResume === true) {
           console.log('[ResumeDetails] 检测到新简历，运行初始化分析...');
           document.title = `简历分析优化 - 职管加`;
           
@@ -371,20 +465,36 @@ export default function ResumeDetails() {
             updater.startStep(2);
             
             const processedData = structured_data as ResumeV2Data;
-            const analysisResult = await workflowAPI.executeWorkflow("common-analysis", {
-              origin_resume: JSON.stringify(processedData)
-            }, true);
-            
-            if (analysisResult.code !== 0) {
-              throw new Error('简历分析失败');
-            }
-            
-            const analysisContent = analysisResult.data.data.outputs?.reply;
-            console.log('分析结果:', analysisContent);
-            addChatMessage(analysisContent, 'assistant');
-            
-            if (!analysisContent || typeof analysisContent !== 'string') {
-              throw new Error('分析结果格式错误');
+            let analysisContent = currentMetadata.initialAnalysisContent;
+            if (!analysisContent) {
+              const analysisResult = await workflowAPI.executeWorkflow("common-analysis", {
+                origin_resume: JSON.stringify(processedData)
+              }, true);
+              
+              if (analysisResult.code !== 0) {
+                throw new Error('简历分析失败');
+              }
+              
+              const analysisContent = analysisResult.data.data.outputs?.reply;
+  
+              console.log('分析结果:', analysisContent);
+              addChatMessage(analysisContent, 'assistant');
+              saveMessageToBackend({
+                id: Date.now().toString(),
+                type: 'assistant',
+                content: analysisContent,
+                timestamp: new Date(),
+              });
+  
+              
+              if (!analysisContent || typeof analysisContent !== 'string') {
+                throw new Error('分析结果格式错误');
+              }
+  
+              // Mark initialization complete and update processing stage
+              await updateMetadata({
+                initialAnalysisContent: analysisContent,
+              }, true); // 暂存到服务器，防止下面的步骤炸了这里又要重来
             }
             
             // Format result
@@ -400,7 +510,7 @@ export default function ResumeDetails() {
               throw new Error('简历格式化失败');
             }
             
-            const formattedResult = formatResult.data.data.outputs?.reply;
+            const formattedResult = formatResult.data.data.outputs?.output;
             if (!formattedResult) {
               throw new Error('格式化结果为空');
             }
@@ -408,9 +518,20 @@ export default function ResumeDetails() {
             const formattedResumeData = parseAndFixResumeJson(formattedResult);
             setNewResumeData(formattedResumeData);
             
-            // Mark initialization complete
-            await resumeAPI.updateResume(id, {
-              metadata: { ...metadata, isNewResume: false },
+            // Mark initialization complete and update processing stage
+            await updateMetadata({
+              isNewResume: false,
+              processingStage: 'completed',
+              initialAnalysisContent: "cleared"  // 内容已经被消费，可以清理了
+            }, false); // 不立即持久化，和 pending_content 一起更新
+            
+            await resumeAPI.updateResume(resumeId, {
+              metadata: {
+                ...metadataRef.current,
+                isNewResume: false,
+                processingStage: 'completed',
+                lastUpdated: new Date().toISOString(),
+              },
               pending_content: {
                 newResumeData: formattedResumeData,
               }
@@ -425,21 +546,6 @@ export default function ResumeDetails() {
           } finally {
             cleanupProgressState();
           }
-        } else if (hash === '#jd-new') {
-          setIsJD(true);
-          currentTargetRef.current = "jd";
-          document.title = `简历JD优化 - 职管加`;
-          window.history.replaceState(null, '', window.location.pathname + window.location.search + '#jd');
-          
-          const result = await executeStep3_AnalyzeResume(id, structured_data as ResumeV2Data, text_content);
-          if (!result.success) {
-            showError(result.error || 'jd简历分析优化失败');
-            console.warn(result.error);
-          }
-        } else if (hash === '#jd') {
-          currentTargetRef.current = "jd";
-          setIsJD(true);
-          document.title = `简历JD优化 - 职管加`;
         }
       }
       
@@ -450,10 +556,15 @@ export default function ResumeDetails() {
       if (shouldCleanup) {
         cleanupProgressState();
       }
+      // 无论如何都要释放加载锁
+      isLoadingRef.current = false;
     }
-  }, [id, addChatMessage, executeStep1_ParseFile, executeStep2_StructureData, executeStep3_AnalyzeResume, cleanupProgressState]);
+  }, [resumeId]); // 只依赖 resumeId，避免循环依赖
 
+  // 添加加载锁，防止并发加载
+  const isLoadingRef = useRef(false);
   const loadTimeOutRef = useRef<NodeJS.Timeout | null>(null);
+  
   useEffect(() => {
     if (loadTimeOutRef.current) {
       clearTimeout(loadTimeOutRef.current);
@@ -461,21 +572,19 @@ export default function ResumeDetails() {
     loadTimeOutRef.current = setTimeout(() => {
       loadResumeDetail();
     }, 1);
-  }, [id, loadResumeDetail]);
+  }, [resumeId]); // 移除 loadResumeDetail 依赖，只依赖 resumeId
 
   // Save resume
   const handleSaveResume = async () => {
-    if (!id) return;
+    if (!resumeId) return;
     try {
       setSaving(true);
       // 默认创建新版本（new_version: true）
-      const response = await resumeAPI.updateResume(id, {
+      const response = await resumeAPI.updateResume(resumeId, {
         name: resumeName,
         // text_content: text_content,
         structured_data: resumeData,
-        metadata: {
-          currentTarget: currentTargetRef.current, // 保存当前编辑目标类型
-        },
+        metadata: metadata, // 保存完整的 metadata
         new_version: true, // 创建新版本而不是覆盖原简历
       });
       
@@ -525,7 +634,7 @@ export default function ResumeDetails() {
 
   // 服务端PDF导出
   const handleServerExport = async () => {
-    if (!id) {
+    if (!resumeId) {
       showError('简历ID不存在');
       return;
     }
@@ -535,7 +644,7 @@ export default function ResumeDetails() {
       showInfo('正在生成PDF，请稍候...');
 
       // 1. 创建导出任务（传递当前编辑的简历数据作为快照）
-      const createRes: any = await createExportTask(id, resumeData);
+      const createRes: any = await createExportTask(resumeId, resumeData);
       if (createRes.code !== 0) {
         throw new Error(createRes.msg || '创建导出任务失败');
       }
@@ -609,25 +718,12 @@ export default function ResumeDetails() {
   // Handle target change
   const handleTargetChange = useCallback(async (newTarget: TargetType) => {
     console.log('[ResumeDetails] 切换目标类型:', newTarget);
-    currentTargetRef.current = newTarget;
     
-    // 更新 isJD 状态
-    setIsJD(newTarget === 'jd');
+    // 使用 updateMetadata 钩子更新并持久化
+    await updateMetadata({ currentTarget: newTarget }, true);
     
-    // 保存目标类型到 metadata
-    if (id) {
-      try {
-        await resumeAPI.updateResume(id, {
-          metadata: {
-            currentTarget: newTarget,
-          },
-        });
-        showSuccess(`已切换到${newTarget === 'jd' ? '职位匹配' : newTarget === 'foreign' ? '英文简历' : '常规优化'}模式`);
-      } catch (error) {
-        console.error('[ResumeDetails] 保存目标类型失败:', error);
-      }
-    }
-  }, [id]);
+    showSuccess(`已切换到${newTarget === 'jd' ? '职位匹配' : newTarget === 'foreign' ? '英文简历' : '常规优化'}模式`);
+  }, [updateMetadata]);
 
   useEffect(() => {
     // 设置标签页标题
@@ -642,6 +738,9 @@ export default function ResumeDetails() {
       }
     };
   }, []);
+
+  const showContent = !metadata.isNewResume || metadata.hasStructuredData;
+  console.log('showContent', showContent);
 
   return (
     <div className="fixed top-0 left-0 h-screen w-screen flex flex-col bg-gray-50">
@@ -673,7 +772,7 @@ export default function ResumeDetails() {
 
           <div className="flex items-center space-x-2">
             <VersionSelector
-              currentResumeId={id || ''}
+              currentResumeId={resumeId || ''}
               currentVersion={resumeVersion}
               resumeNumber={resumeNumber}
               onVersionChange={handleVersionChange}
@@ -705,16 +804,7 @@ export default function ResumeDetails() {
 
       {/* Main Content */}
       <div className="flex-1 flex">
-        {loading ? (
-          <LoadingIndicator
-            stages={loadingStages}
-            currentStage={currentStage}
-            progress={progress}
-            progressText={progressText}
-            showCompleted={showCompleted}
-            title="正在处理您的简历"
-          />
-        ) : (
+        {showContent && (
           <>
             {/* Editor Panel */}
             <div className="w-full md:flex-1 border-gray-200 bg-white overflow-auto" style={{ height: 'calc(100vh - 48px)' }}>
@@ -733,17 +823,30 @@ export default function ResumeDetails() {
               onMessagesChange={setChatMessages}
               resumeData={resumeData}
               onResumeDataChange={(data, require_commit) => handleResumeDataChange(data as ResumeV2Data, require_commit)}
-              isJD={isJD}
-              resumeId={id}
-              currentTarget={currentTargetRef.current}
+              resumeId={resumeId}
+              currentTarget={currentTarget}
+              updateMetadata={updateMetadata}
               emptyComponent={
                 <TargetSelector
-                  currentTarget={currentTargetRef.current}
+                  currentTarget={currentTarget}
                   onTargetChange={handleTargetChange}
                 />
               }
+              saveMessageToBackend={saveMessageToBackend}
             />
           </>
+        )}
+
+        {loading && (
+          <LoadingIndicator
+            stages={loadingStages}
+            currentStage={currentStage}
+            progress={progress}
+            progressText={progressText}
+            showCompleted={showCompleted}
+            title="正在处理您的简历"
+            classNames={metadata.hasStructuredData ? 'bg-black/20' : ''}
+          />
         )}
       </div>
     </div>

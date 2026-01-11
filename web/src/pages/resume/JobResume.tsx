@@ -198,6 +198,7 @@ const JobResume: React.FC = () => {
 
     try {
       let resumeId: string;
+      let isNewResume: boolean = false;
 
       if (selectedFile instanceof File) {
         // If it's a new uploaded file, upload first to get resume ID
@@ -210,12 +211,22 @@ const JobResume: React.FC = () => {
         }
         
         resumeId = uploadResponse.data?.id || '';
+        isNewResume = true;
       } else {
         // If it's an existing resume, use its ID directly
         resumeId = selectedFile.id;
+        isNewResume = false;
       }
 
       if (resumeId) {
+        await resumeAPI.updateResume(resumeId, {
+          metadata: { 
+            currentTarget: 'jd', 
+            jobDescription: jobDescription, 
+            isNewResume: isNewResume 
+          }
+        });
+        
         // TODO: Call workflow with resume_text and job_description
         // For now, just navigate to V2 editor with JD hash
         navigate(`/editor/v2/${resumeId}#jd-new`);

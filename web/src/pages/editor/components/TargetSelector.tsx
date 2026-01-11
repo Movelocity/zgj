@@ -45,15 +45,15 @@ export default function TargetSelector({ currentTarget, onTargetChange }: Target
   };
 
   return (
-    <div className="flex flex-col items-center justify-center p-6 space-y-6">
+    <div className="flex flex-col items-center justify-center p-6 pb-0 space-y-6">
       <div className="text-center space-y-2">
         <div className="flex items-center justify-center space-x-2 text-gray-700">
           <Target className="w-6 h-6 text-blue-600" />
           <h3 className="text-lg font-semibold">选择优化目标</h3>
         </div>
-        <p className="text-sm text-gray-500">
+        {/* <p className="text-sm text-gray-500">
           根据您的需求选择合适的优化方向
-        </p>
+        </p> */}
       </div>
 
       <div className="grid grid-cols-1 gap-3 w-full max-w-md">

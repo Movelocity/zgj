@@ -11,7 +11,7 @@ import { previewPrintContent } from '@/utils/pdfExport';
 import { resumeAPI } from '@/api/resume';
 import { chatMessageAPI } from '@/api/chatMessage';
 import type { ChatMessage as BackendChatMessage } from '@/types/chatMessage';
-import { useAuthStore } from '@/store';
+// import { useAuthStore } from '@/store';
 import cn from 'classnames';
 
 interface Message {
@@ -28,10 +28,12 @@ interface ChatPanelProps {
   onResumeDataChange: (data: ResumeV2Data, require_commit: boolean) => void;
   initialMessages?: Message[];
   onMessagesChange?: (messages: Message[]) => void;
-  isJD: boolean;
   resumeId?: string; // 简历ID，用于保存pending_content
   currentTarget?: 'jd' | 'normal' | 'foreign'; // 当前任务类型
   emptyComponent?: React.ReactNode; // 无消息时显示的组件
+  updateMetadata?: (updates: any, persistToServer?: boolean) => Promise<any>; // 更新metadata的钩子
+
+  saveMessageToBackend?: (message: Message) => Promise<void>;
 }
 
 // 导出Message接口供外部使用
@@ -65,14 +67,20 @@ export default function ChatPanel({
   onResumeDataChange,
   initialMessages,
   onMessagesChange,
-  isJD,
   resumeId,
   currentTarget,
-  emptyComponent
+  emptyComponent,
+  saveMessageToBackend,
+  // updateMetadata,
 }: ChatPanelProps) {
-  const { user } = useAuthStore();
-  const userName = user?.name || user?.phone || '用户';
+  // const { user } = useAuthStore();
+  // const userName = user?.name || user?.phone || '用户';
   const chatConfig = getChatConfig(currentTarget);
+  
+  // updateMetadata 钩子：用于在聊天过程中更新简历的元数据状态
+  // 例如：在完成某个优化任务后更新 processingStage
+  // 使用示例：await updateMetadata?.({ processingStage: 'completed' }, true);
+  // console.log('[ChatPanel] updateMetadata hook available:', !!updateMetadata);
   
   const [messages, setMessages] = useState<Message[]>(initialMessages || [
     {
@@ -331,23 +339,7 @@ export default function ChatPanel({
     }
   };
   
-  // Save message to backend
-  const saveMessageToBackend = async (message: Message) => {
-    if (!resumeId) return;
-    
-    try {
-      await chatMessageAPI.createMessage({
-        resume_id: resumeId,
-        sender_name: message.type === 'user' ? userName : 'AI助手',
-        message: {
-          content: message.content,
-        },
-      });
-      console.log('[ChatPanel] 消息已保存到后端:', message.id);
-    } catch (error) {
-      console.error('[ChatPanel] 保存消息失败:', error);
-    }
-  };
+  
 
   const handleSlashCommand = (command: string) => {
     command = command.replace("/", "");
@@ -475,7 +467,7 @@ export default function ChatPanel({
     setSuggestions([])
     
     // Save user message to backend
-    saveMessageToBackend(userMessage);
+    saveMessageToBackend?.(userMessage);
     
     // 重置 textarea 高度
     if (textareaRef.current) {
@@ -522,7 +514,7 @@ export default function ChatPanel({
           
           // Save AI message to backend when workflow is finished
           if (aiResponse.content.trim()) {
-            saveMessageToBackend(aiResponse);
+            saveMessageToBackend?.(aiResponse);
           }
           
           // Auto-save: 工作流完成时自动保存pending_content和messages
@@ -593,7 +585,7 @@ export default function ChatPanel({
           resume: JSON.stringify(latestResumeDataRef.current),
           scene: currentTarget,
         }
-        if (isJD) {
+        if (currentTarget === 'jd') {
           inputs.job_detail = localStorage.getItem('job_description');
         }
         await workflowAPI.executeWorkflowStream({
@@ -784,7 +776,7 @@ export default function ChatPanel({
             >
               {/* Empty component when no messages or only welcome message */}
               {emptyComponent && messages.length <= 1 && (
-                <div className="flex items-center justify-center h-full">
+                <div className="flex items-center justify-center">
                   {emptyComponent}
                 </div>
               )}
@@ -806,7 +798,7 @@ export default function ChatPanel({
                 </div>
               )}
               
-              {(!emptyComponent || messages.length > 1) && messages.map((message) => (
+              {(!emptyComponent || messages.length > 0) && messages.map((message) => (
                 <div key={message.id} className="space-y-2">
                   {message.type === 'user' ? (
                     // 用户消息保持气泡样式

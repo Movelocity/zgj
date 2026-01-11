@@ -2,6 +2,7 @@
 export { Button } from './Button';
 export { Badge } from './badge';
 export { Label } from './label';
+export { Checkbox } from './checkbox';
 export { default as Input } from './Input';
 export { default as Loading } from './Loading';
 export { default as Modal } from './Modal';

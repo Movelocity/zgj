@@ -6,6 +6,7 @@ import type { ResumeUploadData, ResumeInfo } from '@/types/resume';
 import { resumeAPI } from '@/api/resume';
 import { useNavigate } from 'react-router-dom';
 import { showError } from '@/utils/toast';
+import { Checkbox } from '@/components/ui/checkbox';
 
 const HistoryResumeSelector: React.FC<{
   onSelect: (resume: ResumeInfo) => void;
@@ -190,7 +191,7 @@ const ResumeSelector: React.FC<{
       {/* 文件上传区域 */}
       <div 
         title="支持PDF、Word等格式，文件大小不超过10MB"
-        className={`border-2 border-dashed rounded-lg p-8 text-center relative py-24 transition-colors ${
+        className={`border-2 border-dashed rounded-lg p-8 text-center relative py-24 transition-colors w-full ${
           isDragging 
             ? 'border-blue-500 bg-blue-50' 
             : 'border-gray-500'
@@ -231,7 +232,7 @@ const ResumeSelector: React.FC<{
               </span>
               <button
                 onClick={() => onSelect(null)}
-                className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
+                className="p-1 pl-3 text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
               >
                 <FiX className="w-4 h-4" />
               </button>
@@ -279,6 +280,7 @@ const SimpleResume: React.FC = () => {
   const navigate = useNavigate();
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | ResumeInfo | null>(null);
+  const [isForeign, setIsForeign] = useState(false);
 
   const handleStartOptimization = async () => {
     if (!selectedFile) return;
@@ -301,7 +303,7 @@ const SimpleResume: React.FC = () => {
         // 标记为新简历，需要初始化分析
         if (resumeId) {
           await resumeAPI.updateResume(resumeId, {
-            metadata: { isNewResume: true }
+            metadata: { isNewResume: true, currentTarget: isForeign ? 'foreign' : 'normal' }
           });
         }
       } else {
@@ -339,24 +341,31 @@ const SimpleResume: React.FC = () => {
               AI简历优化
             </h1>
           </div>
-          <p className="text-gray-500">
+          {/* <p className="text-gray-500">
             上传您的简历，让AI为您智能优化内容和格式
-          </p>
+          </p> */}
         </div>
 
         <div className="p-4 lg:p-6 max-w-3xl mx-auto">
 
-          <div className="flex items-center mb-2">
+          {/* <div className="flex items-center mb-2">
             <h2 className="text-lg font-medium">上传简历</h2>
-          </div>
+          </div> */}
 
-          <div className="space-y-6">
+          <div className="space-y-3 flex flex-col items-start justify-center">
             {!isOptimizing && (
               <>
                 <ResumeSelector
                   selectedFile={selectedFile}
                   onSelect={setSelectedFile}
                 />
+                <Checkbox 
+                  checked={isForeign} 
+                  onCheckedChange={(checked) => setIsForeign(checked === true)}
+                  className="pl-2"
+                >
+                  <span className="text-sm text-gray-500">需优化成英文简历</span>
+                </Checkbox>
                 {/* 开始优化按钮 */}
                 <Button
                   variant="primary"

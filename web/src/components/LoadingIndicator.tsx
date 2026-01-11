@@ -1,4 +1,5 @@
 import { FiCheckCircle } from 'react-icons/fi';
+import cn from 'classnames';
 
 export interface LoadingStage {
   key: string;
@@ -19,6 +20,8 @@ export interface LoadingIndicatorProps {
   showCompleted?: boolean;
   /** 主标题 */
   title?: string;
+  /** 背景颜色 */
+  classNames?: string;
 }
 
 /**
@@ -31,6 +34,7 @@ export default function LoadingIndicator({
   progressText,
   progress,
   showCompleted = false,
+  classNames = '',
   title = '正在处理您的简历',
 }: LoadingIndicatorProps) {
   /**
@@ -90,8 +94,8 @@ export default function LoadingIndicator({
   };
 
   return (
-    <div className="flex justify-center items-center h-full w-full">
-      <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-8 max-w-md w-full mx-4">
+    <div className={cn('fixed flex justify-center h-full w-full', classNames)}>
+      <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-8 max-w-md w-full mx-4 h-fit mt-[20vh]">
         {!showCompleted ? (
           <div className="space-y-6">
             <div className="text-center">
@@ -117,9 +121,9 @@ export default function LoadingIndicator({
             </div>
             
             {/* 进度条 */}
-            <div className="w-full bg-gray-200 rounded-full h-4 mt-6">
+            <div className="w-full bg-gray-200 rounded-full h-3 mt-6">
               <div 
-                className="bg-blue-600 h-2 rounded-full transition-all duration-500" 
+                className="bg-blue-600 h-3 rounded-full transition-all duration-500" 
                 style={{ width: `${progress}%` }}
               ></div>
             </div>
