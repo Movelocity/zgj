@@ -307,6 +307,38 @@ export default function ChatPanel({
       window.removeEventListener('resume-update-formatted' as any, handleResumeFormatted);
     };
   }, [onResumeDataChange]);
+
+  // 监听 chat-message-added 事件（从外部添加的新消息）
+  useEffect(() => {
+    const handleChatMessageAdded = (event: CustomEvent<{ message: Message }>) => {
+      const { message } = event.detail;
+      console.log('[ChatPanel] 收到外部新消息事件:', message);
+      
+      // 添加消息到本地状态
+      setMessages(prev => {
+        // 检查是否已存在该消息（避免重复）
+        const exists = prev.some(m => m.id === message.id);
+        if (exists) {
+          console.log('[ChatPanel] 消息已存在，跳过:', message.id);
+          return prev;
+        }
+        return [...prev, message];
+      });
+      
+      // 滚动到底部
+      setTimeout(() => {
+        if (scrollRef.current) {
+          scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+          console.log('[ChatPanel] 滚动到底部');
+        }
+      }, 100);
+    };
+
+    window.addEventListener('chat-message-added' as any, handleChatMessageAdded);
+    return () => {
+      window.removeEventListener('chat-message-added' as any, handleChatMessageAdded);
+    };
+  }, []);
   
   useEffect(() => {
     if (scrollRef.current) {

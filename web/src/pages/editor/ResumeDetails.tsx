@@ -188,6 +188,13 @@ export default function ResumeDetails() {
     };
     console.log('addChatMessage', newMessage);
     setChatMessages(prev => [...prev, newMessage]);
+    
+    // 触发自定义事件，通知 ChatPanel 有新消息并滚动到底部
+    window.dispatchEvent(new CustomEvent('chat-message-added', {
+      detail: { message: newMessage }
+    }));
+    
+    return newMessage;
   }, []);
 
   // 步骤1：解析文件到文本
@@ -252,93 +259,7 @@ export default function ResumeDetails() {
       return { success: false, error: error instanceof Error ? error.message : '数据结构化失败' };
     }
   }, [initProgressUpdater, updateMetadata]);
-  
-  // 步骤3：分析优化简历
-  // const executeStep3_AnalyzeResume = useCallback(async (
-  //   _resumeId: string, // 保留用于未来扩展
-  //   processedData: ResumeV2Data,
-  //   _text_content: string
-  // ): Promise<StepResult> => {
-  //   try {
-  //     setCurrentStage('analyzing');
-  //     setLoading(true);
-      
-  //     const updater = initProgressUpdater();
-  //     updater.startStep(2);
 
-  //     let analysisResult;
-
-  //     if (currentTarget === "jd") {
-  //       // 1. 调用阻塞式 API common-analysis
-  //       const job_description = localStorage.getItem('job_description');
-  //       if (!job_description) {
-  //         throw new Error('职位描述不存在，终止分析优化');
-  //       }
-  //       console.log('开始jd分析优化...', {
-  //         job_description,
-  //         resume_text: processedData
-  //       });
-  //       analysisResult = await workflowAPI.executeWorkflow("job-description-fitter", {
-  //         job_description: job_description,
-  //         resume_text: JSON.stringify(processedData)
-  //       }, true);
-  //     } else {
-  //       return { success: false, error: '没有匹配的分析优化方式' };
-  //     }
-      
-  //     if (analysisResult.code !== 0) {
-  //       throw new Error('简历分析失败');
-  //     }
-      
-  //     const analysisContent = analysisResult.data.data.outputs?.reply;
-  //     console.log('分析结果:', analysisContent);
-
-  //     // 添加AI优化消息到聊天面板
-  //     addChatMessage(analysisContent, 'assistant');
-      
-  //     if (!analysisContent || typeof analysisContent !== 'string') {
-  //       throw new Error('分析结果格式错误');
-  //     }
-      
-  //     // 2. 格式化结果
-  //     console.log('格式化优化后的简历...');
-  //     setCurrentStage('exporting');
-  //     updater.startStep(3);
-  //     const formatResult = await workflowAPI.executeWorkflow("smart-format-2", {
-  //       current_resume: JSON.stringify(processedData),
-  //       resume_edit: analysisContent
-  //     }, true);
-      
-  //     if (formatResult.code !== 0) {
-  //       throw new Error('简历格式化失败');
-  //     }
-      
-  //     const structuredResumeData = formatResult.data.data.outputs?.output;
-  //     console.log('格式化结果:', structuredResumeData);
-      
-  //     if (structuredResumeData && typeof structuredResumeData === 'string') {
-  //       const finalResumeData = parseAndFixResumeJson(structuredResumeData as string);
-        
-  //       // parseAndFixResumeJson 已经确保了数据的有效性，直接使用
-  //       // 更新到newResumeData而不是直接更新resumeData
-  //       setNewResumeData(finalResumeData);
-        
-  //       // 原始数据保持不变
-  //       setResumeData(processedData);
-        
-  //       updater.completeCurrentStep();
-  //       console.log('简历优化完成');
-  //       // 更新处理阶段到 metadata
-  //       await updateMetadata({ processingStage: 'analyzed' }, true);
-  //       return { success: true };
-  //     } else {
-  //       throw new Error('格式化结果格式错误');
-  //     }
-  //   } catch (error) {
-  //     console.error('第三阶段处理失败:', error);
-  //     return { success: false, error: error instanceof Error ? error.message : '简历分析优化失败' };
-  //   }
-  // }, [initProgressUpdater, addChatMessage, updateMetadata]);
 
   // Load resume detail
   const loadResumeDetail = useCallback(async () => {
@@ -478,13 +399,8 @@ export default function ResumeDetails() {
               const analysisContent = analysisResult.data.data.outputs?.reply;
   
               console.log('分析结果:', analysisContent);
-              addChatMessage(analysisContent, 'assistant');
-              saveMessageToBackend({
-                id: Date.now().toString(),
-                type: 'assistant',
-                content: analysisContent,
-                timestamp: new Date(),
-              });
+              const newMessage = addChatMessage(analysisContent, 'assistant');
+              saveMessageToBackend(newMessage);
   
               
               if (!analysisContent || typeof analysisContent !== 'string') {
@@ -740,7 +656,7 @@ export default function ResumeDetails() {
   }, []);
 
   const showContent = !metadata.isNewResume || metadata.hasStructuredData;
-  console.log('showContent', showContent);
+  // console.log('showContent', showContent);
 
   return (
     <div className="fixed top-0 left-0 h-screen w-screen flex flex-col bg-gray-50">
