@@ -31,6 +31,8 @@ interface ChatPanelProps {
   resumeId?: string; // 简历ID，用于保存pending_content
   currentTarget?: 'jd' | 'normal' | 'foreign'; // 当前任务类型
   emptyComponent?: React.ReactNode; // 无消息时显示的组件
+
+  metadata?: Record<string, any>;
   updateMetadata?: (updates: any, persistToServer?: boolean) => Promise<any>; // 更新metadata的钩子
 
   saveMessageToBackend?: (message: Message) => Promise<void>;
@@ -71,17 +73,10 @@ export default function ChatPanel({
   currentTarget,
   emptyComponent,
   saveMessageToBackend,
-  // updateMetadata,
+  updateMetadata,
+  metadata,
 }: ChatPanelProps) {
-  // const { user } = useAuthStore();
-  // const userName = user?.name || user?.phone || '用户';
   const chatConfig = getChatConfig(currentTarget);
-  
-  // updateMetadata 钩子：用于在聊天过程中更新简历的元数据状态
-  // 例如：在完成某个优化任务后更新 processingStage
-  // 使用示例：await updateMetadata?.({ processingStage: 'completed' }, true);
-  // console.log('[ChatPanel] updateMetadata hook available:', !!updateMetadata);
-  
   const [messages, setMessages] = useState<Message[]>(initialMessages || [
     {
       id: '1',
@@ -135,6 +130,14 @@ export default function ChatPanel({
   useEffect(() => {
     latestResumeDataRef.current = resumeData;
   }, [resumeData]);
+
+  // 解析 metadata 
+  useEffect(() => {
+    console.log('[ChatPanel] metadata:', metadata);
+    if(metadata?.conversation_id) {
+      conversationIdRef.current = metadata.conversation_id;
+    }
+  }, [metadata]);
 
   // Load chat messages from backend when component mounts
   useEffect(() => {
@@ -371,8 +374,6 @@ export default function ChatPanel({
     }
   };
   
-  
-
   const handleSlashCommand = (command: string) => {
     command = command.replace("/", "");
     if (command === "print") {
@@ -628,6 +629,9 @@ export default function ChatPanel({
           onError: onError,
         });
         // postProcess(aiResponse.content);
+        if(conversationIdRef.current) { // 更新对话id到metadata
+          updateMetadata?.({ conversation_id: conversationIdRef.current }, true);
+        }
       }
     } catch (error: any) {
       console.error('Execution error:', error);

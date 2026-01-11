@@ -389,7 +389,9 @@ export default function ResumeDetails() {
             let analysisContent = currentMetadata.initialAnalysisContent;
             if (!analysisContent) {
               const analysisResult = await workflowAPI.executeWorkflow("common-analysis", {
-                origin_resume: JSON.stringify(processedData)
+                origin_resume: JSON.stringify(processedData),
+                job_description: metadataRef.current.jobDescription || '',
+                scene: metadataRef.current.currentTarget || '',
               }, true);
               
               if (analysisResult.code !== 0) {
