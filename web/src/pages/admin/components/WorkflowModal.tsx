@@ -240,7 +240,8 @@ const WorkflowModal: React.FC<WorkflowModalProps> = ({ mode, workflow, onClose }
               {mode === 'edit' && (
                 <div className="flex items-center">
                   <Button 
-                    className="ml-2 text-sm text-blue-500" 
+                    variant="outline"
+                    className="ml-2 text-sm " 
                     onClick={() => setIsTestModalOpen(true)}
                     disabled={!formData.api_url || !formData.api_key || !!jsonErrors.inputs}
                   >

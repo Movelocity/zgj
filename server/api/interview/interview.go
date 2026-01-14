@@ -89,6 +89,44 @@ func ListReviews(c *gin.Context) {
 	utils.OkWithData(response, c)
 }
 
+// UpdateReviewMetadataRequest 更新面试复盘元数据请求
+type UpdateReviewMetadataRequest struct {
+	Metadata map[string]interface{} `json:"metadata" binding:"required"` // 要更新的元数据字段
+}
+
+// UpdateReviewMetadata 更新面试复盘记录元数据（如岗位、公司等）
+func UpdateReviewMetadata(c *gin.Context) {
+	// 获取用户ID
+	userID := c.GetString("userID")
+	if userID == "" {
+		utils.FailWithMessage("无法识别用户", c)
+		return
+	}
+
+	// 获取记录ID
+	reviewIDStr := c.Param("id")
+	reviewID, err := strconv.ParseInt(reviewIDStr, 10, 64)
+	if err != nil {
+		utils.FailWithMessage("记录ID格式错误", c)
+		return
+	}
+
+	var req UpdateReviewMetadataRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		utils.FailWithMessage("请求参数错误: "+err.Error(), c)
+		return
+	}
+
+	// 更新元数据
+	review, err := interview.InterviewService.UpdateReviewMetadata(reviewID, userID, req.Metadata)
+	if err != nil {
+		utils.FailWithMessage(err.Error(), c)
+		return
+	}
+
+	utils.OkWithData(review, c)
+}
+
 // TriggerAnalysis 触发面试分析工作流
 func TriggerAnalysis(c *gin.Context) {
 	// 获取用户ID

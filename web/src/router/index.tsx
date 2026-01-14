@@ -28,6 +28,7 @@ const ServerError = lazy(() => import('@/pages/error/ServerError'));
 // const ASRTest = lazy(() => import('@/pages/test/ASRTest'));
 const AllTests = lazy(() => import('@/pages/test/AllTests'));
 const InterviewReviews = lazy(() => import('@/pages/interview/InterviewReviews'));
+const InterviewReviewList = lazy(() => import('@/pages/interview/InterviewReviewList'));
 
 // 路由错误处理组件
 function RouteErrorBoundary() {
@@ -94,6 +95,10 @@ export const routes = [
     element: <Contact />,
   },
   {
+    path: '/interview',
+    element: <InterviewReviewList />,
+  },
+  {
     path: '/interview/reviews',
     element: <InterviewReviews />,
   },
@@ -130,7 +135,8 @@ const protectedRoutes = [
   '/editor/:id',
   '/editor/v2/:id',
   '/profile',
-  '/interview/reviews', // 面试复盘页面需要登录
+  '/interview', // 面试复盘列表页需要登录
+  '/interview/reviews', // 面试复盘详情/创建页面需要登录
   '/api-test', // API测试页面需要登录才能访问
   '/test/tos', // TOS服务测试页面需要登录
   '/test/asr', // ASR服务测试页面需要登录

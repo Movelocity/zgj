@@ -120,7 +120,7 @@ export const InterviewReviewDetail: React.FC = () => {
       
       // Generate download URL
       const downloadResponse = await tosAPI.generateDownloadURL(upload.key);
-      const audioUrl = downloadResponse.url;
+      const audioUrl = downloadResponse.data.url;
 
       // Store in workflow state
       workflow.handleUploadComplete(audioUrl, upload.key, file);
@@ -216,15 +216,10 @@ export const InterviewReviewDetail: React.FC = () => {
     setAnalyzing(true);
     try {
       // Create review record
+      // 后端期望 { main_audio_id, asr_result }，metadata 由后端自动构建
       const createdReview = await interviewAPI.createReview({
         main_audio_id: workflow.asrTaskId,
-        metadata: {
-          audio_filename: workflow.audioFile?.name || 'audio.mp3',
-          asr_result: workflow.asrResult,
-          current_step: 3,
-          steps_completed: ['upload', 'asr'],
-          status: 'pending',
-        },
+        asr_result: workflow.asrResult,
       });
 
       // Update workflow state
@@ -281,7 +276,19 @@ export const InterviewReviewDetail: React.FC = () => {
    * Render creation mode
    */
   const renderCreationMode = () => (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-4xl mx-auto mt-12">
+      {/* Header with back button */}
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">新建面试复盘</h1>
+          <p className="text-gray-600 mt-1">上传面试录音，获取 AI 分析反馈</p>
+        </div>
+        <Button variant="outline" onClick={() => navigate('/interview')}>
+          <FiArrowLeft className="mr-2" />
+          返回列表
+        </Button>
+      </div>
+
       {/* Step Indicator */}
       <StepIndicator
         steps={WORKFLOW_STEPS}
@@ -323,7 +330,7 @@ export const InterviewReviewDetail: React.FC = () => {
               </p>
             </div>
             <label className="cursor-pointer">
-              <Button variant="outline" size="sm" as="span">
+              <Button variant="outline" size="sm">
                 重新选择
               </Button>
               <input
@@ -520,7 +527,7 @@ export const InterviewReviewDetail: React.FC = () => {
               创建时间：{new Date(review.created_at).toLocaleString('zh-CN')}
             </p>
           </div>
-          <Button variant="outline" onClick={() => navigate('/interview/reviews')}>
+          <Button variant="outline" onClick={() => navigate('/interview')}>
             <FiArrowLeft className="mr-2" />
             返回列表
           </Button>

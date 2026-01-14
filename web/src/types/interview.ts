@@ -47,10 +47,11 @@ export interface InterviewReview {
 
 /**
  * Request payload for creating interview review
+ * 后端期望格式：{ main_audio_id, asr_result }
  */
 export interface CreateReviewRequest {
   main_audio_id: string;
-  metadata: Partial<InterviewReviewMetadata>;
+  asr_result: any; // ASR识别结果
 }
 
 /**

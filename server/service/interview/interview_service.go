@@ -120,6 +120,43 @@ func (s *interviewService) ListInterviewReviews(userID string, page, pageSize in
 	}, nil
 }
 
+// UpdateReviewMetadata 更新面试复盘记录元数据
+func (s *interviewService) UpdateReviewMetadata(reviewID int64, userID string, updates map[string]interface{}) (*model.InterviewReview, error) {
+	// 获取记录并验证权限
+	review, err := s.GetInterviewReview(reviewID, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	// 解析现有metadata
+	var metadata map[string]interface{}
+	if err := json.Unmarshal(review.Metadata, &metadata); err != nil {
+		metadata = make(map[string]interface{})
+	}
+
+	// 只允许更新指定字段（安全考虑，不允许覆盖status等关键字段）
+	allowedFields := map[string]bool{
+		"job_position":   true,
+		"target_company": true,
+		"audio_filename": true,
+	}
+
+	for key, value := range updates {
+		if allowedFields[key] {
+			metadata[key] = value
+		}
+	}
+
+	// 保存更新
+	metadataJSON, _ := json.Marshal(metadata)
+	if err := global.DB.Model(review).Update("metadata", model.JSON(metadataJSON)).Error; err != nil {
+		return nil, errors.New("更新元数据失败")
+	}
+
+	// 返回更新后的记录
+	return s.GetInterviewReview(reviewID, userID)
+}
+
 // TriggerAnalysis 触发面试分析工作流
 func (s *interviewService) TriggerAnalysis(reviewID int64, userID string) (*model.InterviewReview, error) {
 	// 获取记录并验证权限

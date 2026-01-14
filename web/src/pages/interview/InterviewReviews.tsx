@@ -1,19 +1,20 @@
 /**
  * Interview Reviews Wrapper Component
- * Routes between list and detail views based on query parameter
+ * 
+ * Routes to detail page based on query parameter:
+ * - No `id` param: Creation mode (new review workflow)
+ * - With `id` param: View mode (existing review details)
+ * 
+ * The list view is now at /interview route instead.
  */
 
-import { useSearchParams } from 'react-router-dom';
-import InterviewReviewList from './InterviewReviewList';
 import InterviewReviewDetail from './InterviewReviewDetail';
 
 export const InterviewReviews: React.FC = () => {
-  const [searchParams] = useSearchParams();
-  const reviewId = searchParams.get('id');
-
-  // If no ID or ID is empty, show list view
-  // Otherwise show detail view
-  return reviewId ? <InterviewReviewDetail /> : <InterviewReviewList />;
+  // Always render detail component
+  // Mode detection (creation vs view) happens inside InterviewReviewDetail
+  // based on whether `id` query parameter is present
+  return <InterviewReviewDetail />;
 };
 
 export default InterviewReviews;
