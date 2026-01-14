@@ -24,8 +24,9 @@ const Administrator = lazy(() => import('@/pages/admin/Administrator'));
 const Contact = lazy(() => import('@/pages/contact/Contact'));
 const NotFound = lazy(() => import('@/pages/error/NotFound'));
 const ServerError = lazy(() => import('@/pages/error/ServerError'));
-const TOSTest = lazy(() => import('@/pages/test/TOSTest'));
-const ASRTest = lazy(() => import('@/pages/test/ASRTest'));
+// const TOSTest = lazy(() => import('@/pages/test/TOSTest'));
+// const ASRTest = lazy(() => import('@/pages/test/ASRTest'));
+const AllTests = lazy(() => import('@/pages/test/AllTests'));
 
 // 路由错误处理组件
 function RouteErrorBoundary() {
@@ -91,13 +92,17 @@ export const routes = [
     path: '/contact',
     element: <Contact />,
   },
+  // {
+  //   path: '/test/tos',
+  //   element: <TOSTest />,
+  // },
+  // {
+  //   path: '/test/asr',
+  //   element: <ASRTest />,
+  // },
   {
-    path: '/test/tos',
-    element: <TOSTest />,
-  },
-  {
-    path: '/test/asr',
-    element: <ASRTest />,
+    path: '/test/all',
+    element: <AllTests />,
   },
   {
     path: '/500',

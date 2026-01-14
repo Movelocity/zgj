@@ -319,7 +319,7 @@ const ASRTest: React.FC = () => {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="bg-white rounded-lg shadow-md p-8">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">ASR 语音识别服务测试</h1>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">语音识别服务测试</h1>
             <p className="text-gray-600">
               测试火山引擎 ASR 语音识别服务，支持音频文件上传、识别任务管理和结果查询
             </p>

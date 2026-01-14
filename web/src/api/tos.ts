@@ -64,12 +64,12 @@ export const tosAPI = {
     return apiClient.get('/api/tos/sts');
   },
 
-  // 生成上传预签名URL
+  // 生成[上传]预签名URL
   generatePresignURL: (data: PresignRequest): Promise<ApiResponse<PresignResponse>> => {
     return apiClient.post('/api/tos/presign', data);
   },
 
-  // 生成下载预签名URL
+  // 生成[下载]预签名URL
   generateDownloadURL: (key: string): Promise<ApiResponse<DownloadResponse>> => {
     return apiClient.get('/api/tos/presign/download', { params: { key } });
   },

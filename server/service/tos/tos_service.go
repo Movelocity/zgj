@@ -77,12 +77,11 @@ func (s *tosService) GetSTSCredentials(ctx context.Context) (*global.TOSSTSCrede
 
 	// 调用AssumeRole获取临时凭证
 	resp, status, err := stsClient.AssumeRole(params)
-	if err != nil {
+	if err != nil || resp.Result == nil {
 		return nil, fmt.Errorf("failed to assume role: %w (status: %d)", err, status)
 	}
 
 	credentials := resp.Result.Credentials
-
 	return &global.TOSSTSCredentials{
 		AccessKeyID:     credentials.AccessKeyId,
 		SecretAccessKey: credentials.SecretAccessKey,

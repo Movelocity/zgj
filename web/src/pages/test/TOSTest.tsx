@@ -89,39 +89,39 @@ const TOSTest: React.FC = () => {
   };
 
   // 测试生成预签名URL
-  const testGeneratePresignURL = async () => {
-    if (!selectedFile) {
-      showWarning('请先选择文件');
-      return;
-    }
+  // const testGeneratePresignURL = async () => {
+  //   if (!selectedFile) {
+  //     showWarning('请先选择文件');
+  //     return;
+  //   }
 
-    try {
-      addTestResult('🔗 开始测试生成预签名URL...');
-      const timestamp = Date.now();
-      const randomStr = Math.random().toString(36).substring(7);
-      const extension = selectedFile.name.split('.').pop();
-      const key = `test_${timestamp}_${randomStr}.${extension}`;
+  //   try {
+  //     addTestResult('🔗 开始测试生成预签名URL...');
+  //     const timestamp = Date.now();
+  //     const randomStr = Math.random().toString(36).substring(7);
+  //     const extension = selectedFile.name.split('.').pop();
+  //     const key = `test_${timestamp}_${randomStr}.${extension}`;
 
-      const response = await tosAPI.generatePresignURL({
-        key,
-        content_type: selectedFile.type,
-      });
+  //     const response = await tosAPI.generatePresignURL({
+  //       key,
+  //       content_type: selectedFile.type,
+  //     });
 
-      if (response.code === 0 && response.data) {
-        showSuccess('生成预签名URL成功');
-        addTestResult(`✅ 生成预签名URL成功`);
-        addTestResult(`  - Key: ${response.data.key}`);
-        addTestResult(`  - URL长度: ${response.data.url.length}字符`);
-        addTestResult(`  - 过期时间: ${response.data.expires_in}秒`);
-      } else {
-        throw new Error(response.msg || '生成失败');
-      }
-    } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : '生成预签名URL失败';
-      showError(errorMsg);
-      addTestResult(`❌ 生成预签名URL失败: ${errorMsg}`);
-    }
-  };
+  //     if (response.code === 0 && response.data) {
+  //       showSuccess('生成预签名URL成功');
+  //       addTestResult(`✅ 生成预签名URL成功`);
+  //       addTestResult(`  - Key: ${response.data.key}`);
+  //       addTestResult(`  - URL长度: ${response.data.url.length}字符`);
+  //       addTestResult(`  - 过期时间: ${response.data.expires_in}秒`);
+  //     } else {
+  //       throw new Error(response.msg || '生成失败');
+  //     }
+  //   } catch (error) {
+  //     const errorMsg = error instanceof Error ? error.message : '生成预签名URL失败';
+  //     showError(errorMsg);
+  //     addTestResult(`❌ 生成预签名URL失败: ${errorMsg}`);
+  //   }
+  // };
 
   // 测试生成下载URL
   const testGenerateDownloadURL = async () => {
@@ -180,17 +180,17 @@ const TOSTest: React.FC = () => {
   };
 
   // 清除测试结果
-  const clearResults = () => {
-    setTestResults([]);
-    setUploadResult(null);
-    setSelectedFile(null);
-    setSTSCredentials(null);
-    setUploadList(null);
-    const fileInput = document.getElementById('tos-file-input') as HTMLInputElement;
-    if (fileInput) {
-      fileInput.value = '';
-    }
-  };
+  // const clearResults = () => {
+  //   setTestResults([]);
+  //   setUploadResult(null);
+  //   setSelectedFile(null);
+  //   setSTSCredentials(null);
+  //   setUploadList(null);
+  //   const fileInput = document.getElementById('tos-file-input') as HTMLInputElement;
+  //   if (fileInput) {
+  //     fileInput.value = '';
+  //   }
+  // };
 
   return (
     <div className="min-h-screen bg-gray-50 pt-20">
@@ -253,25 +253,6 @@ const TOSTest: React.FC = () => {
             <h2 className="text-xl font-semibold mb-4">2. API 功能测试</h2>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               <Button
-                onClick={testGetSTSCredentials}
-                className="flex items-center justify-center space-x-2"
-                variant="outline"
-              >
-                <FiKey className="w-4 h-4" />
-                <span>获取STS凭证</span>
-              </Button>
-
-              <Button
-                onClick={testGeneratePresignURL}
-                disabled={!selectedFile}
-                className="flex items-center justify-center space-x-2"
-                variant="outline"
-              >
-                <FiUpload className="w-4 h-4" />
-                <span>生成预签名URL</span>
-              </Button>
-
-              <Button
                 onClick={testUploadFile}
                 disabled={!selectedFile || uploading}
                 className="flex items-center justify-center space-x-2"
@@ -279,7 +260,15 @@ const TOSTest: React.FC = () => {
                 <FiUpload className="w-4 h-4" />
                 <span>{uploading ? '上传中...' : '上传文件'}</span>
               </Button>
-
+              {/* <Button
+                onClick={testGeneratePresignURL}
+                disabled={!selectedFile}
+                className="flex items-center justify-center space-x-2"
+                variant="outline"
+              >
+                <FiUpload className="w-4 h-4" />
+                <span>生成预签名URL</span>
+              </Button> */}
               <Button
                 onClick={testGenerateDownloadURL}
                 disabled={!uploadResult}
@@ -289,23 +278,21 @@ const TOSTest: React.FC = () => {
                 <FiDownload className="w-4 h-4" />
                 <span>生成下载URL</span>
               </Button>
-
               <Button
-                onClick={testListUploads}
+                onClick={testGetSTSCredentials}
                 className="flex items-center justify-center space-x-2"
                 variant="outline"
               >
-                <FiList className="w-4 h-4" />
-                <span>查看上传列表</span>
+                <FiKey className="w-4 h-4" />
+                <span>获取STS凭证</span>
               </Button>
-
-              <Button
+              {/* <Button
                 onClick={clearResults}
                 variant="outline"
                 className="text-red-600 hover:text-red-700"
               >
-                清除所有结果
-              </Button>
+                重置状态
+              </Button> */}
             </div>
           </div>
 
@@ -378,63 +365,73 @@ const TOSTest: React.FC = () => {
           )}
 
           {/* 上传记录列表 */}
-          {uploadList && uploadList.items.length > 0 && (
-            <div className="mb-8">
-              <h2 className="text-xl font-semibold mb-4">
-                5. 上传记录列表 (总数: {uploadList.total})
-              </h2>
-              <div className="bg-gray-50 border rounded-lg overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-100">
-                      <tr>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                          ID
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                          文件名
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                          大小
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                          状态
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                          上传时间
-                        </th>
+          
+          <div className="mb-8">
+            <h2 className="text-xl font-semibold mb-2">
+              5. 上传记录列表 (总数: {uploadList?.total || 0})
+            </h2>
+            <Button
+              onClick={testListUploads}
+              className="flex items-center justify-center space-x-2 mb-2"
+              variant="outline"
+            >
+              <FiList className="w-4 h-4" />
+              <span>查看上传列表</span>
+            </Button>
+            {uploadList && uploadList.items.length > 0 && (
+            <div className="bg-gray-50 border rounded-lg overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-100">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                        ID
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                        文件名
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                        大小
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                        状态
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                        上传时间
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {uploadList.items.map((item) => (
+                      <tr key={item.id}>
+                        <td className="px-4 py-3 text-sm">{item.id}</td>
+                        <td className="px-4 py-3 text-sm">{item.filename}</td>
+                        <td className="px-4 py-3 text-sm">
+                          {(item.size / 1024).toFixed(2)} KB
+                        </td>
+                        <td className="px-4 py-3 text-sm">
+                          <span
+                            className={`px-2 py-1 rounded text-xs font-semibold ${
+                              item.status === 'success'
+                                ? 'bg-green-100 text-green-800'
+                                : 'bg-red-100 text-red-800'
+                            }`}
+                          >
+                            {item.status}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-sm">
+                          {new Date(item.created_at).toLocaleString()}
+                        </td>
                       </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {uploadList.items.map((item) => (
-                        <tr key={item.id}>
-                          <td className="px-4 py-3 text-sm">{item.id}</td>
-                          <td className="px-4 py-3 text-sm">{item.filename}</td>
-                          <td className="px-4 py-3 text-sm">
-                            {(item.size / 1024).toFixed(2)} KB
-                          </td>
-                          <td className="px-4 py-3 text-sm">
-                            <span
-                              className={`px-2 py-1 rounded text-xs font-semibold ${
-                                item.status === 'success'
-                                  ? 'bg-green-100 text-green-800'
-                                  : 'bg-red-100 text-red-800'
-                              }`}
-                            >
-                              {item.status}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3 text-sm">
-                            {new Date(item.created_at).toLocaleString()}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
-          )}
+            )}
+          </div>
+        
 
           {/* 测试日志 */}
           <div>
