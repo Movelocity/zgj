@@ -11,6 +11,7 @@ export { adminAPI } from './admin';
 export { invitationAPI } from './invitation';
 export { fileAPI } from './file';
 export { siteVariableAPI } from './siteVariable';
+export { interviewAPI } from './interview';
 // export { billingAPI } from './billing';
 export { eventLogAPI } from './eventlog';
 // export { pdfExportAPI } from './pdfExport';
@@ -18,4 +19,5 @@ export { eventLogAPI } from './eventlog';
 // 类型导出
 export type * from './tos';
 export type * from './asr';
+export type * from './interview';
 

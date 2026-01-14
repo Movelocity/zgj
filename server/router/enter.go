@@ -33,4 +33,5 @@ func InitRoutes(r *gin.Engine) {
 	InitBillingRouter(PrivateGroup, PublicGroup, AdminGroup)
 	InitTOSRouter(PrivateGroup, PublicGroup, AdminGroup)
 	InitASRRouter(PrivateGroup, PublicGroup, AdminGroup)
+	InitInterviewRouter(PrivateGroup, PublicGroup, AdminGroup)
 }

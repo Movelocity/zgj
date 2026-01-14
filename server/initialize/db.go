@@ -74,6 +74,7 @@ func InitDB() {
 		&model.TOSUpload{},
 		&model.ASRTask{},
 		&model.PdfExportTask{},
+		&model.InterviewReview{},
 	); err != nil {
 		panic(fmt.Errorf("failed to migrate database: %s", err))
 	}

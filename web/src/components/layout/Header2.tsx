@@ -33,6 +33,10 @@ const NAV_ITEMS: NavItem[] = [
     path: '/resumes',
     label: '我的简历',
   },
+  {
+    path: '/interview/reviews',
+    label: '面试复盘',
+  },
 ];
 
 const Header: React.FC = () => {
