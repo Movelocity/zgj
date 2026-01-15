@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import MarkdownRenderer from '@/components/ui/Markdown';
-import { FiFileText, FiCheckSquare, FiPlus, FiEdit, FiStar, FiInfo, FiChevronDown, FiChevronUp, FiCheck, FiX, FiRefreshCw } from 'react-icons/fi';
+import { FiFileText, FiCheckSquare, FiPlus, FiEdit, FiStar, FiInfo, FiChevronDown, FiChevronUp, FiCheck, FiX } from 'react-icons/fi';
 import { generateHash } from '@/utils/hash';
 import { parseAndFixResumeJson } from '@/utils/helpers';
 import { workflowAPI } from '@/api/workflow';
@@ -107,7 +107,7 @@ function ActionMarkerDisplay({
   const isActionable = marker.status === 'pending' && !isHistorical;
 
   return (
-    <div className="w-full my-3 border border-gray-300 rounded-md bg-gray-50 overflow-hidden hover:shadow-md transition-shadow duration-300">
+    <div className="w-full my-2 border border-gray-300 rounded-md bg-gray-50 overflow-hidden hover:shadow-md transition-shadow duration-300">
       {/* Header */}
       <div 
         className="flex items-center justify-between px-2 py-1 bg-white border-b border-gray-200 cursor-pointer"
@@ -116,7 +116,7 @@ function ActionMarkerDisplay({
         <div className="flex items-center gap-1 flex-1">
           <div className="text-gray-600">{getIcon()}</div>
           <div className="flex-1">
-            <div className="text-sm font-medium text-gray-800">{getTitle()}</div>
+            <div className="text-xs font-medium text-gray-800">{getTitle()}</div>
             {/* {marker.title && marker.type !== 'NEW_SECTION' && (
               <div className="text-xs text-gray-500 mt-0.5">标题: {marker.title}</div>
             )} */}
@@ -143,14 +143,14 @@ function ActionMarkerDisplay({
         <div className="p-2 pb-0 bg-gray-50">
           {marker.type === 'ADD_PART' && (
             <div className="space-y-2">
-              <div className="text-xs text-gray-600">
+              {/* <div className="text-xs text-gray-600">
                 <span className="font-medium">板块:</span> {marker.section}
-              </div>
+              </div> */}
               <div className="text-xs text-gray-600">
                 <span className="font-medium">标题:</span> {marker.title}
               </div>
               <div className="text-xs text-gray-600">
-                <span className="font-medium">内容:</span>
+                {/* <span className="font-medium">内容:</span> */}
                 <div className="mt-1 p-2 bg-white border border-gray-200 rounded text-gray-700 whitespace-pre-wrap">
                   {marker.content}
                 </div>
@@ -230,8 +230,8 @@ function ActionMarkerDisplay({
             onClick={() => onRetrigger(marker)}
             className="flex items-center gap-1 px-3 py-1 text-xs text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded transition-colors"
           >
-            <FiRefreshCw className="w-3 h-3" />
-            <span>重新触发</span>
+            {/* <FiRefreshCw className="w-3 h-3" /> */}
+            <span>更新到简历</span>
           </button>
         )}
       </div>
@@ -266,11 +266,10 @@ export default function AiMessageRenderer({
     setActionMarkers(prev => 
       prev.map(m => m.id === markerId ? { ...m, isExpanded: !m.isExpanded } : m)
     );
-    // Update ref as well
+    // Update ref with a NEW object to avoid mutating the shared reference
     const marker = markerStatesRef.current.get(markerId);
     if (marker) {
-      marker.isExpanded = !marker.isExpanded;
-      markerStatesRef.current.set(markerId, marker);
+      markerStatesRef.current.set(markerId, { ...marker, isExpanded: !marker.isExpanded });
     }
   };
 

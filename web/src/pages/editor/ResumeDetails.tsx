@@ -419,22 +419,22 @@ export default function ResumeDetails() {
             console.log('格式化优化后的简历...');
             setCurrentStage('exporting');
             updater.startStep(3);
-            const formatResult = await workflowAPI.executeWorkflow("smart-format-2", {
-              current_resume: JSON.stringify(processedData),
-              resume_edit: analysisContent
-            }, true);
+            // const formatResult = await workflowAPI.executeWorkflow("smart-format-2", {
+            //   current_resume: JSON.stringify(processedData),
+            //   resume_edit: analysisContent
+            // }, true);
             
-            if (formatResult.code !== 0) {
-              throw new Error('简历格式化失败');
-            }
+            // if (formatResult.code !== 0) {
+            //   throw new Error('简历格式化失败');
+            // }
             
-            const formattedResult = formatResult.data.data.outputs?.output;
-            if (!formattedResult) {
-              throw new Error('格式化结果为空');
-            }
+            // const formattedResult = formatResult.data.data.outputs?.output;
+            // if (!formattedResult) {
+            //   throw new Error('格式化结果为空');
+            // }
             
-            const formattedResumeData = parseAndFixResumeJson(formattedResult);
-            setNewResumeData(formattedResumeData);
+            // const formattedResumeData = parseAndFixResumeJson(formattedResult);
+            // setNewResumeData(formattedResumeData);
             
             // Mark initialization complete and update processing stage
             await updateMetadata({
@@ -450,9 +450,9 @@ export default function ResumeDetails() {
                 processingStage: 'completed',
                 lastUpdated: new Date().toISOString(),
               },
-              pending_content: {
-                newResumeData: formattedResumeData,
-              }
+              // pending_content: {
+              //   newResumeData: formattedResumeData,
+              // }
             });
             
             updater.completeCurrentStep();

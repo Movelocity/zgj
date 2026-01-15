@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { Target, Briefcase, FileText, Globe } from 'lucide-react';
 
 export type TargetType = 'jd' | 'normal' | 'foreign';
@@ -37,10 +36,7 @@ interface TargetSelectorProps {
 }
 
 export default function TargetSelector({ currentTarget, onTargetChange }: TargetSelectorProps) {
-  const [selectedTarget, setSelectedTarget] = useState<TargetType>(currentTarget);
-
   const handleSelectTarget = (target: TargetType) => {
-    setSelectedTarget(target);
     onTargetChange(target);
   };
 
@@ -65,7 +61,7 @@ export default function TargetSelector({ currentTarget, onTargetChange }: Target
               relative flex items-start gap-3 p-4 rounded-lg border transition-all
               hover:shadow-md hover:scale-[1.02] cursor-pointer
               ${
-                selectedTarget === option.value
+                currentTarget === option.value
                   ? 'border-blue-200 bg-blue-50/50 shadow-md'
                   : 'border-gray-200 bg-white hover:border-blue-300'
               }
@@ -75,7 +71,7 @@ export default function TargetSelector({ currentTarget, onTargetChange }: Target
               className={`
                 flex-shrink-0 p-2 rounded-lg
                 ${
-                  selectedTarget === option.value
+                  currentTarget === option.value
                     ? 'bg-blue-100 text-blue-600'
                     : 'bg-gray-100 text-gray-600'
                 }
@@ -89,7 +85,7 @@ export default function TargetSelector({ currentTarget, onTargetChange }: Target
                   className={`
                     font-semibold text-sm
                     ${
-                      selectedTarget === option.value
+                      currentTarget === option.value
                         ? 'text-blue-700'
                         : 'text-gray-800'
                     }
@@ -97,7 +93,7 @@ export default function TargetSelector({ currentTarget, onTargetChange }: Target
                 >
                   {option.label}
                 </h4>
-                {selectedTarget === option.value && (
+                {currentTarget === option.value && (
                   <div className="flex items-center justify-center w-5 h-5 rounded-full bg-blue-600">
                     <svg
                       className="w-3 h-3 text-white"

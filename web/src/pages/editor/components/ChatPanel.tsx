@@ -321,19 +321,40 @@ export default function ChatPanel({
       try {
         if (type === 'ADD_PART') {
           // Find the section and add a new item
-          const sectionBlock = updatedData.blocks.find(b => b.title === section);
-          if (sectionBlock && sectionBlock.type === 'list' && Array.isArray(sectionBlock.data)) {
-            sectionBlock.data.push({
-              id: Date.now().toString(),
-              name: title || '',
-              description: content || '',
-              time: '',
-              highlight: ''
-            });
-            console.log(`[ChatPanel] Added item to section: ${section}`);
-          } else {
-            console.warn(`[ChatPanel] Section not found or not a list type: ${section}`);
+          let sectionBlock = updatedData.blocks.find(b => b.title === section);
+          
+          // If section doesn't exist, create a new list section
+          if (!sectionBlock) {
+            console.log(`[ChatPanel] Section "${section}" not found, creating new list section`);
+            sectionBlock = {
+              title: section,
+              type: 'list',
+              data: []
+            };
+            updatedData.blocks.push(sectionBlock);
           }
+          
+          // If section exists but is not a list type, convert it or create parallel list section
+          if (sectionBlock.type !== 'list' || !Array.isArray(sectionBlock.data)) {
+            console.log(`[ChatPanel] Section "${section}" is not a list type (${sectionBlock.type}), creating new list section`);
+            // Create a new list section with same name (will appear as a separate block)
+            sectionBlock = {
+              title: section,
+              type: 'list',
+              data: []
+            };
+            updatedData.blocks.push(sectionBlock);
+          }
+          
+          // Now add the item to the section
+          (sectionBlock.data as any[]).push({
+            id: Date.now().toString(),
+            name: title || '',
+            description: content || '',
+            time: '',
+            highlight: ''
+          });
+          console.log(`[ChatPanel] Added item to section: ${section}`);
         } else if (type === 'NEW_SECTION') {
           // Create a new section (default to text type for simplicity)
           updatedData.blocks.push({

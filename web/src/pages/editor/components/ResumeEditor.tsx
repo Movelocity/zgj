@@ -1,5 +1,4 @@
-import { ChevronUp, ChevronDown, Trash2, Mail, Phone, MapPin, Plus, MoreVertical } from 'lucide-react';
-import { Button } from "@/components/ui/Button";
+import { ChevronUp, ChevronDown, Trash2, Mail, Phone, MapPin, Plus, MoreVertical, Check, X } from 'lucide-react';
 import type { ResumeBlock, ResumeBlockListItem, ResumeV2Data } from '@/types/resumeV2';
 import { isListBlock, isTextBlock, isObjectBlock, createEmptyListItem } from '@/types/resumeV2';
 import { showSuccess } from '@/utils/toast';
@@ -493,47 +492,76 @@ export default function ResumeEditorV2({
             );
           })}
 
-          {/* AI Suggested New Blocks */}
-          {newBlockIndices.length > 0 && (
-            <div className="mt-6 mb-4">   
-              <div className="space-y-3">
-                {newBlockIndices.map((newBlockIdx) => {
-                  const block = newResumeData.blocks[newBlockIdx];
-                  if (!block) return null;
+          {/* AI Suggested New Blocks - rendered inline with indicator */}
+          {newBlockIndices.map((newBlockIdx) => {
+            const block = newResumeData.blocks[newBlockIdx];
+            if (!block || block.type === 'object') return null;
+            
+            return (
+              <div key={`new-${newBlockIdx}`} className="relative group/block">
+                {/* Block Header with left border and action buttons */}
+                <div className="relative flex items-center justify-between">
+                  <h3 className={`text-gray-800 border-l-4 border-blue-600 pl-2 inline-flex items-center gap-2 font-semibold ${fontSizeClasses.title}`}>
+                    <span>{block.title || '(无标题)'}</span>
+                  </h3>
                   
-                  return (
-                    <div key={newBlockIdx} className="bg-white rounded-md p-3 border border-blue-400">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <h4 className="font-medium text-gray-800 mb-1">新增板块：{block.title || '(无标题)'}</h4>
-                          <p className="text-xs text-gray-500">
-                            类型: {block.type === 'list' ? '列表' : block.type === 'text' ? '文本' : '对象'}
-                            {isListBlock(block) && ` (${block.data.length} 项)`}
-                          </p>
+                  {/* Accept/Reject buttons on the right */}
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => addNewBlock(newBlockIdx)}
+                      className="flex items-center gap-1 px-2 py-0.5 text-xs text-white bg-green-500 hover:bg-green-600 rounded transition-colors cursor-pointer"
+                      title="确认添加到简历"
+                    >
+                      <Check size={12} />
+                      <span>接收</span>
+                    </button>
+                    <button
+                      onClick={() => rejectNewBlock(newBlockIdx)}
+                      className="flex items-center gap-1 px-2 py-0.5 text-xs text-gray-500 hover:text-red-600 hover:bg-red-50 rounded transition-colors cursor-pointer"
+                      title="移除此板块"
+                    >
+                      <X size={12} />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Block Content - read only preview */}
+                {isListBlock(block) && (
+                  <div className="">
+                    {block.data.map((item) => (
+                      <div key={item.id} className="relative pl-4 break-inside-avoid">
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1">
+                            <h4 className={`text-gray-800 font-medium ${fontSizeClasses.label}`}>
+                              {item.name || '(无标题)'}
+                            </h4>
+                          </div>
+                          {item.time && (
+                            <span className={cn('text-gray-500 ml-4', fontSizeClasses.content)}>
+                              {item.time}
+                            </span>
+                          )}
                         </div>
-                        <div className="flex gap-2 ml-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => rejectNewBlock(newBlockIdx)}
-                          >
-                            拒绝
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="default"
-                            onClick={() => addNewBlock(newBlockIdx)}
-                          >
-                            确认
-                          </Button>
-                        </div>
+                        {item.description && (
+                          <div className={cn('text-gray-700 leading-relaxed whitespace-pre-line', fontSizeClasses.content)}>
+                            {item.description}
+                          </div>
+                        )}
                       </div>
-                    </div>
-                  );
-                })}
+                    ))}
+                    {block.data.length === 0 && (
+                      <p className="text-gray-500 italic pl-4">暂无内容</p>
+                    )}
+                  </div>
+                )}
+                {isTextBlock(block) && (
+                  <div className={`text-gray-700 leading-relaxed ml-4 whitespace-pre-line ${fontSizeClasses.content}`}>
+                    {block.data || '(无内容)'}
+                  </div>
+                )}
               </div>
-            </div>
-          )}
+            );
+          })}
 
           {/* Add Block Button */}
           <div className="relative group mb-3 p-4 -m-4 opacity-0 hover:opacity-100 transition-opacity">
