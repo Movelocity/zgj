@@ -18,7 +18,8 @@ import type {
 
 /**
  * Create a new interview review record
- * @param data - Review data including main_audio_id and asr_result
+ * 在TOS上传完成后调用，创建pending状态的记录
+ * @param data - Review data including tos_file_key and audio_filename
  * @returns Created review record
  */
 export const createReview = async (data: CreateReviewRequest): Promise<InterviewReview> => {
@@ -54,7 +55,41 @@ export const listReviews = async (params?: ListReviewsParams): Promise<Interview
 };
 
 /**
+ * Start ASR (speech recognition) for a review
+ * Uses the stored tos_file_key to generate a temporary URL and submit an ASR task
+ * @param id - Review ID
+ * @returns Updated review record with transcribing status
+ */
+export const startASR = async (id: number): Promise<InterviewReview> => {
+  const response = await apiClient.post<ApiResponse<InterviewReview>>(`/api/interview/reviews/${id}/start-asr`);
+  return (response as unknown as ApiResponse<InterviewReview>).data;
+};
+
+/**
+ * Retry ASR (speech recognition) for a review
+ * Used after ASR failure, generates a new temporary URL and submits a new ASR task
+ * @param id - Review ID
+ * @returns Updated review record with transcribing status
+ */
+export const retryASR = async (id: number): Promise<InterviewReview> => {
+  const response = await apiClient.post<ApiResponse<InterviewReview>>(`/api/interview/reviews/${id}/retry-asr`);
+  return (response as unknown as ApiResponse<InterviewReview>).data;
+};
+
+/**
+ * Sync ASR result from asr_tasks table to interview_review metadata
+ * Backend directly fetches from ASR table and updates review metadata
+ * @param id - Review ID
+ * @returns Updated review record with asr_result in metadata
+ */
+export const syncASRResult = async (id: number): Promise<InterviewReview> => {
+  const response = await apiClient.post<ApiResponse<InterviewReview>>(`/api/interview/reviews/${id}/sync-asr`);
+  return (response as unknown as ApiResponse<InterviewReview>).data;
+};
+
+/**
  * Trigger AI analysis for a review
+ * Requires ASR to be completed (asr_result must exist in metadata)
  * @param id - Review ID
  * @returns Updated review record with analyzing status
  */
@@ -84,6 +119,9 @@ export const interviewAPI = {
   createReview,
   getReview,
   listReviews,
+  startASR,
+  retryASR,
+  syncASRResult,
   triggerAnalysis,
   updateReviewMetadata,
 };

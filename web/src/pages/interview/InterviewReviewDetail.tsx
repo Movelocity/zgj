@@ -1,18 +1,30 @@
 /**
  * Interview Review Detail Page
  * Handles both creation workflow and view/retry modes
+ * 
+ * Creation Flow (refactored):
+ * 1. Upload audio to TOS → Create review record immediately (status: pending)
+ * 2. Start ASR → Poll until complete → Update metadata with asr_result
+ * 3. Trigger AI analysis → Poll until complete → View results
+ * 
+ * State Recovery:
+ * - Page refresh with ?id=xxx will resume from the appropriate step
+ * - pending (no asr_result): Show "Start ASR" button
+ * - pending (with asr_result): Show "Start Analysis" button  
+ * - transcribing: Resume ASR polling
+ * - analyzing: Show progress
+ * - completed: Show results
+ * - failed: Show retry options
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { FiUpload, FiRefreshCw, FiArrowLeft, FiArrowRight } from 'react-icons/fi';
-import { Button } from '@/components/ui';
+import { FiUpload, FiRefreshCw, FiArrowLeft, FiArrowRight, FiSettings } from 'react-icons/fi';
+import { Button, Modal, Input } from '@/components/ui';
 import { StepIndicator } from '@/components/interview/StepIndicator';
 import { ReviewStatusBadge } from '@/components/interview/ReviewStatusBadge';
 import { ASRResultViewer } from '@/components/interview/ASRResultViewer';
 import { AnalysisMarkdownRenderer } from '@/components/interview/AnalysisMarkdownRenderer';
-import { useInterviewWorkflow } from './hooks/useInterviewWorkflow';
-import { useReviewPolling } from './hooks/useReviewPolling';
 import { interviewAPI } from '@/api/interview';
 import { tosAPI } from '@/api/tos';
 import { asrAPI } from '@/api/asr';
@@ -22,78 +34,116 @@ import type { ASRTask } from '@/api/asr';
 
 const WORKFLOW_STEPS: WorkflowStep[] = [
   { key: 'upload', label: '上传音频' },
-  { key: 'asr', label: '语音识别' },
+  { key: 'asr', label: '音频识别' },
   { key: 'analyze', label: 'AI分析' },
 ];
+
+// Polling interval in milliseconds
+const ASR_POLL_INTERVAL = 3000;
+const ASR_MAX_ATTEMPTS = 60; // 3 minutes max
 
 export const InterviewReviewDetail: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const reviewId = searchParams.get('id');
 
-  // Mode: creation (no id) or view (with id)
+  // Determine if we're in view mode (with existing review) or creation mode
   const isViewMode = !!reviewId;
 
-  // Creation mode state
-  const workflow = useInterviewWorkflow();
-
-  // View mode state
+  // Core state
   const [review, setReview] = useState<InterviewReview | null>(null);
   const [loading, setLoading] = useState(false);
-  const [retrying, setRetrying] = useState(false);
-
+  const [currentStep, setCurrentStep] = useState(1);
+  
   // Step-specific state
+  const [audioFile, setAudioFile] = useState<File | null>(null);
+  const [audioKey, setAudioKey] = useState<string>('');
   const [uploading, setUploading] = useState(false);
+  
   const [asrProcessing, setAsrProcessing] = useState(false);
   const [asrTask, setAsrTask] = useState<ASRTask | null>(null);
+  
   const [analyzing, setAnalyzing] = useState(false);
+  const [retrying, setRetrying] = useState(false);
 
-  // Polling for view mode
-  const { review: polledReview, isPolling } = useReviewPolling(
-    reviewId ? parseInt(reviewId) : null,
-    {
-      enabled: isViewMode,
-      onComplete: (completedReview) => {
-        setReview(completedReview);
-        if (completedReview.metadata.status === 'completed') {
-          showSuccess('分析完成！');
-        }
-      },
-    }
-  );
-
-  // Load review data in view mode
-  useEffect(() => {
-    if (isViewMode && reviewId) {
-      loadReview(parseInt(reviewId));
-    }
-  }, [reviewId, isViewMode]);
-
-  // Update review when polling gets new data
-  useEffect(() => {
-    if (polledReview) {
-      setReview(polledReview);
-    }
-  }, [polledReview]);
+  // Configuration modal state
+  const [configModalOpen, setConfigModalOpen] = useState(false);
+  const [configForm, setConfigForm] = useState({
+    job_position: '',
+    target_company: '',
+  });
+  const [savingConfig, setSavingConfig] = useState(false);
 
   /**
    * Load review from API
+   * Note: Does NOT auto-resume polling to avoid high-frequency errors
    */
-  const loadReview = async (id: number) => {
+  const loadReview = useCallback(async (id: number) => {
     setLoading(true);
     try {
       const data = await interviewAPI.getReview(id);
       setReview(data);
+      
+      // Determine current step based on metadata
+      const status = data.metadata.status;
+      const hasAsrResult = !!data.metadata.asr_result;
+      
+      if (status === 'pending' && !hasAsrResult) {
+        setCurrentStep(2); // Ready for ASR
+      } else if (status === 'pending' && hasAsrResult) {
+        setCurrentStep(3); // Ready for analysis
+      } else if (status === 'transcribing') {
+        setCurrentStep(2);
+        // Don't auto-resume polling - user can manually click to poll
+      } else if (status === 'analyzing') {
+        setCurrentStep(3);
+        // Don't auto-resume polling - user can manually refresh
+      } else if (status === 'completed') {
+        setCurrentStep(3);
+      } else if (status === 'failed' || status === 'timeout') {
+        // Determine which step failed
+        if (hasAsrResult) {
+          setCurrentStep(3);
+        } else {
+          setCurrentStep(2);
+        }
+      }
+      
+      // Update audio file info if available
+      if (data.metadata.audio_filename) {
+        setAudioFile({ name: data.metadata.audio_filename } as File);
+      }
+      if (data.metadata.tos_file_key) {
+        setAudioKey(data.metadata.tos_file_key);
+      }
     } catch (error) {
       showError('加载面试复盘失败');
       console.error('Failed to load review:', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  // Load review on mount if in view mode
+  useEffect(() => {
+    if (isViewMode && reviewId) {
+      loadReview(parseInt(reviewId));
+    }
+  }, [reviewId, isViewMode, loadReview]);
+
+  // Initialize config form when review is loaded
+  useEffect(() => {
+    if (review) {
+      setConfigForm({
+        job_position: review.metadata.job_position || '',
+        target_company: review.metadata.target_company || '',
+      });
+    }
+  }, [review?.id]);
 
   /**
    * Handle audio file selection and upload
+   * After upload, immediately create review record
    */
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -117,20 +167,28 @@ export const InterviewReviewDetail: React.FC = () => {
     try {
       // Upload to TOS
       const upload = await tosAPI.uploadToTOS(file);
-      
-      // Generate download URL
-      const downloadResponse = await tosAPI.generateDownloadURL(upload.key);
-      const audioUrl = downloadResponse.data.url;
-
-      // Store in workflow state
-      workflow.handleUploadComplete(audioUrl, upload.key, file);
+      setAudioFile(file);
+      setAudioKey(upload.key);
       
       showSuccess('音频上传成功');
+
+      // Immediately create review record
+      const createdReview = await interviewAPI.createReview({
+        tos_file_key: upload.key,
+        audio_filename: file.name,
+      });
+
+      setReview(createdReview);
       
-      // Auto-advance to next step
-      workflow.goToStep(2);
+      // Update URL to include review ID (for state recovery)
+      navigate(`/interview/reviews?id=${createdReview.id}`, { replace: true });
+      
+      showInfo('已创建复盘记录');
+      
+      // Move to ASR step
+      setCurrentStep(2);
     } catch (error) {
-      showError('音频上传失败');
+      showError(error instanceof Error ? error.message : '音频上传失败');
       console.error('Upload failed:', error);
     } finally {
       setUploading(false);
@@ -138,120 +196,198 @@ export const InterviewReviewDetail: React.FC = () => {
   };
 
   /**
-   * Start ASR processing
+   * Start ASR processing using the backend StartASR endpoint
    */
   const startAsrProcessing = async () => {
-    if (!workflow.audioUrl) {
+    if (!review) {
       showError('请先上传音频文件');
       return;
     }
 
     setAsrProcessing(true);
     try {
-      // Determine audio format from file name
-      const extension = workflow.audioFile?.name.split('.').pop()?.toLowerCase() || 'mp3';
-      const format = extension === 'mp3' ? 'mp3' : extension === 'wav' ? 'wav' : 'mp3';
-
-      // Submit ASR task
-      const response = await asrAPI.submitTask({
-        audio_url: workflow.audioUrl,
-        audio_format: format as any,
-        options: {
-          enable_itn: true,
-          enable_ddc: true,
-        },
-      });
-
-      if (response.code !== 0) {
-        throw new Error(response.msg || '提交识别任务失败');
-      }
-
-      const taskId = response.data.id;
-      showInfo('语音识别任务已提交，正在处理...');
-
-      // Poll until complete
-      const completedTask = await asrAPI.pollUntilComplete(
-        taskId,
-        (task) => {
-          setAsrTask(task);
-        },
-        60,
-        3000
-      );
-
-      if (completedTask.status === 'failed') {
-        throw new Error(completedTask.error_message || '语音识别失败');
-      }
-
-      // Parse result
-      const parsedResult = asrAPI.parseResult(completedTask);
-      if (!parsedResult) {
-        throw new Error('无法解析识别结果');
-      }
-
-      // Store in workflow state
-      workflow.handleAsrComplete(taskId, parsedResult);
+      // Call backend to start ASR (backend generates URL and submits task)
+      const updatedReview = await interviewAPI.startASR(review.id);
+      setReview(updatedReview);
       
-      showSuccess('语音识别完成');
-      
-      // Auto-advance to next step
-      workflow.goToStep(3);
+      showInfo('语音识别任务已提交，等待处理...');
+
+      // Wait 3 seconds before starting to poll (ASR service needs initialization time)
+      await new Promise(resolve => setTimeout(resolve, 3000));
+
+      // Start polling for ASR completion using the same logic as ASRTest
+      if (updatedReview.metadata.asr_task_id) {
+        const completedTask = await asrAPI.pollUntilComplete(
+          updatedReview.metadata.asr_task_id,
+          (task) => {
+            setAsrTask(task);
+          },
+          ASR_MAX_ATTEMPTS,
+          ASR_POLL_INTERVAL
+        );
+
+        if (completedTask.status === 'completed') {
+          // Sync ASR result from backend (backend directly fetches from asr_tasks table)
+          const syncedReview = await interviewAPI.syncASRResult(review.id);
+          setReview(syncedReview);
+          
+          if (syncedReview.metadata.asr_result) {
+            showSuccess('语音识别完成');
+            setCurrentStep(3);
+          } else {
+            showError('无法获取识别结果');
+          }
+        } else if (completedTask.status === 'failed') {
+          // Sync failed status from backend
+          const syncedReview = await interviewAPI.syncASRResult(review.id);
+          setReview(syncedReview);
+          showError(completedTask.error_message || '语音识别失败');
+        }
+      }
     } catch (error) {
-      showError(error instanceof Error ? error.message : '语音识别失败');
-      console.error('ASR failed:', error);
+      showError(error instanceof Error ? error.message : '启动语音识别失败');
+      console.error('Start ASR failed:', error);
+      // Reload review to get latest state
+      if (review) {
+        await loadReview(review.id);
+      }
     } finally {
       setAsrProcessing(false);
     }
   };
 
   /**
-   * Create review and trigger analysis
+   * Retry ASR for failed attempts
    */
-  const createReviewAndAnalyze = async () => {
-    if (!workflow.asrTaskId || !workflow.asrResult) {
+  const handleRetryASR = async () => {
+    if (!review) return;
+
+    setRetrying(true);
+    setAsrProcessing(true);
+    try {
+      // Call backend retry endpoint (generates new URL and new task)
+      const updatedReview = await interviewAPI.retryASR(review.id);
+      setReview(updatedReview);
+      
+      showInfo('已重新提交语音识别任务，等待处理...');
+
+      // Wait 3 seconds before starting to poll (ASR service needs initialization time)
+      await new Promise(resolve => setTimeout(resolve, 3000));
+
+      // Start polling using the same logic as ASRTest
+      if (updatedReview.metadata.asr_task_id) {
+        const completedTask = await asrAPI.pollUntilComplete(
+          updatedReview.metadata.asr_task_id,
+          (task) => {
+            setAsrTask(task);
+          },
+          ASR_MAX_ATTEMPTS,
+          ASR_POLL_INTERVAL
+        );
+
+        if (completedTask.status === 'completed') {
+          // Sync ASR result from backend
+          const syncedReview = await interviewAPI.syncASRResult(review.id);
+          setReview(syncedReview);
+          
+          if (syncedReview.metadata.asr_result) {
+            showSuccess('语音识别完成');
+            setCurrentStep(3);
+          } else {
+            showError('无法获取识别结果');
+          }
+        } else if (completedTask.status === 'failed') {
+          // Sync failed status from backend
+          const syncedReview = await interviewAPI.syncASRResult(review.id);
+          setReview(syncedReview);
+          showError(completedTask.error_message || '语音识别失败');
+        }
+      }
+    } catch (error) {
+      showError(error instanceof Error ? error.message : '重试语音识别失败');
+      if (review) {
+        await loadReview(review.id);
+      }
+    } finally {
+      setRetrying(false);
+      setAsrProcessing(false);
+    }
+  };
+
+  /**
+   * Start analysis with job info (saves info first if provided)
+   */
+  const handleStartAnalysisWithInfo = async () => {
+    if (!review) {
       showError('请先完成语音识别');
       return;
     }
 
     setAnalyzing(true);
     try {
-      // Create review record
-      // 后端期望 { main_audio_id, asr_result }，metadata 由后端自动构建
-      const createdReview = await interviewAPI.createReview({
-        main_audio_id: workflow.asrTaskId,
-        asr_result: workflow.asrResult,
-      });
+      // Save job info first if any field is filled
+      if (configForm.job_position || configForm.target_company) {
+        const updatedReview = await interviewAPI.updateReviewMetadata(review.id, {
+          metadata: {
+            job_position: configForm.job_position,
+            target_company: configForm.target_company,
+          },
+        });
+        setReview(updatedReview);
+      }
 
-      // Update workflow state
-      workflow.handleReviewCreated(createdReview.id);
-
-      // Update URL without navigation
-      navigate(`/interview/reviews?id=${createdReview.id}`, { replace: true });
-
-      showInfo('已创建复盘记录，正在提交分析任务...');
-
-      // Trigger analysis
-      await interviewAPI.triggerAnalysis(createdReview.id);
-      
+      // Then trigger analysis
+      await interviewAPI.triggerAnalysis(review.id);
       showSuccess('分析任务已提交，请稍候...');
-
-      // Load the created review into view mode
-      await loadReview(createdReview.id);
+      
+      // Start polling for completion
+      await startAnalysisPolling(review.id);
     } catch (error) {
-      showError('创建复盘失败');
-      console.error('Create review failed:', error);
+      showError(error instanceof Error ? error.message : '启动分析失败');
+      await loadReview(review.id);
     } finally {
       setAnalyzing(false);
     }
   };
 
   /**
-   * Retry analysis for existing review
+   * Poll for analysis completion
+   */
+  const startAnalysisPolling = async (reviewId: number) => {
+    const maxAttempts = 60; // 5 minutes with 5s interval
+    let attempts = 0;
+
+    while (attempts < maxAttempts) {
+      try {
+        const updatedReview = await interviewAPI.getReview(reviewId);
+        setReview(updatedReview);
+
+        if (updatedReview.metadata.status === 'completed') {
+          showSuccess('分析完成！');
+          return;
+        }
+
+        if (updatedReview.metadata.status === 'failed') {
+          showError(updatedReview.metadata.error_message || '分析失败');
+          return;
+        }
+
+        // Still analyzing, wait and retry
+        await new Promise(resolve => setTimeout(resolve, 5000));
+        attempts++;
+      } catch (error) {
+        console.error('Polling error:', error);
+        attempts++;
+      }
+    }
+  };
+
+  /**
+   * Retry analysis for failed attempts
    */
   const retryAnalysis = async () => {
     if (!review) return;
 
-    // Check if already processing
     if (review.metadata.status === 'transcribing' || review.metadata.status === 'analyzing') {
       showInfo('任务正在进行中，请稍候');
       return;
@@ -261,51 +397,75 @@ export const InterviewReviewDetail: React.FC = () => {
     try {
       await interviewAPI.triggerAnalysis(review.id);
       showSuccess('已重新提交分析任务');
-      
-      // Reload review
-      await loadReview(review.id);
+      await startAnalysisPolling(review.id);
     } catch (error) {
-      showError('重新分析失败');
-      console.error('Retry failed:', error);
+      showError(error instanceof Error ? error.message : '重新分析失败');
+      await loadReview(review.id);
     } finally {
       setRetrying(false);
     }
   };
 
   /**
-   * Render creation mode
+   * Open configuration modal with current values
    */
-  const renderCreationMode = () => (
-    <div className="max-w-4xl mx-auto mt-12">
-      {/* Header with back button */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">新建面试复盘</h1>
-          <p className="text-gray-600 mt-1">上传面试录音，获取 AI 分析反馈</p>
-        </div>
-        <Button variant="outline" onClick={() => navigate('/interview')}>
-          <FiArrowLeft className="mr-2" />
-          返回列表
-        </Button>
-      </div>
+  const openConfigModal = () => {
+    if (review) {
+      setConfigForm({
+        job_position: review.metadata.job_position || '',
+        target_company: review.metadata.target_company || '',
+      });
+    }
+    setConfigModalOpen(true);
+  };
 
-      {/* Step Indicator */}
-      <StepIndicator
-        steps={WORKFLOW_STEPS}
-        currentStep={workflow.currentStep}
-        completedSteps={workflow.completedSteps}
-        onStepClick={workflow.goToStep}
-        canNavigateBack={!workflow.reviewId}
-      />
+  /**
+   * Save configuration (job position and target company)
+   */
+  const saveConfig = async () => {
+    if (!review) return;
 
-      {/* Step Content */}
-      <div className="bg-white rounded-lg shadow-lg p-8">
-        {workflow.currentStep === 1 && renderUploadStep()}
-        {workflow.currentStep === 2 && renderAsrStep()}
-        {workflow.currentStep === 3 && renderAnalyzeStep()}
-      </div>
-    </div>
-  );
+    setSavingConfig(true);
+    try {
+      const updatedReview = await interviewAPI.updateReviewMetadata(review.id, {
+        metadata: {
+          job_position: configForm.job_position,
+          target_company: configForm.target_company,
+        },
+      });
+      setReview(updatedReview);
+      showSuccess('保存成功');
+      setConfigModalOpen(false);
+    } catch (error) {
+      showError(error instanceof Error ? error.message : '保存失败');
+    } finally {
+      setSavingConfig(false);
+    }
+  };
+
+  /**
+   * Compute which steps are completed
+   */
+  const getCompletedSteps = (): string[] => {
+    const completed: string[] = [];
+    
+    // Upload is complete if we have a review with tos_file_key
+    if (review?.metadata.tos_file_key || audioKey) {
+      completed.push('upload');
+    }
+    
+    // ASR is complete if we have asr_result
+    if (review?.metadata.asr_result) {
+      completed.push('asr');
+    }
+    
+    // Analysis is complete if status is completed
+    if (review?.metadata.status === 'completed') {
+      completed.push('analyze');
+    }
+    
+    return completed;
+  };
 
   /**
    * Render Step 1: Upload Audio
@@ -314,33 +474,37 @@ export const InterviewReviewDetail: React.FC = () => {
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-bold text-gray-900 mb-2">上传面试录音</h2>
-        <p className="text-gray-600">
+        {/* <p className="text-gray-600">
           支持 MP3、WAV、OGG 格式，文件大小不超过 100MB
-        </p>
+        </p> */}
       </div>
 
-      {workflow.audioFile ? (
+      {audioFile ? (
         <div className="bg-green-50 border border-green-200 rounded-lg p-4">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-green-900">已选择文件</p>
-              <p className="text-sm text-green-700">{workflow.audioFile.name}</p>
-              <p className="text-xs text-green-600">
-                {(workflow.audioFile.size / 1024 / 1024).toFixed(2)} MB
-              </p>
+              <p className="text-sm text-green-700">{audioFile.name}</p>
+              {audioFile.size && (
+                <p className="text-xs text-green-600">
+                  {(audioFile.size / 1024 / 1024).toFixed(2)} MB
+                </p>
+              )}
             </div>
-            <label className="cursor-pointer">
-              <Button variant="outline" size="sm">
-                重新选择
-              </Button>
-              <input
-                type="file"
-                accept="audio/mp3,audio/mpeg,audio/wav,audio/ogg,.mp3,.wav,.ogg"
-                onChange={handleFileSelect}
-                className="hidden"
-                disabled={uploading}
-              />
-            </label>
+            {!review && (
+              <label className="cursor-pointer">
+                <Button variant="outline" size="sm">
+                  重新选择
+                </Button>
+                <input
+                  type="file"
+                  accept="audio/mp3,audio/mpeg,audio/wav,audio/ogg,.mp3,.wav,.ogg"
+                  onChange={handleFileSelect}
+                  className="hidden"
+                  disabled={uploading}
+                />
+              </label>
+            )}
           </div>
         </div>
       ) : (
@@ -348,7 +512,7 @@ export const InterviewReviewDetail: React.FC = () => {
           <div className="border-2 border-dashed border-gray-300 rounded-lg p-12 text-center hover:border-blue-400 transition-colors">
             <FiUpload className="w-12 h-12 mx-auto text-gray-400 mb-4" />
             <p className="text-gray-600 mb-2">点击选择文件或拖拽文件到此处</p>
-            <p className="text-sm text-gray-500">支持 MP3、WAV、OGG 格式</p>
+            <p className="text-sm text-gray-500">支持 MP3、WAV、OGG 格式，文件大小不超过 100MB</p>
           </div>
           <input
             type="file"
@@ -363,14 +527,15 @@ export const InterviewReviewDetail: React.FC = () => {
       {uploading && (
         <div className="text-center text-gray-600">
           <FiRefreshCw className="w-6 h-6 mx-auto animate-spin mb-2" />
-          <p>正在上传...</p>
+          <p>正在上传并创建记录...</p>
         </div>
       )}
 
       <div className="flex justify-end gap-3">
         <Button
-          onClick={() => workflow.goToStep(2)}
-          disabled={!workflow.audioFile || uploading}
+          onClick={() => setCurrentStep(2)}
+          disabled={!review || uploading}
+          variant="primary"
         >
           下一步
           <FiArrowRight className="ml-2" />
@@ -378,211 +543,211 @@ export const InterviewReviewDetail: React.FC = () => {
       </div>
     </div>
   );
+
+  /**
+   * Resume polling for transcribing status (manual trigger)
+   */
+  const resumeAsrPolling = async () => {
+    if (!review || !review.metadata.asr_task_id) {
+      showError('无法获取任务信息');
+      return;
+    }
+
+    setAsrProcessing(true);
+    try {
+      const completedTask = await asrAPI.pollUntilComplete(
+        review.metadata.asr_task_id,
+        (task) => {
+          setAsrTask(task);
+        },
+        ASR_MAX_ATTEMPTS,
+        ASR_POLL_INTERVAL
+      );
+
+      if (completedTask.status === 'completed') {
+        // Sync ASR result from backend
+        const syncedReview = await interviewAPI.syncASRResult(review.id);
+        setReview(syncedReview);
+        
+        if (syncedReview.metadata.asr_result) {
+          showSuccess('语音识别完成');
+          setCurrentStep(3);
+        } else {
+          showError('无法获取识别结果');
+        }
+      } else if (completedTask.status === 'failed') {
+        // Sync failed status from backend
+        const syncedReview = await interviewAPI.syncASRResult(review.id);
+        setReview(syncedReview);
+        showError(completedTask.error_message || '语音识别失败');
+      }
+    } catch (error) {
+      showError(error instanceof Error ? error.message : '轮询失败');
+      if (review) {
+        await loadReview(review.id);
+      }
+    } finally {
+      setAsrProcessing(false);
+    }
+  };
 
   /**
    * Render Step 2: ASR Processing
    */
-  const renderAsrStep = () => (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">语音识别</h2>
-        <p className="text-gray-600">
-          将音频转换为文字，用于后续分析
-        </p>
-      </div>
+  const renderAsrStep = () => {
+    const hasAsrResult = !!review?.metadata.asr_result;
+    const isFailed = review?.metadata.status === 'failed' && !hasAsrResult;
+    const isTimeout = review?.metadata.status === 'timeout';
+    const isTranscribing = review?.metadata.status === 'transcribing';
 
-      {workflow.asrResult ? (
-        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-          <p className="text-sm font-medium text-green-900 mb-2">识别完成</p>
-          <p className="text-sm text-green-700">
-            识别文本长度：{workflow.asrResult.text.length} 字
+    return (
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">语音识别</h2>
+          <p className="text-gray-600">
+            将音频转换为文字，用于后续分析
           </p>
-          {workflow.asrResult.segments && (
-            <p className="text-xs text-green-600">
-              分段数量：{workflow.asrResult.segments.length}
+        </div>
+
+        {hasAsrResult ? (
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+            <p className="text-sm font-medium text-green-900 mb-2">识别完成</p>
+            <p className="text-sm text-green-700">
+              识别文本长度：{review?.metadata.asr_result?.result?.text?.length || 0} 字
             </p>
-          )}
-        </div>
-      ) : asrProcessing ? (
-        <div className="text-center py-8">
-          <FiRefreshCw className="w-12 h-12 mx-auto animate-spin text-blue-500 mb-4" />
-          <p className="text-gray-900 font-medium mb-2">正在识别音频内容...</p>
-          {asrTask && (
-            <div className="text-sm text-gray-600">
-              <p>进度：{asrTask.progress}%</p>
-              <p className="mt-1">状态：{asrTask.status}</p>
-            </div>
-          )}
-        </div>
-      ) : (
-        <div className="text-center py-8">
-          <p className="text-gray-600 mb-4">点击下方按钮开始语音识别</p>
-          <Button onClick={startAsrProcessing} disabled={asrProcessing}>
-            <FiRefreshCw className="mr-2" />
-            开始识别
+            {review?.metadata.asr_result?.segments && (
+              <p className="text-xs text-green-600">
+                分段数量：{review.metadata.asr_result.segments.length}
+              </p>
+            )}
+          </div>
+        ) : asrProcessing ? (
+          <div className="text-center py-8">
+            <FiRefreshCw className="w-12 h-12 mx-auto animate-spin text-blue-500 mb-4" />
+            <p className="text-gray-900 font-medium mb-2">正在识别音频内容...</p>
+            {asrTask && (
+              <div className="text-sm text-gray-600">
+                <p>进度：{asrTask.progress}%</p>
+                <p className="mt-1">状态：{asrTask.status}</p>
+              </div>
+            )}
+          </div>
+        ) : isTranscribing ? (
+          // Transcribing but not actively polling - show resume button
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
+            <p className="text-lg font-medium text-yellow-900 mb-2">识别任务进行中</p>
+            <p className="text-sm text-yellow-700 mb-4">
+              任务ID: {review?.metadata.asr_task_id?.substring(0, 8)}...
+            </p>
+            <Button onClick={resumeAsrPolling} disabled={asrProcessing}>
+              <FiRefreshCw className="mr-2" />
+              继续轮询
+            </Button>
+          </div>
+        ) : isFailed || isTimeout ? (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+            <p className="text-lg font-medium text-red-900 mb-2">
+              {isTimeout ? '语音识别超时' : '语音识别失败'}
+            </p>
+            {review?.metadata.error_message && (
+              <p className="text-sm text-red-700 mb-4">
+                错误信息：{review.metadata.error_message}
+              </p>
+            )}
+            <Button
+              variant="outline"
+              onClick={handleRetryASR}
+              disabled={retrying || asrProcessing}
+            >
+              {retrying || asrProcessing ? (
+                <>
+                  <FiRefreshCw className="mr-2 animate-spin" />
+                  重试中...
+                </>
+              ) : (
+                <>
+                  <FiRefreshCw className="mr-2" />
+                  重试语音识别
+                </>
+              )}
+            </Button>
+          </div>
+        ) : (
+          <div className="text-center py-8">
+            <p className="text-gray-600 mb-4">点击下方按钮开始语音识别</p>
+            <Button onClick={startAsrProcessing} disabled={asrProcessing || !review}>
+              <FiRefreshCw className="mr-2" />
+              开始识别
+            </Button>
+          </div>
+        )}
+
+        <div className="flex justify-between">
+          <Button
+            variant="outline"
+            onClick={() => setCurrentStep(1)}
+            disabled={asrProcessing}
+          >
+            <FiArrowLeft className="mr-2" />
+            上一步
+          </Button>
+          <Button
+            onClick={() => setCurrentStep(3)}
+            disabled={!hasAsrResult || asrProcessing}
+            variant="primary"
+          >
+            下一步
+            <FiArrowRight className="ml-2" />
           </Button>
         </div>
-      )}
-
-      <div className="flex justify-between">
-        <Button
-          variant="outline"
-          onClick={() => workflow.goToStep(1)}
-          disabled={asrProcessing}
-        >
-          <FiArrowLeft className="mr-2" />
-          上一步
-        </Button>
-        <Button
-          onClick={() => workflow.goToStep(3)}
-          disabled={!workflow.asrResult || asrProcessing}
-        >
-          下一步
-          <FiArrowRight className="ml-2" />
-        </Button>
       </div>
-    </div>
-  );
+    );
+  };
 
   /**
    * Render Step 3: Analysis
    */
-  const renderAnalyzeStep = () => (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">AI 面试分析</h2>
-        <p className="text-gray-600">
-          基于语音识别结果，生成面试表现分析报告
-        </p>
-      </div>
-
-      {workflow.reviewId ? (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <p className="text-sm font-medium text-blue-900 mb-2">复盘记录已创建</p>
-          <p className="text-sm text-blue-700">
-            分析任务正在进行中，请稍候...
-          </p>
-        </div>
-      ) : (
-        <div className="text-center py-8">
-          <p className="text-gray-600 mb-4">准备就绪，点击下方按钮开始分析</p>
-          <Button onClick={createReviewAndAnalyze} disabled={analyzing}>
-            {analyzing ? (
-              <>
-                <FiRefreshCw className="mr-2 animate-spin" />
-                分析中...
-              </>
-            ) : (
-              <>
-                <FiRefreshCw className="mr-2" />
-                开始分析
-              </>
-            )}
-          </Button>
-        </div>
-      )}
-
-      <div className="flex justify-between">
-        <Button
-          variant="outline"
-          onClick={() => workflow.goToStep(2)}
-          disabled={!!workflow.reviewId || analyzing}
-        >
-          <FiArrowLeft className="mr-2" />
-          上一步
-        </Button>
-      </div>
-    </div>
-  );
-
-  /**
-   * Render view mode
-   */
-  const renderViewMode = () => {
-    if (loading || !review) {
-      return (
-        <div className="max-w-5xl mx-auto">
-          <div className="animate-pulse space-y-4">
-            <div className="h-8 bg-gray-200 rounded w-1/4"></div>
-            <div className="h-64 bg-gray-200 rounded"></div>
-          </div>
-        </div>
-      );
-    }
-
-    const isCompleted = review.metadata.status === 'completed';
-    const isFailed = review.metadata.status === 'failed' || review.metadata.status === 'timeout';
-    const isProcessing = review.metadata.status === 'transcribing' || review.metadata.status === 'analyzing';
+  const renderAnalyzeStep = () => {
+    const isCompleted = review?.metadata.status === 'completed';
+    const isAnalyzing = review?.metadata.status === 'analyzing';
+    const isFailed = review?.metadata.status === 'failed' && !!review?.metadata.asr_result;
+    const hasAsrResult = !!review?.metadata.asr_result;
 
     return (
-      <div className="max-w-5xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <div className="flex items-center gap-3 mb-2">
-              <h1 className="text-3xl font-bold text-gray-900">面试复盘详情</h1>
-              <ReviewStatusBadge status={review.metadata.status} />
-            </div>
-            <p className="text-gray-600">
-              创建时间：{new Date(review.created_at).toLocaleString('zh-CN')}
-            </p>
-          </div>
-          <Button variant="outline" onClick={() => navigate('/interview')}>
-            <FiArrowLeft className="mr-2" />
-            返回列表
-          </Button>
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">AI 面试分析</h2>
+          <p className="text-gray-600">
+            基于语音识别结果，生成面试表现分析报告
+          </p>
         </div>
 
-        {/* Metadata */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">基本信息</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-            <div>
-              <span className="text-gray-500">岗位：</span>
-              <span className="text-gray-900">
-                {review.metadata.job_position || '未填写'}
-              </span>
+        {isCompleted ? (
+          <>
+            <AnalysisMarkdownRenderer content={review?.data || ''} />
+            <div className="flex justify-end">
+              <Button
+                variant="outline"
+                onClick={retryAnalysis}
+                disabled={retrying}
+              >
+                <FiRefreshCw className="mr-2" />
+                重新分析
+              </Button>
             </div>
-            <div>
-              <span className="text-gray-500">公司：</span>
-              <span className="text-gray-900">
-                {review.metadata.target_company || '未填写'}
-              </span>
-            </div>
-            {review.metadata.audio_filename && (
-              <div>
-                <span className="text-gray-500">音频文件：</span>
-                <span className="text-gray-900">
-                  {review.metadata.audio_filename}
-                </span>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Processing Status */}
-        {isProcessing && (
+          </>
+        ) : isAnalyzing || analyzing ? (
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 text-center">
             <FiRefreshCw className="w-12 h-12 mx-auto animate-spin text-blue-500 mb-4" />
-            <p className="text-lg font-medium text-blue-900 mb-2">
-              {review.metadata.status === 'transcribing' ? '语音识别中...' : 'AI分析中...'}
-            </p>
+            <p className="text-lg font-medium text-blue-900 mb-2">AI分析中...</p>
             <p className="text-sm text-blue-700">
               这可能需要几分钟时间，请稍候
             </p>
-            {isPolling && (
-              <p className="text-xs text-blue-600 mt-2">
-                正在自动刷新状态...
-              </p>
-            )}
           </div>
-        )}
-
-        {/* Failed Status */}
-        {isFailed && (
+        ) : isFailed ? (
           <div className="bg-red-50 border border-red-200 rounded-lg p-6">
             <p className="text-lg font-medium text-red-900 mb-2">分析失败</p>
-            {review.metadata.error_message && (
+            {review?.metadata.error_message && (
               <p className="text-sm text-red-700 mb-4">
                 错误信息：{review.metadata.error_message}
               </p>
@@ -605,38 +770,200 @@ export const InterviewReviewDetail: React.FC = () => {
               )}
             </Button>
           </div>
-        )}
-
-        {/* Analysis Result */}
-        {isCompleted && (
-          <AnalysisMarkdownRenderer content={review.data} />
-        )}
-
-        {/* ASR Result */}
-        {review.metadata.asr_result && (
-          <ASRResultViewer asrResult={review.metadata.asr_result} defaultCollapsed={true} />
-        )}
-
-        {/* Retry Button for Completed */}
-        {isCompleted && (
-          <div className="flex justify-end">
-            <Button
-              variant="outline"
-              onClick={retryAnalysis}
-              disabled={retrying}
-            >
-              <FiRefreshCw className="mr-2" />
-              重新分析
-            </Button>
+        ) : (
+          <div className="py-6">
+            {/* Quick info form before analysis */}
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-5 mb-6">
+              <h3 className="text-base font-medium text-gray-900 mb-3">
+                填写面试信息（可选）
+              </h3>
+              <p className="text-sm text-gray-500 mb-4">
+                填写面试相关信息，AI将根据这些信息提供更精准的分析建议
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    目标岗位
+                  </label>
+                  <Input
+                    value={configForm.job_position}
+                    onChange={(e) => setConfigForm(prev => ({ ...prev, job_position: e.target.value }))}
+                    placeholder="例如：前端工程师、产品经理"
+                    maxLength={100}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    目标公司
+                  </label>
+                  <Input
+                    value={configForm.target_company}
+                    onChange={(e) => setConfigForm(prev => ({ ...prev, target_company: e.target.value }))}
+                    placeholder="例如：字节跳动、阿里巴巴"
+                    maxLength={100}
+                  />
+                </div>
+              </div>
+            </div>
+            
+            <div className="text-center">
+              <Button onClick={handleStartAnalysisWithInfo} disabled={analyzing || !hasAsrResult}>
+                {analyzing ? (
+                  <>
+                    <FiRefreshCw className="mr-2 animate-spin" />
+                    分析中...
+                  </>
+                ) : (
+                  <>
+                    <FiRefreshCw className="mr-2" />
+                    开始分析
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
         )}
+
+        {/* ASR Result Viewer */}
+        {review?.metadata.asr_result && !isCompleted && (
+          <ASRResultViewer asrResult={review.metadata.asr_result} defaultCollapsed={false} />
+        )}
+        {/* {review?.metadata.asr_result && isCompleted && (
+          <ASRResultViewer asrResult={review.metadata.asr_result} defaultCollapsed={true} />
+        )} */}
+
+        <div className="flex justify-between">
+          <Button
+            variant="outline"
+            onClick={() => setCurrentStep(2)}
+            disabled={isAnalyzing || analyzing}
+          >
+            <FiArrowLeft className="mr-2" />
+            上一步
+          </Button>
+        </div>
       </div>
     );
   };
 
+  /**
+   * Render loading state
+   */
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="max-w-5xl mx-auto">
+          <div className="animate-pulse space-y-4">
+            <div className="h-8 bg-gray-200 rounded w-1/4"></div>
+            <div className="h-64 bg-gray-200 rounded"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto px-4 py-8">
-      {isViewMode ? renderViewMode() : renderCreationMode()}
+      <div className="max-w-4xl mx-auto mt-12">
+        {/* Header with back button */}
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <div className="flex items-center gap-3">
+              <h1 className="text-3xl font-bold text-gray-900">
+                {review ? '面试复盘' : '新建面试复盘'}
+              </h1>
+              {review && <ReviewStatusBadge status={review.metadata.status} />}
+            </div>
+            {review && (
+            <div className="text-xs flex gap-2">
+              <div>
+                {new Date(review.created_at).toLocaleString('zh-CN')}
+              </div>
+              <div>
+                <span className="text-gray-500">公司：</span>
+                <span className="text-gray-900">
+                  {review.metadata.target_company || '未填写'}
+                </span>
+              </div>
+              <div>
+                <span className="text-gray-500">岗位：</span>
+                <span className="text-gray-900">
+                  {review.metadata.job_position || '未填写'}
+                </span>
+              </div>
+            </div>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            {review && (
+              <Button variant="outline" onClick={openConfigModal}>
+                <FiSettings className="mr-2" />
+                配置
+              </Button>
+            )}
+            <Button variant="outline" onClick={() => navigate('/interview')}>
+              <FiArrowLeft className="mr-2" />
+              返回列表
+            </Button>
+          </div>
+        </div>
+
+        {/* Step Indicator */}
+        <StepIndicator
+          steps={WORKFLOW_STEPS}
+          currentStep={currentStep}
+          completedSteps={getCompletedSteps()}
+          onStepClick={setCurrentStep}
+          canNavigateBack={!asrProcessing && !analyzing}
+        />
+
+        {/* Step Content */}
+        <div className="bg-white rounded-lg shadow-lg p-8">
+          {currentStep === 1 && renderUploadStep()}
+          {currentStep === 2 && renderAsrStep()}
+          {currentStep === 3 && renderAnalyzeStep()}
+        </div>
+      </div>
+
+      {/* Configuration Modal */}
+      <Modal
+        open={configModalOpen}
+        onClose={() => setConfigModalOpen(false)}
+        title="面试信息配置"
+        size="sm"
+        onConfirm={saveConfig}
+        confirmText="保存"
+        cancelText="取消"
+        confirmDisabled={savingConfig}
+      >
+        <div className="p-4 space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              目标岗位
+            </label>
+            <Input
+              value={configForm.job_position}
+              onChange={(e) => setConfigForm(prev => ({ ...prev, job_position: e.target.value }))}
+              placeholder="例如：前端工程师、产品经理"
+              maxLength={100}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              目标公司
+            </label>
+            <Input
+              value={configForm.target_company}
+              onChange={(e) => setConfigForm(prev => ({ ...prev, target_company: e.target.value }))}
+              placeholder="例如：字节跳动、阿里巴巴"
+              maxLength={100}
+            />
+          </div>
+          <p className="text-xs text-gray-500">
+            填写面试相关信息，AI将根据这些信息提供更精准的分析建议
+          </p>
+        </div>
+      </Modal>
     </div>
   );
 };

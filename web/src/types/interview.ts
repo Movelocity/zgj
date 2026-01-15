@@ -19,7 +19,9 @@ export type ReviewStatus = typeof REVIEW_STATUS[keyof typeof REVIEW_STATUS];
  * Interview review metadata stored in JSONB field
  */
 export interface InterviewReviewMetadata {
-  main_audio_id?: string;
+  tos_file_key?: string;       // TOS文件key，用于生成临时URL
+  asr_task_id?: string;        // ASR任务ID
+  main_audio_id?: string;      // 旧字段，保留兼容
   workflow_id?: string;
   status: ReviewStatus;
   asr_result?: any;
@@ -47,11 +49,11 @@ export interface InterviewReview {
 
 /**
  * Request payload for creating interview review
- * 后端期望格式：{ main_audio_id, asr_result }
+ * 基于TOS文件信息创建，不再依赖ASR任务
  */
 export interface CreateReviewRequest {
-  main_audio_id: string;
-  asr_result: any; // ASR识别结果
+  tos_file_key: string;    // TOS文件key
+  audio_filename: string;  // 音频文件名
 }
 
 /**

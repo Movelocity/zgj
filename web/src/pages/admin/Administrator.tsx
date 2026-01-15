@@ -112,7 +112,7 @@ const Administrator: React.FC = () => {
       </div>
 
       {/* 窄屏布局：fixed可折叠 */}
-      <div className="lg:hidden mt-16">
+      <div className="lg:hidden mt-14">
         {/**顶部可滚动菜单 */}
         <div className="py-2 px-4 w-screen overflow-x-auto flex flex-nowrap gap-2 bg-gray-100">
           {tabs.map((tab) => {

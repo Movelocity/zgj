@@ -9,12 +9,14 @@ import (
 )
 
 // CreateReviewRequest 创建面试复盘记录请求
+// 基于TOS文件信息创建，ASR任务将在后续步骤中触发
 type CreateReviewRequest struct {
-	MainAudioID string                 `json:"main_audio_id" binding:"required"` // ASR任务ID
-	AsrResult   map[string]interface{} `json:"asr_result" binding:"required"`    // ASR识别结果
+	TosFileKey    string `json:"tos_file_key" binding:"required"`   // TOS文件key
+	AudioFilename string `json:"audio_filename" binding:"required"` // 音频文件名
 }
 
 // CreateReview 创建面试复盘记录
+// 在TOS上传完成后立即调用，创建pending状态的记录
 func CreateReview(c *gin.Context) {
 	// 获取用户ID
 	userID := c.GetString("userID")
@@ -30,7 +32,7 @@ func CreateReview(c *gin.Context) {
 	}
 
 	// 创建记录
-	review, err := interview.InterviewService.CreateInterviewReview(userID, req.MainAudioID, req.AsrResult)
+	review, err := interview.InterviewService.CreateInterviewReview(userID, req.TosFileKey, req.AudioFilename)
 	if err != nil {
 		utils.FailWithMessage(err.Error(), c)
 		return
@@ -146,6 +148,90 @@ func TriggerAnalysis(c *gin.Context) {
 
 	// 触发分析
 	review, err := interview.InterviewService.TriggerAnalysis(reviewID, userID)
+	if err != nil {
+		utils.FailWithMessage(err.Error(), c)
+		return
+	}
+
+	utils.OkWithData(review, c)
+}
+
+// StartASR 启动ASR语音识别任务
+// 使用存储的tos_file_key生成临时URL并提交ASR任务
+func StartASR(c *gin.Context) {
+	// 获取用户ID
+	userID := c.GetString("userID")
+	if userID == "" {
+		utils.FailWithMessage("无法识别用户", c)
+		return
+	}
+
+	// 获取记录ID
+	reviewIDStr := c.Param("id")
+	reviewID, err := strconv.ParseInt(reviewIDStr, 10, 64)
+	if err != nil {
+		utils.FailWithMessage("记录ID格式错误", c)
+		return
+	}
+
+	// 启动ASR
+	review, err := interview.InterviewService.StartASR(reviewID, userID)
+	if err != nil {
+		utils.FailWithMessage(err.Error(), c)
+		return
+	}
+
+	utils.OkWithData(review, c)
+}
+
+// RetryASR 重试ASR语音识别任务
+// 在ASR失败后使用存储的tos_file_key生成新URL并重新提交任务
+func RetryASR(c *gin.Context) {
+	// 获取用户ID
+	userID := c.GetString("userID")
+	if userID == "" {
+		utils.FailWithMessage("无法识别用户", c)
+		return
+	}
+
+	// 获取记录ID
+	reviewIDStr := c.Param("id")
+	reviewID, err := strconv.ParseInt(reviewIDStr, 10, 64)
+	if err != nil {
+		utils.FailWithMessage("记录ID格式错误", c)
+		return
+	}
+
+	// 重试ASR
+	review, err := interview.InterviewService.RetryASR(reviewID, userID)
+	if err != nil {
+		utils.FailWithMessage(err.Error(), c)
+		return
+	}
+
+	utils.OkWithData(review, c)
+}
+
+// SyncASRResult 从ASR表同步识别结果
+// 直接从asr_tasks表获取数据并更新到interview_review的metadata中
+func SyncASRResult(c *gin.Context) {
+	// 获取用户ID
+	userID := c.GetString("userID")
+	if userID == "" {
+		utils.FailWithMessage("无法识别用户", c)
+		return
+	}
+
+	// 获取记录ID
+	reviewIDStr := c.Param("id")
+	reviewID, err := strconv.ParseInt(reviewIDStr, 10, 64)
+	if err != nil {
+		utils.FailWithMessage("记录ID格式错误", c)
+		return
+	}
+
+	// 同步ASR结果
+	review, err := interview.InterviewService.SyncASRResult(reviewID, userID)
 	if err != nil {
 		utils.FailWithMessage(err.Error(), c)
 		return

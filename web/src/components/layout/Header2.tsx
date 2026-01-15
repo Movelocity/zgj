@@ -34,7 +34,7 @@ const NAV_ITEMS: NavItem[] = [
     label: '我的简历',
   },
   {
-    path: '/interview/reviews',
+    path: '/interview',
     label: '面试复盘',
   },
 ];

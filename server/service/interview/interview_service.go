@@ -1,15 +1,17 @@
 package interview
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"math"
+	"path/filepath"
+	"strings"
 
 	"server/global"
 	"server/model"
 	"server/service/app"
-	"server/service/sitevariable"
 
 	"gorm.io/gorm"
 )
@@ -19,31 +21,13 @@ type interviewService struct{}
 var InterviewService = &interviewService{}
 
 // CreateInterviewReview 创建面试复盘记录
-func (s *interviewService) CreateInterviewReview(userID, mainAudioID string, asrResult map[string]interface{}) (*model.InterviewReview, error) {
-	// 验证ASR任务是否存在
-	var asrTask model.ASRTask
-	if err := global.DB.Where("id = ?", mainAudioID).First(&asrTask).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, errors.New("ASR任务不存在")
-		}
-		return nil, errors.New("查询ASR任务失败")
-	}
-
-	// 验证ASR任务是否属于当前用户
-	if asrTask.UserID != userID {
-		return nil, errors.New("无权访问该ASR任务")
-	}
-
-	// 验证ASR任务是否已完成
-	if asrTask.Status != model.ASRTaskStatusCompleted {
-		return nil, fmt.Errorf("ASR任务未完成，当前状态: %s", asrTask.Status)
-	}
-
-	// 构建metadata
+// 基于TOS文件信息创建pending状态的记录，不再依赖ASR任务完成
+func (s *interviewService) CreateInterviewReview(userID, tosFileKey, audioFilename string) (*model.InterviewReview, error) {
+	// 构建metadata - 存储TOS文件信息，ASR后续触发
 	metadata := map[string]interface{}{
-		"main_audio_id": mainAudioID,
-		"status":        model.InterviewReviewStatusPending,
-		"asr_result":    asrResult,
+		"tos_file_key":   tosFileKey,
+		"audio_filename": audioFilename,
+		"status":         model.InterviewReviewStatusPending,
 	}
 	metadataJSON, _ := json.Marshal(metadata)
 
@@ -59,6 +43,193 @@ func (s *interviewService) CreateInterviewReview(userID, mainAudioID string, asr
 	}
 
 	return review, nil
+}
+
+// StartASR 启动ASR语音识别任务
+// 从metadata读取tos_file_key，生成临时URL，提交ASR任务
+func (s *interviewService) StartASR(reviewID int64, userID string) (*model.InterviewReview, error) {
+	// 获取记录并验证权限
+	review, err := s.GetInterviewReview(reviewID, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	// 解析metadata
+	var metadata map[string]interface{}
+	if err := json.Unmarshal(review.Metadata, &metadata); err != nil {
+		return nil, errors.New("解析元数据失败")
+	}
+
+	// 检查状态
+	status, _ := metadata["status"].(string)
+	if status == model.InterviewReviewStatusTranscribing {
+		return nil, errors.New("ASR任务正在进行中")
+	}
+	if status == model.InterviewReviewStatusAnalyzing || status == model.InterviewReviewStatusCompleted {
+		return nil, errors.New("该记录已完成语音识别")
+	}
+
+	// 获取TOS文件key
+	tosFileKey, ok := metadata["tos_file_key"].(string)
+	if !ok || tosFileKey == "" {
+		return nil, errors.New("TOS文件信息不存在")
+	}
+
+	// 生成临时下载URL
+	audioURL, err := s.generateDownloadURL(tosFileKey)
+	if err != nil {
+		return nil, fmt.Errorf("生成下载URL失败: %w", err)
+	}
+
+	// 获取音频格式
+	audioFormat := s.getAudioFormat(tosFileKey, metadata)
+
+	// 提交ASR任务
+	if global.ASRService == nil {
+		return nil, errors.New("ASR服务未启用")
+	}
+
+	asrTask, err := global.ASRService.SubmitTask(context.Background(), &global.ASRSubmitTaskRequest{
+		UserID:      userID,
+		AudioURL:    audioURL,
+		AudioFormat: audioFormat,
+		Options: map[string]interface{}{
+			"enable_itn": true,
+			"enable_ddc": true,
+		},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("提交ASR任务失败: %w", err)
+	}
+
+	// 更新metadata
+	metadata["status"] = model.InterviewReviewStatusTranscribing
+	metadata["asr_task_id"] = asrTask.ID
+	metadataJSON, _ := json.Marshal(metadata)
+
+	if err := global.DB.Model(review).Update("metadata", model.JSON(metadataJSON)).Error; err != nil {
+		return nil, errors.New("更新状态失败")
+	}
+
+	// 返回更新后的记录
+	return s.GetInterviewReview(reviewID, userID)
+}
+
+// RetryASR 重试ASR语音识别任务
+// 在ASR失败后调用，使用存储的tos_file_key生成新URL重新提交任务
+func (s *interviewService) RetryASR(reviewID int64, userID string) (*model.InterviewReview, error) {
+	// 获取记录并验证权限
+	review, err := s.GetInterviewReview(reviewID, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	// 解析metadata
+	var metadata map[string]interface{}
+	if err := json.Unmarshal(review.Metadata, &metadata); err != nil {
+		return nil, errors.New("解析元数据失败")
+	}
+
+	// 检查状态 - 只有failed状态可以重试
+	status, _ := metadata["status"].(string)
+	if status == model.InterviewReviewStatusTranscribing {
+		return nil, errors.New("ASR任务正在进行中")
+	}
+	if status == model.InterviewReviewStatusAnalyzing {
+		return nil, errors.New("分析任务正在进行中")
+	}
+	// 允许从pending（初次尝试）或failed状态重试
+
+	// 获取TOS文件key
+	tosFileKey, ok := metadata["tos_file_key"].(string)
+	if !ok || tosFileKey == "" {
+		return nil, errors.New("TOS文件信息不存在")
+	}
+
+	// 生成新的临时下载URL
+	audioURL, err := s.generateDownloadURL(tosFileKey)
+	if err != nil {
+		return nil, fmt.Errorf("生成下载URL失败: %w", err)
+	}
+
+	// 获取音频格式
+	audioFormat := s.getAudioFormat(tosFileKey, metadata)
+
+	// 提交新的ASR任务
+	if global.ASRService == nil {
+		return nil, errors.New("ASR服务未启用")
+	}
+
+	asrTask, err := global.ASRService.SubmitTask(context.Background(), &global.ASRSubmitTaskRequest{
+		UserID:      userID,
+		AudioURL:    audioURL,
+		AudioFormat: audioFormat,
+		Options: map[string]interface{}{
+			"enable_itn": true,
+			"enable_ddc": true,
+		},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("提交ASR任务失败: %w", err)
+	}
+
+	// 更新metadata - 清除旧的错误信息
+	metadata["status"] = model.InterviewReviewStatusTranscribing
+	metadata["asr_task_id"] = asrTask.ID
+	delete(metadata, "error_message")
+	metadataJSON, _ := json.Marshal(metadata)
+
+	if err := global.DB.Model(review).Update("metadata", model.JSON(metadataJSON)).Error; err != nil {
+		return nil, errors.New("更新状态失败")
+	}
+
+	// 返回更新后的记录
+	return s.GetInterviewReview(reviewID, userID)
+}
+
+// generateDownloadURL 生成TOS临时下载URL
+func (s *interviewService) generateDownloadURL(fileKey string) (string, error) {
+	if global.TOSService == nil {
+		return "", errors.New("TOS服务未启用")
+	}
+
+	response, err := global.TOSService.GenerateDownloadURL(context.Background(), fileKey)
+	if err != nil {
+		return "", err
+	}
+
+	return response.URL, nil
+}
+
+// getAudioFormat 从文件key或metadata获取音频格式
+func (s *interviewService) getAudioFormat(tosFileKey string, metadata map[string]interface{}) string {
+	// 尝试从文件名获取
+	audioFilename, _ := metadata["audio_filename"].(string)
+	if audioFilename != "" {
+		ext := strings.ToLower(filepath.Ext(audioFilename))
+		switch ext {
+		case ".mp3":
+			return "mp3"
+		case ".wav":
+			return "wav"
+		case ".ogg":
+			return "ogg"
+		}
+	}
+
+	// 尝试从TOS key获取
+	ext := strings.ToLower(filepath.Ext(tosFileKey))
+	switch ext {
+	case ".mp3":
+		return "mp3"
+	case ".wav":
+		return "wav"
+	case ".ogg":
+		return "ogg"
+	}
+
+	// 默认mp3
+	return "mp3"
 }
 
 // GetInterviewReview 获取面试复盘记录详情
@@ -157,7 +328,112 @@ func (s *interviewService) UpdateReviewMetadata(reviewID int64, userID string, u
 	return s.GetInterviewReview(reviewID, userID)
 }
 
+// SyncASRResult 从ASR表同步识别结果到interview_review
+// 直接从asr_tasks表获取数据，验证用户权限后更新到metadata
+// 使用行级锁防止并发写入导致的数据覆盖问题
+func (s *interviewService) SyncASRResult(reviewID int64, userID string) (*model.InterviewReview, error) {
+	var result *model.InterviewReview
+
+	// 使用事务和行级锁确保数据一致性
+	err := global.DB.Transaction(func(tx *gorm.DB) error {
+		// 获取记录并加行级锁（FOR UPDATE）
+		var review model.InterviewReview
+		if err := tx.Set("gorm:query_option", "FOR UPDATE").
+			Where("id = ?", reviewID).
+			First(&review).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return errors.New("面试复盘记录不存在")
+			}
+			return errors.New("查询面试复盘记录失败")
+		}
+
+		// 验证用户权限
+		if review.UserID != userID {
+			return errors.New("无权访问该记录")
+		}
+
+		// 解析metadata
+		var metadata map[string]interface{}
+		if err := json.Unmarshal(review.Metadata, &metadata); err != nil {
+			return errors.New("解析元数据失败")
+		}
+
+		// 获取asr_task_id
+		asrTaskID, ok := metadata["asr_task_id"].(string)
+		if !ok || asrTaskID == "" {
+			return errors.New("ASR任务ID不存在")
+		}
+
+		// 从asr_tasks表获取ASR任务
+		var asrTask model.ASRTask
+		if err := tx.Where("id = ?", asrTaskID).First(&asrTask).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return errors.New("ASR任务不存在")
+			}
+			return errors.New("查询ASR任务失败")
+		}
+
+		// 验证用户权限：ASR任务的用户必须与review的用户一致
+		if asrTask.UserID != userID {
+			return errors.New("无权访问该ASR任务")
+		}
+
+		// 检查ASR任务状态
+		switch asrTask.Status {
+		case model.ASRTaskStatusPending, model.ASRTaskStatusProcessing:
+			// 任务还在进行中，返回当前状态
+			result = &review
+			return nil
+		case model.ASRTaskStatusFailed:
+			// 任务失败，更新metadata
+			metadata["status"] = model.InterviewReviewStatusFailed
+			metadata["error_message"] = asrTask.ErrorMessage
+			metadataJSON, _ := json.Marshal(metadata)
+			if err := tx.Model(&review).Update("metadata", model.JSON(metadataJSON)).Error; err != nil {
+				return errors.New("更新状态失败")
+			}
+			result = &review
+			result.Metadata = model.JSON(metadataJSON)
+			return nil
+		case model.ASRTaskStatusCompleted:
+			// 任务完成，解析result并更新metadata
+			if asrTask.Result == "" {
+				return errors.New("ASR结果为空")
+			}
+
+			// 解析ASR结果
+			var asrResult map[string]interface{}
+			if err := json.Unmarshal([]byte(asrTask.Result), &asrResult); err != nil {
+				return errors.New("解析ASR结果失败")
+			}
+
+			// 更新metadata（保留已有字段，只更新ASR相关字段）
+			metadata["asr_result"] = asrResult
+			metadata["status"] = model.InterviewReviewStatusPending // 回到pending，准备分析
+			delete(metadata, "error_message")
+			metadataJSON, _ := json.Marshal(metadata)
+
+			if err := tx.Model(&review).Update("metadata", model.JSON(metadataJSON)).Error; err != nil {
+				return errors.New("保存ASR结果失败")
+			}
+			result = &review
+			result.Metadata = model.JSON(metadataJSON)
+			return nil
+		default:
+			return errors.New("未知的ASR任务状态")
+		}
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	// 返回更新后的记录（重新查询以获取最新数据）
+	return s.GetInterviewReview(reviewID, userID)
+}
+
 // TriggerAnalysis 触发面试分析工作流
+// 需要先完成ASR识别（metadata中存在asr_result）才能触发分析
 func (s *interviewService) TriggerAnalysis(reviewID int64, userID string) (*model.InterviewReview, error) {
 	// 获取记录并验证权限
 	review, err := s.GetInterviewReview(reviewID, userID)
@@ -179,30 +455,33 @@ func (s *interviewService) TriggerAnalysis(reviewID int64, userID string) (*mode
 	if status == model.InterviewReviewStatusAnalyzing {
 		return nil, errors.New("该记录正在分析中")
 	}
+	if status == model.InterviewReviewStatusTranscribing {
+		return nil, errors.New("语音识别正在进行中，请等待完成后再分析")
+	}
 
-	// 从site_variables获取workflow配置
-	workflowConfig, err := s.getWorkflowConfig()
+	// 检查ASR结果是否存在
+	asrResult, ok := metadata["asr_result"].(map[string]interface{})
+	if !ok || asrResult == nil {
+		return nil, errors.New("请先完成语音识别")
+	}
+
+	// 从workflows表查找名为 interview-analysis-workflow 的工作流
+	workflow, err := s.getWorkflowByName("interview-analysis-workflow")
 	if err != nil {
 		return nil, err
 	}
 
 	// 更新状态为analyzing
 	metadata["status"] = model.InterviewReviewStatusAnalyzing
-	metadata["workflow_id"] = workflowConfig
+	metadata["workflow_id"] = workflow.ID
+	delete(metadata, "error_message") // 清除之前的错误信息
 	metadataJSON, _ := json.Marshal(metadata)
 	if err := global.DB.Model(review).Update("metadata", metadataJSON).Error; err != nil {
 		return nil, errors.New("更新状态失败")
 	}
 
-	// 提取ASR文本
-	asrResult, ok := metadata["asr_result"].(map[string]interface{})
-	if !ok {
-		s.updateAnalysisError(reviewID, "ASR结果格式错误")
-		return nil, errors.New("ASR结果格式错误")
-	}
-
-	// 调用Dify工作流
-	analysisResult, err := s.callDifyWorkflow(workflowConfig, userID, asrResult)
+	// 调用工作流服务执行分析
+	analysisResult, err := s.executeAnalysisWorkflow(workflow.ID, userID, asrResult)
 	if err != nil {
 		s.updateAnalysisError(reviewID, err.Error())
 		return nil, err
@@ -211,11 +490,10 @@ func (s *interviewService) TriggerAnalysis(reviewID int64, userID string) (*mode
 	// 更新记录：保存分析结果到data字段，更新状态为completed
 	metadata["status"] = model.InterviewReviewStatusCompleted
 	metadataJSON, _ = json.Marshal(metadata)
-	
-	analysisResultJSON, _ := json.Marshal(analysisResult)
-	
+
+	// 直接存储分析结果字符串到data字段
 	updates := map[string]interface{}{
-		"data":     model.JSON(analysisResultJSON),
+		"data":     model.JSON(analysisResult),
 		"metadata": model.JSON(metadataJSON),
 	}
 
@@ -227,38 +505,111 @@ func (s *interviewService) TriggerAnalysis(reviewID int64, userID string) (*mode
 	return s.GetInterviewReview(reviewID, userID)
 }
 
-// getWorkflowConfig 从site_variables获取工作流配置
-func (s *interviewService) getWorkflowConfig() (string, error) {
-	config, err := sitevariable.SiteVariableService.GetSiteVariableByKey("interview-analysis-workflow")
-	if err != nil {
-		return "", errors.New("工作流配置不存在，请在后台配置 interview-analysis-workflow")
+// getWorkflowByName 从workflows表按名称查找工作流
+func (s *interviewService) getWorkflowByName(name string) (*model.Workflow, error) {
+	var workflow model.Workflow
+	if err := global.DB.Where("name = ? AND enabled = ?", name, true).First(&workflow).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, fmt.Errorf("工作流 '%s' 不存在，请在后台创建", name)
+		}
+		return nil, errors.New("查询工作流失败")
 	}
-
-	if config.Value == "" {
-		return "", errors.New("工作流配置为空")
-	}
-
-	return config.Value, nil
+	return &workflow, nil
 }
 
-// callDifyWorkflow 调用Dify工作流API（非流式）
-func (s *interviewService) callDifyWorkflow(workflowID, userID string, asrResult map[string]interface{}) (map[string]interface{}, error) {
-	// 构建输入参数
-	inputs := map[string]interface{}{
-		"asr_result": asrResult,
+// executeAnalysisWorkflow 使用标准工作流服务执行分析
+func (s *interviewService) executeAnalysisWorkflow(workflowID, userID string, asrResult map[string]interface{}) ([]byte, error) {
+	// 从ASR结果中提取utterances并组合为带行号的文本
+	interviewText, err := s.extractInterviewText(asrResult)
+	if err != nil {
+		return nil, fmt.Errorf("提取面试文本失败: %w", err)
 	}
 
-	// 调用工作流
-	response, err := app.AppService.ExecuteWorkflowAPI(workflowID, userID, inputs)
+	// 构建输入参数
+	inputs := map[string]interface{}{
+		"interview_text": interviewText,
+		"is_test":        "true",
+	}
+
+	// 使用标准工作流服务执行
+	response, err := app.AppService.ExecuteWorkflow(workflowID, userID, inputs)
 	if err != nil {
-		return nil, fmt.Errorf("调用Dify工作流失败: %w", err)
+		return nil, fmt.Errorf("执行工作流失败: %w", err)
 	}
 
 	if !response.Success {
 		return nil, fmt.Errorf("工作流执行失败: %s", response.Message)
 	}
 
-	return response.Data, nil
+	// 从outputs中提取结果
+	outputs, ok := response.Data["outputs"].(map[string]interface{})
+	if !ok {
+		return nil, errors.New("工作流输出格式错误")
+	}
+
+	// 获取分析结果（假设输出字段名为 result 或 answer）
+	var result interface{}
+	if r, ok := outputs["result"]; ok {
+		result = r
+	} else if r, ok := outputs["answer"]; ok {
+		result = r
+	} else if r, ok := outputs["text"]; ok {
+		result = r
+	} else {
+		// 如果没有特定字段，直接使用整个outputs
+		result = outputs
+	}
+
+	// 序列化结果
+	resultJSON, err := json.Marshal(result)
+	if err != nil {
+		return nil, errors.New("序列化分析结果失败")
+	}
+
+	return resultJSON, nil
+}
+
+// extractInterviewText 从ASR结果中提取utterances并组合为带行号的文本
+// ASR结果格式: {"text": "...", "additions": {...}, "utterances": [{"text": "..."}, ...]}
+func (s *interviewService) extractInterviewText(asrResult map[string]interface{}) (string, error) {
+	// jsonText, _ := json.Marshal(asrResult)
+	// fmt.Println("asrResult", string(jsonText))
+	resultData, ok := asrResult["result"].(map[string]interface{})
+	if !ok {
+		return "", errors.New("ASR结果中没有有效的文本内容")
+	}
+	// 获取utterances数组
+	utterances, ok := resultData["utterances"].([]interface{})
+	if !ok || len(utterances) == 0 {
+		// 如果没有utterances，尝试使用整体text
+		if text, ok := resultData["text"].(string); ok && text != "" {
+			return text, nil
+		}
+		return "", errors.New("ASR结果中没有有效的文本内容")
+	}
+
+	// 提取每个utterance的text并添加行号
+	var lines []string
+	for i, u := range utterances {
+		utterance, ok := u.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		text, ok := utterance["text"].(string)
+		if !ok || text == "" {
+			continue
+		}
+		// 添加行号（从1开始）
+		line := fmt.Sprintf("%d. %s", i+1, text)
+		lines = append(lines, line)
+	}
+
+	if len(lines) == 0 {
+		return "", errors.New("无法从utterances中提取文本")
+	}
+
+	// 用换行符连接所有行
+	return strings.Join(lines, "\n"), nil
 }
 
 // updateAnalysisError 更新分析错误状态
@@ -270,10 +621,10 @@ func (s *interviewService) updateAnalysisError(reviewID int64, errorMsg string) 
 
 	var metadata map[string]interface{}
 	json.Unmarshal(review.Metadata, &metadata)
-	
+
 	metadata["status"] = model.InterviewReviewStatusFailed
 	metadata["error_message"] = errorMsg
-	
+
 	metadataJSON, _ := json.Marshal(metadata)
 	global.DB.Model(&review).Update("metadata", metadataJSON)
 }

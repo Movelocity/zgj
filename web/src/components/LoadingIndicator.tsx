@@ -95,7 +95,7 @@ export default function LoadingIndicator({
 
   return (
     <div className={cn('fixed flex justify-center h-full w-full', classNames)}>
-      <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-8 max-w-md w-full mx-4 h-fit mt-[20vh]">
+      <div className="bg-white backdrop-blur-sm rounded-xl shadow-lg border border-gray-200 p-8 max-w-md w-full mx-4 h-fit mt-[20vh]">
         {!showCompleted ? (
           <div className="space-y-6">
             <div className="text-center">

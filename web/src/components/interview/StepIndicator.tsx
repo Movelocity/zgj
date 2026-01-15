@@ -38,9 +38,9 @@ export const StepIndicator: React.FC<StepIndicatorProps> = ({
     }
   };
 
-  const getLineColor = (status: 'completed' | 'active' | 'pending') => {
-    return status === 'completed' ? 'bg-green-500' : 'bg-gray-300';
-  };
+  // const getLineColor = (status: 'completed' | 'active' | 'pending') => {
+  //   return status === 'completed' ? 'bg-green-500' : 'bg-gray-300';
+  // };
 
   const handleStepClick = (index: number, stepKey: string) => {
     if (!canNavigateBack || !onStepClick) return;

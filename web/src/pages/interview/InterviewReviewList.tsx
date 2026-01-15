@@ -5,11 +5,11 @@
 
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FiPlus, FiEdit2, FiCheck, FiX } from 'react-icons/fi';
-import { Button, Input } from '@/components/ui';
+import { FiPlus } from 'react-icons/fi';
+import { Button } from '@/components/ui';
 import { ReviewStatusBadge } from '@/components/interview/ReviewStatusBadge';
 import { interviewAPI } from '@/api/interview';
-import { showError, showSuccess } from '@/utils/toast';
+import { showError } from '@/utils/toast';
 import type { InterviewReview } from '@/types/interview';
 
 export const InterviewReviewList: React.FC = () => {
@@ -19,13 +19,6 @@ export const InterviewReviewList: React.FC = () => {
   const [page, setPage] = useState(1);
   const [pageSize] = useState(10);
   const [total, setTotal] = useState(0);
-
-  // Inline editing state
-  const [editingId, setEditingId] = useState<number | null>(null);
-  const [editingField, setEditingField] = useState<'job_position' | 'target_company' | null>(null);
-  const [editingValue, setEditingValue] = useState('');
-  const [saving, setSaving] = useState(false);
-
   /**
    * Load reviews from API
    */
@@ -65,64 +58,6 @@ export const InterviewReviewList: React.FC = () => {
   const handleCreateNew = () => {
     navigate('/interview/reviews');
   };
-
-  /**
-   * Start inline editing
-   */
-  const startEditing = (review: InterviewReview, field: 'job_position' | 'target_company') => {
-    setEditingId(review.id);
-    setEditingField(field);
-    setEditingValue(review.metadata[field] || '');
-  };
-
-  /**
-   * Save inline edit
-   */
-  const saveEdit = async () => {
-    if (!editingId || !editingField) return;
-
-    setSaving(true);
-    try {
-      await interviewAPI.updateReviewMetadata(editingId, {
-        metadata: {
-          [editingField]: editingValue,
-        },
-      });
-
-      // Update local state
-      setReviews((prev) =>
-        prev.map((review) =>
-          review.id === editingId
-            ? {
-                ...review,
-                metadata: {
-                  ...review.metadata,
-                  [editingField]: editingValue,
-                },
-              }
-            : review
-        )
-      );
-
-      showSuccess('保存成功');
-      cancelEdit();
-    } catch (error) {
-      showError('保存失败');
-      console.error('Failed to save edit:', error);
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  /**
-   * Cancel inline editing
-   */
-  const cancelEdit = () => {
-    setEditingId(null);
-    setEditingField(null);
-    setEditingValue('');
-  };
-
   /**
    * Format timestamp
    */
@@ -160,58 +95,6 @@ export const InterviewReviewList: React.FC = () => {
     </div>
   );
 
-  /**
-   * Render editable field
-   */
-  const renderEditableField = (
-    review: InterviewReview,
-    field: 'job_position' | 'target_company',
-    placeholder: string
-  ) => {
-    const isEditing = editingId === review.id && editingField === field;
-    const value = review.metadata[field] || '';
-
-    if (isEditing) {
-      return (
-        <div className="flex items-center gap-2">
-          <Input
-            value={editingValue}
-            onChange={(e) => setEditingValue(e.target.value)}
-            placeholder={placeholder}
-            maxLength={50}
-            className="flex-1"
-            autoFocus
-          />
-          <button
-            onClick={saveEdit}
-            disabled={saving}
-            className="text-green-600 hover:text-green-700 disabled:opacity-50"
-          >
-            <FiCheck className="w-5 h-5" />
-          </button>
-          <button
-            onClick={cancelEdit}
-            disabled={saving}
-            className="text-red-600 hover:text-red-700 disabled:opacity-50"
-          >
-            <FiX className="w-5 h-5" />
-          </button>
-        </div>
-      );
-    }
-
-    return (
-      <div className="flex items-center gap-2 group">
-        <span className="text-gray-900">{value || <span className="text-gray-400">{placeholder}</span>}</span>
-        <button
-          onClick={() => startEditing(review, field)}
-          className="text-gray-400 hover:text-gray-600 opacity-0 group-hover:opacity-100 transition-opacity"
-        >
-          <FiEdit2 className="w-4 h-4" />
-        </button>
-      </div>
-    );
-  };
 
   /**
    * Render pagination
@@ -256,9 +139,9 @@ export const InterviewReviewList: React.FC = () => {
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">面试复盘</h1>
-          <p className="text-gray-600 mt-2">AI驱动的面试表现分析与反馈</p>
+          <p className="text-gray-600 mt-2">上传面试录音文件，获取AI分析结果。</p>
         </div>
-        <Button onClick={handleCreateNew}>
+        <Button onClick={handleCreateNew} variant="primary">
           <FiPlus className="mr-2" />
           新建复盘
         </Button>
@@ -306,11 +189,11 @@ export const InterviewReviewList: React.FC = () => {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <ReviewStatusBadge status={review.metadata.status} size="sm" />
                     </td>
-                    <td className="px-6 py-4 text-sm" onClick={(e) => e.stopPropagation()}>
-                      {renderEditableField(review, 'job_position', '未填写岗位')}
+                    <td className="px-6 py-4 text-sm">
+                      {review.metadata.job_position || '未填写'}
                     </td>
-                    <td className="px-6 py-4 text-sm" onClick={(e) => e.stopPropagation()}>
-                      {renderEditableField(review, 'target_company', '未填写公司')}
+                    <td className="px-6 py-4 text-sm">
+                      {review.metadata.target_company || '未填写'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
                       <Button

@@ -12,10 +12,13 @@ func InitInterviewRouter(privateGroup *gin.RouterGroup, publicGroup *gin.RouterG
 	if privateGroup != nil {
 		interviewRouter := privateGroup.Group("/api/interview")
 		{
-			interviewRouter.POST("/reviews", interview.CreateReview)               // 创建面试复盘记录
-			interviewRouter.GET("/reviews/:id", interview.GetReview)               // 获取记录详情
-			interviewRouter.GET("/reviews", interview.ListReviews)                 // 获取记录列表
-			interviewRouter.PATCH("/reviews/:id", interview.UpdateReviewMetadata)  // 更新记录元数据
+			interviewRouter.POST("/reviews", interview.CreateReview)                // 创建面试复盘记录
+			interviewRouter.GET("/reviews/:id", interview.GetReview)                // 获取记录详情
+			interviewRouter.GET("/reviews", interview.ListReviews)                  // 获取记录列表
+			interviewRouter.PATCH("/reviews/:id", interview.UpdateReviewMetadata)   // 更新记录元数据
+			interviewRouter.POST("/reviews/:id/start-asr", interview.StartASR)      // 启动ASR语音识别
+			interviewRouter.POST("/reviews/:id/retry-asr", interview.RetryASR)      // 重试ASR语音识别
+			interviewRouter.POST("/reviews/:id/sync-asr", interview.SyncASRResult)  // 从ASR表同步识别结果
 			interviewRouter.POST("/reviews/:id/analyze", interview.TriggerAnalysis) // 触发分析
 		}
 	}
