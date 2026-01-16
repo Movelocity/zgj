@@ -75,7 +75,7 @@ const Modal: React.FC<ModalProps> = ({
   zIndex = 1000,
   fullScreenOnMobile = false,
 }) => {
-  if (!open) return null;
+  const isMobile = useIsMobile();
 
   // 处理ESC键关闭
   React.useEffect(() => {
@@ -102,7 +102,8 @@ const Modal: React.FC<ModalProps> = ({
     };
   }, [open]);
 
-  const isMobile = useIsMobile();
+  // 早期返回必须在所有 hooks 之后
+  if (!open) return null;
 
   // 尺寸配置
   const sizeClasses = {

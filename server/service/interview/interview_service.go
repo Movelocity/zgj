@@ -307,14 +307,25 @@ func (s *interviewService) UpdateReviewMetadata(reviewID int64, userID string, u
 
 	// 只允许更新指定字段（安全考虑，不允许覆盖status等关键字段）
 	allowedFields := map[string]bool{
-		"job_position":   true,
-		"target_company": true,
-		"audio_filename": true,
+		"job_position":    true,
+		"target_company":  true,
+		"job_description": true,
+		"audio_filename":  true,
+		"speech":          true, // 编辑后的语音识别文本（字符串）
 	}
 
 	for key, value := range updates {
 		if allowedFields[key] {
 			metadata[key] = value
+		}
+	}
+
+	// 特殊处理：当保存speech字段时，如果当前状态是transcribing，则更新状态为pending
+	// 这表示ASR已完成，用户已确认/编辑了识别结果，可以进行下一步
+	if _, hasSpeech := updates["speech"]; hasSpeech {
+		currentStatus, _ := metadata["status"].(string)
+		if currentStatus == model.InterviewReviewStatusTranscribing {
+			metadata["status"] = model.InterviewReviewStatusPending
 		}
 	}
 
@@ -449,9 +460,9 @@ func (s *interviewService) TriggerAnalysis(reviewID int64, userID string) (*mode
 
 	// 检查状态
 	status, _ := metadata["status"].(string)
-	if status == model.InterviewReviewStatusCompleted {
-		return nil, errors.New("该记录已完成分析")
-	}
+	// if status == model.InterviewReviewStatusCompleted {
+	// 	return nil, errors.New("该记录已完成分析")
+	// }
 	if status == model.InterviewReviewStatusAnalyzing {
 		return nil, errors.New("该记录正在分析中")
 	}
@@ -460,9 +471,21 @@ func (s *interviewService) TriggerAnalysis(reviewID int64, userID string) (*mode
 	}
 
 	// 检查ASR结果是否存在
-	asrResult, ok := metadata["asr_result"].(map[string]interface{})
-	if !ok || asrResult == nil {
+	speech, ok := metadata["speech"].(string)
+	if !ok || speech == "" {
 		return nil, errors.New("请先完成语音识别")
+	}
+	company, ok := metadata["target_company"].(string)
+	if !ok || company == "" {
+		company = "未填写"
+	}
+	jobPosition, ok := metadata["job_position"].(string)
+	if !ok || jobPosition == "" {
+		jobPosition = "未填写"
+	}
+	jobDescription, ok := metadata["job_description"].(string)
+	if !ok || jobDescription == "" {
+		jobDescription = "未填写"
 	}
 
 	// 从workflows表查找名为 interview-analysis-workflow 的工作流
@@ -481,11 +504,43 @@ func (s *interviewService) TriggerAnalysis(reviewID int64, userID string) (*mode
 	}
 
 	// 调用工作流服务执行分析
-	analysisResult, err := s.executeAnalysisWorkflow(workflow.ID, userID, asrResult)
+	// analysisResult, err := s.executeAnalysisWorkflow(workflow.ID, userID, asrResult)
+	// 构建输入参数
+	inputs := map[string]interface{}{
+		"interview_text":  speech,
+		"company_name":    company,
+		"job_title":       jobPosition,
+		"job_description": jobDescription,
+	}
+
+	// 使用标准工作流服务执行
+	response, err := app.AppService.ExecuteWorkflow(workflow.ID, userID, inputs)
 	if err != nil {
 		s.updateAnalysisError(reviewID, err.Error())
-		return nil, err
+		return nil, fmt.Errorf("执行工作流失败: %w", err)
 	}
+
+	if !response.Success {
+		s.updateAnalysisError(reviewID, response.Message)
+		return nil, fmt.Errorf("工作流执行失败: %s", response.Message)
+	}
+
+	// 从outputs中提取结果
+	outputs, ok := response.Data["outputs"].(map[string]interface{})
+	if !ok {
+		s.updateAnalysisError(reviewID, "工作流输出格式错误")
+		return nil, errors.New("工作流输出格式错误")
+	}
+
+	// 获取分析结果（假设输出字段名为 result 或 answer）
+
+	// 序列化结果
+	resultJSON, err := json.Marshal(outputs)
+	if err != nil {
+		s.updateAnalysisError(reviewID, err.Error())
+		return nil, errors.New("序列化分析结果失败")
+	}
+	fmt.Println("analysisResult", string(resultJSON))
 
 	// 更新记录：保存分析结果到data字段，更新状态为completed
 	metadata["status"] = model.InterviewReviewStatusCompleted
@@ -493,7 +548,7 @@ func (s *interviewService) TriggerAnalysis(reviewID int64, userID string) (*mode
 
 	// 直接存储分析结果字符串到data字段
 	updates := map[string]interface{}{
-		"data":     model.JSON(analysisResult),
+		"data":     model.JSON(resultJSON),
 		"metadata": model.JSON(metadataJSON),
 	}
 
@@ -515,58 +570,6 @@ func (s *interviewService) getWorkflowByName(name string) (*model.Workflow, erro
 		return nil, errors.New("查询工作流失败")
 	}
 	return &workflow, nil
-}
-
-// executeAnalysisWorkflow 使用标准工作流服务执行分析
-func (s *interviewService) executeAnalysisWorkflow(workflowID, userID string, asrResult map[string]interface{}) ([]byte, error) {
-	// 从ASR结果中提取utterances并组合为带行号的文本
-	interviewText, err := s.extractInterviewText(asrResult)
-	if err != nil {
-		return nil, fmt.Errorf("提取面试文本失败: %w", err)
-	}
-
-	// 构建输入参数
-	inputs := map[string]interface{}{
-		"interview_text": interviewText,
-		"is_test":        "true",
-	}
-
-	// 使用标准工作流服务执行
-	response, err := app.AppService.ExecuteWorkflow(workflowID, userID, inputs)
-	if err != nil {
-		return nil, fmt.Errorf("执行工作流失败: %w", err)
-	}
-
-	if !response.Success {
-		return nil, fmt.Errorf("工作流执行失败: %s", response.Message)
-	}
-
-	// 从outputs中提取结果
-	outputs, ok := response.Data["outputs"].(map[string]interface{})
-	if !ok {
-		return nil, errors.New("工作流输出格式错误")
-	}
-
-	// 获取分析结果（假设输出字段名为 result 或 answer）
-	var result interface{}
-	if r, ok := outputs["result"]; ok {
-		result = r
-	} else if r, ok := outputs["answer"]; ok {
-		result = r
-	} else if r, ok := outputs["text"]; ok {
-		result = r
-	} else {
-		// 如果没有特定字段，直接使用整个outputs
-		result = outputs
-	}
-
-	// 序列化结果
-	resultJSON, err := json.Marshal(result)
-	if err != nil {
-		return nil, errors.New("序列化分析结果失败")
-	}
-
-	return resultJSON, nil
 }
 
 // extractInterviewText 从ASR结果中提取utterances并组合为带行号的文本

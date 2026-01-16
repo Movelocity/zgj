@@ -212,7 +212,7 @@ func RetryASR(c *gin.Context) {
 	utils.OkWithData(review, c)
 }
 
-// SyncASRResult 从ASR表同步识别结果
+// SyncASRResult 从ASR表同步识别结果 Deprecated
 // 直接从asr_tasks表获取数据并更新到interview_review的metadata中
 func SyncASRResult(c *gin.Context) {
 	// 获取用户ID

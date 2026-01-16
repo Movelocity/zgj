@@ -59,14 +59,14 @@ export const StepIndicator: React.FC<StepIndicatorProps> = ({
           const isClickable = canNavigateBack && (completedSteps.includes(step.key) || index + 1 === currentStep);
           
           return (
-            <div key={step.key} className="flex items-center flex-1">
+            <div key={step.key} className="flex flex-1">
               {/* Step Circle */}
               <div className="flex flex-col items-center">
                 <button
                   onClick={() => handleStepClick(index, step.key)}
                   disabled={!isClickable}
                   className={`
-                    w-10 h-10 rounded-full flex items-center justify-center font-semibold
+                    w-8 h-8 rounded-full flex items-center justify-center font-semibold
                     transition-all duration-200
                     ${getStepColor(status)}
                     ${isClickable ? 'cursor-pointer hover:scale-110' : 'cursor-not-allowed'}
@@ -100,7 +100,7 @@ export const StepIndicator: React.FC<StepIndicatorProps> = ({
 
               {/* Connecting Line (not for last step) */}
               {index < steps.length - 1 && (
-                <div className="flex-1 mx-2 h-1 rounded transition-all duration-300"
+                <div className="flex-1 mt-4 mx-1 h-1 rounded transition-all duration-300"
                   style={{
                     background: status === 'completed' ? '#10b981' : '#d1d5db'
                   }}

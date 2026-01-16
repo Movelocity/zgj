@@ -17,20 +17,22 @@ export type ReviewStatus = typeof REVIEW_STATUS[keyof typeof REVIEW_STATUS];
 
 /**
  * Interview review metadata stored in JSONB field
+ * Note: ASR result is stored in asr_tasks table, not in metadata
  */
 export interface InterviewReviewMetadata {
   tos_file_key?: string;       // TOS文件key，用于生成临时URL
-  asr_task_id?: string;        // ASR任务ID
+  asr_task_id?: string;        // ASR任务ID，用于从asr_tasks表获取结果
   main_audio_id?: string;      // 旧字段，保留兼容
   workflow_id?: string;
   status: ReviewStatus;
-  asr_result?: any;
   error_message?: string;
   current_step?: number;
   steps_completed?: string[];
-  job_position?: string;
-  target_company?: string;
+  job_position?: string;       // 职位名称
+  target_company?: string;     // 公司名称
+  job_description?: string;    // 职位描述/JD
   audio_filename?: string;
+  speech?: string;             // 编辑后的语音识别文本（ASR完成后用户确认的文本）
   [key: string]: any; // Allow additional fields
 }
 
@@ -41,7 +43,7 @@ export interface InterviewReview {
   id: number;
   user_id: number;
   main_audio_id: string;
-  data: string;
+  data: Record<string, any>;
   metadata: InterviewReviewMetadata;
   created_at: string;
   updated_at: string;

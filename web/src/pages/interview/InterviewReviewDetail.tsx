@@ -2,18 +2,22 @@
  * Interview Review Detail Page
  * Handles both creation workflow and view/retry modes
  * 
- * Creation Flow (refactored):
+ * Creation Flow (4 steps):
  * 1. Upload audio to TOS → Create review record immediately (status: pending)
- * 2. Start ASR → Poll until complete → Update metadata with asr_result
- * 3. Trigger AI analysis → Poll until complete → View results
+ * 2. Start ASR → Poll until complete → User edits and saves as speech
+ * 3. Fill info → Enter job position, company name, job description (optional)
+ * 4. Trigger AI analysis → Poll until complete → View results
+ * 
+ * Note: ASR result is fetched from asr_tasks table, not stored in metadata.
+ * The speech field in metadata stores the edited/confirmed transcript.
  * 
  * State Recovery:
  * - Page refresh with ?id=xxx will resume from the appropriate step
- * - pending (no asr_result): Show "Start ASR" button
- * - pending (with asr_result): Show "Start Analysis" button  
- * - transcribing: Resume ASR polling
- * - analyzing: Show progress
- * - completed: Show results
+ * - pending (no speech): Show "Start ASR" button (step 2)
+ * - pending (with speech): Show info form (step 3)
+ * - transcribing: Resume ASR polling (step 2)
+ * - analyzing: Show progress (step 4)
+ * - completed: Show results (step 4)
  * - failed: Show retry options
  */
 
@@ -35,6 +39,7 @@ import type { ASRTask } from '@/api/asr';
 const WORKFLOW_STEPS: WorkflowStep[] = [
   { key: 'upload', label: '上传音频' },
   { key: 'asr', label: '音频识别' },
+  { key: 'info', label: '信息填写' },
   { key: 'analyze', label: 'AI分析' },
 ];
 
@@ -62,6 +67,9 @@ export const InterviewReviewDetail: React.FC = () => {
   
   const [asrProcessing, setAsrProcessing] = useState(false);
   const [asrTask, setAsrTask] = useState<ASRTask | null>(null);
+  const [localAsrResult, setLocalAsrResult] = useState<any>(null); // 前端直接获取的ASR结果
+  const [editedSpeechText, setEditedSpeechText] = useState<string>(''); // 编辑中的语音文本
+  const [savingSpeech, setSavingSpeech] = useState(false);
   
   const [analyzing, setAnalyzing] = useState(false);
   const [retrying, setRetrying] = useState(false);
@@ -71,12 +79,53 @@ export const InterviewReviewDetail: React.FC = () => {
   const [configForm, setConfigForm] = useState({
     job_position: '',
     target_company: '',
+    job_description: '',
   });
   const [savingConfig, setSavingConfig] = useState(false);
 
   /**
+   * Format utterances with line numbers and blank lines between them
+   */
+  const formatUtterancesWithNumbers = (utterances: any[]) => {
+    return utterances
+      .map((u: any, idx: number) => `${idx + 1}. ${u.text}`)
+      .join('\n\n');
+  };
+
+  /**
+   * Get original ASR text from result (utterances joined or saved speech)
+   * Note: asr_result is now fetched from asr_tasks table, not stored in metadata
+   */
+  const getOriginalSpeechText = useCallback(() => {
+    // 优先使用已保存的 speech（字符串），否则从 ASR 结果提取
+    if (review?.metadata.speech && typeof review.metadata.speech === 'string') {
+      return review.metadata.speech;
+    }
+    // ASR结果只存在于localAsrResult中（从asr_tasks表获取）
+    if (localAsrResult?.result?.utterances) {
+      return formatUtterancesWithNumbers(localAsrResult.result.utterances);
+    }
+    if (localAsrResult?.result?.text) {
+      return localAsrResult.result.text;
+    }
+    return '';
+  }, [localAsrResult, review?.metadata.speech]);
+
+  /**
+   * Initialize edited speech text when ASR result becomes available
+   * Note: ASR result is now only in localAsrResult (fetched from asr_tasks table)
+   */
+  useEffect(() => {
+    // 有本地ASR结果或已保存的speech时，初始化编辑文本
+    if ((localAsrResult || review?.metadata.speech) && !editedSpeechText) {
+      setEditedSpeechText(getOriginalSpeechText());
+    }
+  }, [localAsrResult, review?.metadata.speech, editedSpeechText, getOriginalSpeechText]);
+
+  /**
    * Load review from API
    * Note: Does NOT auto-resume polling to avoid high-frequency errors
+   * Note: ASR result is no longer stored in metadata, must fetch from asr_tasks table
    */
   const loadReview = useCallback(async (id: number) => {
     setLoading(true);
@@ -85,25 +134,26 @@ export const InterviewReviewDetail: React.FC = () => {
       setReview(data);
       
       // Determine current step based on metadata
+      // Note: use speech field instead of asr_result to determine if ASR step is complete
       const status = data.metadata.status;
-      const hasAsrResult = !!data.metadata.asr_result;
+      const hasSpeech = !!data.metadata.speech;
       
-      if (status === 'pending' && !hasAsrResult) {
+      if (status === 'pending' && !hasSpeech) {
         setCurrentStep(2); // Ready for ASR
-      } else if (status === 'pending' && hasAsrResult) {
-        setCurrentStep(3); // Ready for analysis
+      } else if (status === 'pending' && hasSpeech) {
+        setCurrentStep(3); // Ready for info filling
       } else if (status === 'transcribing') {
         setCurrentStep(2);
         // Don't auto-resume polling - user can manually click to poll
       } else if (status === 'analyzing') {
-        setCurrentStep(3);
+        setCurrentStep(4); // Analysis step
         // Don't auto-resume polling - user can manually refresh
       } else if (status === 'completed') {
-        setCurrentStep(3);
+        setCurrentStep(4); // Analysis step
       } else if (status === 'failed' || status === 'timeout') {
-        // Determine which step failed
-        if (hasAsrResult) {
-          setCurrentStep(3);
+        // Determine which step failed: if speech exists, analysis failed; otherwise ASR failed
+        if (hasSpeech) {
+          setCurrentStep(4); // Analysis step
         } else {
           setCurrentStep(2);
         }
@@ -115,6 +165,20 @@ export const InterviewReviewDetail: React.FC = () => {
       }
       if (data.metadata.tos_file_key) {
         setAudioKey(data.metadata.tos_file_key);
+      }
+      
+      // If on ASR step and ASR task completed, fetch the result from asr_tasks table
+      if (data.metadata.asr_task_id && !hasSpeech && status !== 'transcribing') {
+        try {
+          const taskResponse = await asrAPI.getTask(data.metadata.asr_task_id);
+          if (taskResponse.code === 0 && taskResponse.data.status === 'completed' && taskResponse.data.result) {
+            const parsedResult = JSON.parse(taskResponse.data.result);
+            setLocalAsrResult(parsedResult);
+            setAsrTask(taskResponse.data);
+          }
+        } catch (e) {
+          console.error('Failed to fetch ASR task result:', e);
+        }
       }
     } catch (error) {
       showError('加载面试复盘失败');
@@ -137,6 +201,7 @@ export const InterviewReviewDetail: React.FC = () => {
       setConfigForm({
         job_position: review.metadata.job_position || '',
         target_company: review.metadata.target_company || '',
+        job_description: review.metadata.job_description || '',
       });
     }
   }, [review?.id]);
@@ -227,20 +292,22 @@ export const InterviewReviewDetail: React.FC = () => {
         );
 
         if (completedTask.status === 'completed') {
-          // Sync ASR result from backend (backend directly fetches from asr_tasks table)
-          const syncedReview = await interviewAPI.syncASRResult(review.id);
-          setReview(syncedReview);
-          
-          if (syncedReview.metadata.asr_result) {
-            showSuccess('语音识别完成');
-            setCurrentStep(3);
+          // Parse ASR result directly from task (前端直接解析，不走后端同步)
+          if (completedTask.result) {
+            try {
+              const parsedResult = JSON.parse(completedTask.result);
+              setLocalAsrResult(parsedResult);
+              setAsrTask(completedTask);
+              showSuccess('语音识别完成，请确认识别结果');
+              // Stay on step 2 to show the result, don't auto-advance
+            } catch (e) {
+              console.error('Failed to parse ASR result:', e);
+              showError('解析识别结果失败');
+            }
           } else {
             showError('无法获取识别结果');
           }
         } else if (completedTask.status === 'failed') {
-          // Sync failed status from backend
-          const syncedReview = await interviewAPI.syncASRResult(review.id);
-          setReview(syncedReview);
           showError(completedTask.error_message || '语音识别失败');
         }
       }
@@ -264,6 +331,7 @@ export const InterviewReviewDetail: React.FC = () => {
 
     setRetrying(true);
     setAsrProcessing(true);
+    setLocalAsrResult(null); // 清除之前的结果
     try {
       // Call backend retry endpoint (generates new URL and new task)
       const updatedReview = await interviewAPI.retryASR(review.id);
@@ -286,20 +354,21 @@ export const InterviewReviewDetail: React.FC = () => {
         );
 
         if (completedTask.status === 'completed') {
-          // Sync ASR result from backend
-          const syncedReview = await interviewAPI.syncASRResult(review.id);
-          setReview(syncedReview);
-          
-          if (syncedReview.metadata.asr_result) {
-            showSuccess('语音识别完成');
-            setCurrentStep(3);
+          // Parse ASR result directly from task
+          if (completedTask.result) {
+            try {
+              const parsedResult = JSON.parse(completedTask.result);
+              setLocalAsrResult(parsedResult);
+              setAsrTask(completedTask);
+              showSuccess('语音识别完成，请确认识别结果');
+            } catch (e) {
+              console.error('Failed to parse ASR result:', e);
+              showError('解析识别结果失败');
+            }
           } else {
             showError('无法获取识别结果');
           }
         } else if (completedTask.status === 'failed') {
-          // Sync failed status from backend
-          const syncedReview = await interviewAPI.syncASRResult(review.id);
-          setReview(syncedReview);
           showError(completedTask.error_message || '语音识别失败');
         }
       }
@@ -315,9 +384,9 @@ export const InterviewReviewDetail: React.FC = () => {
   };
 
   /**
-   * Start analysis with job info (saves info first if provided)
+   * Start analysis (job info should already be saved in step 3)
    */
-  const handleStartAnalysisWithInfo = async () => {
+  const handleStartAnalysis = async () => {
     if (!review) {
       showError('请先完成语音识别');
       return;
@@ -325,18 +394,7 @@ export const InterviewReviewDetail: React.FC = () => {
 
     setAnalyzing(true);
     try {
-      // Save job info first if any field is filled
-      if (configForm.job_position || configForm.target_company) {
-        const updatedReview = await interviewAPI.updateReviewMetadata(review.id, {
-          metadata: {
-            job_position: configForm.job_position,
-            target_company: configForm.target_company,
-          },
-        });
-        setReview(updatedReview);
-      }
-
-      // Then trigger analysis
+      // Trigger analysis
       await interviewAPI.triggerAnalysis(review.id);
       showSuccess('分析任务已提交，请稍候...');
       
@@ -414,13 +472,14 @@ export const InterviewReviewDetail: React.FC = () => {
       setConfigForm({
         job_position: review.metadata.job_position || '',
         target_company: review.metadata.target_company || '',
+        job_description: review.metadata.job_description || '',
       });
     }
     setConfigModalOpen(true);
   };
 
   /**
-   * Save configuration (job position and target company)
+   * Save configuration (job position, target company, and job description)
    */
   const saveConfig = async () => {
     if (!review) return;
@@ -431,6 +490,7 @@ export const InterviewReviewDetail: React.FC = () => {
         metadata: {
           job_position: configForm.job_position,
           target_company: configForm.target_company,
+          job_description: configForm.job_description,
         },
       });
       setReview(updatedReview);
@@ -444,7 +504,119 @@ export const InterviewReviewDetail: React.FC = () => {
   };
 
   /**
+   * Save info step and proceed to analysis step
+   */
+  const saveInfoAndProceed = async () => {
+    if (!review) return;
+
+    setSavingConfig(true);
+    try {
+      const updatedReview = await interviewAPI.updateReviewMetadata(review.id, {
+        metadata: {
+          job_position: configForm.job_position,
+          target_company: configForm.target_company,
+          job_description: configForm.job_description,
+        },
+      });
+      setReview(updatedReview);
+      showSuccess('信息已保存');
+      setCurrentStep(4);
+    } catch (error) {
+      showError(error instanceof Error ? error.message : '保存失败');
+    } finally {
+      setSavingConfig(false);
+    }
+  };
+
+  /**
+   * Save speech text
+   */
+  const saveSpeech = async (speech: string) => {
+    if (!review) return;
+
+    try {
+      const updatedReview = await interviewAPI.updateReviewMetadata(review.id, {
+        metadata: {
+          speech: speech,
+        },
+      });
+      setReview(updatedReview);
+      // showSuccess('语音文本已保存');
+    } catch (error) {
+      showError(error instanceof Error ? error.message : '保存失败');
+      throw error;
+    }
+  };
+
+  /**
+   * Save speech text and proceed to next step
+   */
+  const saveSpeechAndProceed = async () => {
+    if (!review) return;
+    
+    setSavingSpeech(true);
+    try {
+      // 直接保存为字符串
+      const updatedReview = await interviewAPI.updateReviewMetadata(review.id, {
+        metadata: {
+          speech: editedSpeechText,
+        },
+      });
+      setReview(updatedReview);
+      // showSuccess('语音文本已保存');
+      setCurrentStep(3);
+    } catch (error) {
+      showError(error instanceof Error ? error.message : '保存失败');
+    } finally {
+      setSavingSpeech(false);
+    }
+  };
+
+  /**
+   * Reset speech text to original ASR result
+   * Fetches ASR result from asr_tasks table using asr_task_id
+   */
+  const resetSpeechText = async () => {
+    // 优先使用已有的 localAsrResult
+    if (localAsrResult?.result?.utterances) {
+      setEditedSpeechText(formatUtterancesWithNumbers(localAsrResult.result.utterances));
+      return;
+    }
+    if (localAsrResult?.result?.text) {
+      setEditedSpeechText(localAsrResult.result.text);
+      return;
+    }
+
+    // 如果没有 localAsrResult，从 asr_tasks 表获取
+    const asrTaskId = review?.metadata.asr_task_id;
+    if (!asrTaskId) {
+      showError('无法获取ASR任务ID');
+      return;
+    }
+
+    try {
+      const response = await asrAPI.getTask(asrTaskId);
+      if (response.code === 0 && response.data.status === 'completed' && response.data.result) {
+        const parsedResult = JSON.parse(response.data.result);
+        setLocalAsrResult(parsedResult);
+        // 重置为原始 ASR 结果（带序号和空行）
+        if (parsedResult?.result?.utterances) {
+          setEditedSpeechText(formatUtterancesWithNumbers(parsedResult.result.utterances));
+        } else if (parsedResult?.result?.text) {
+          setEditedSpeechText(parsedResult.result.text);
+        }
+      } else {
+        showError('获取ASR结果失败');
+      }
+    } catch (e) {
+      console.error('Failed to fetch ASR task result:', e);
+      showError('获取ASR结果失败');
+    }
+  };
+
+  /**
    * Compute which steps are completed
+   * Note: ASR step completion is determined by speech field, not asr_result
    */
   const getCompletedSteps = (): string[] => {
     const completed: string[] = [];
@@ -454,9 +626,16 @@ export const InterviewReviewDetail: React.FC = () => {
       completed.push('upload');
     }
     
-    // ASR is complete if we have asr_result
-    if (review?.metadata.asr_result) {
+    // ASR is complete if we have speech saved (edited ASR text)
+    if (review?.metadata.speech) {
       completed.push('asr');
+    }
+    
+    // Info step is complete if we have job info filled or if analysis has started/completed
+    const hasJobInfo = review?.metadata.job_position || review?.metadata.target_company || review?.metadata.job_description;
+    const analysisStarted = review?.metadata.status === 'analyzing' || review?.metadata.status === 'completed';
+    if (hasJobInfo || analysisStarted) {
+      completed.push('info');
     }
     
     // Analysis is complete if status is completed
@@ -565,20 +744,21 @@ export const InterviewReviewDetail: React.FC = () => {
       );
 
       if (completedTask.status === 'completed') {
-        // Sync ASR result from backend
-        const syncedReview = await interviewAPI.syncASRResult(review.id);
-        setReview(syncedReview);
-        
-        if (syncedReview.metadata.asr_result) {
-          showSuccess('语音识别完成');
-          setCurrentStep(3);
+        // Parse ASR result directly from task
+        if (completedTask.result) {
+          try {
+            const parsedResult = JSON.parse(completedTask.result);
+            setLocalAsrResult(parsedResult);
+            setAsrTask(completedTask);
+            showSuccess('语音识别完成，请确认识别结果');
+          } catch (e) {
+            console.error('Failed to parse ASR result:', e);
+            showError('解析识别结果失败');
+          }
         } else {
           showError('无法获取识别结果');
         }
       } else if (completedTask.status === 'failed') {
-        // Sync failed status from backend
-        const syncedReview = await interviewAPI.syncASRResult(review.id);
-        setReview(syncedReview);
         showError(completedTask.error_message || '语音识别失败');
       }
     } catch (error) {
@@ -593,35 +773,36 @@ export const InterviewReviewDetail: React.FC = () => {
 
   /**
    * Render Step 2: ASR Processing
+   * Note: ASR result is now only in localAsrResult (fetched from asr_tasks table, not stored in metadata)
    */
   const renderAsrStep = () => {
-    const hasAsrResult = !!review?.metadata.asr_result;
-    const isFailed = review?.metadata.status === 'failed' && !hasAsrResult;
+    // ASR结果只存在于localAsrResult中（从asr_tasks表获取），或用户已保存speech
+    const hasAsrResult = !!localAsrResult || !!review?.metadata.speech;
+    const isFailed = review?.metadata.status === 'failed' && !localAsrResult && !review?.metadata.speech;
     const isTimeout = review?.metadata.status === 'timeout';
-    const isTranscribing = review?.metadata.status === 'transcribing';
+    const isTranscribing = review?.metadata.status === 'transcribing' && !localAsrResult;
 
     return (
-      <div className="space-y-6">
+      <div className="space-y-4">
         <div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2">语音识别</h2>
-          <p className="text-gray-600">
-            将音频转换为文字，用于后续分析
-          </p>
-        </div>
-
-        {hasAsrResult ? (
-          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-            <p className="text-sm font-medium text-green-900 mb-2">识别完成</p>
-            <p className="text-sm text-green-700">
-              识别文本长度：{review?.metadata.asr_result?.result?.text?.length || 0} 字
-            </p>
-            {review?.metadata.asr_result?.segments && (
-              <p className="text-xs text-green-600">
-                分段数量：{review.metadata.asr_result.segments.length}
-              </p>
+          <div className="flex justify-between">
+            <span className="text-gray-600 ">将音频转换为文字，确认识别结果后进入下一步</span>
+            {hasAsrResult && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={resetSpeechText}
+              >
+                <FiRefreshCw className="mr-1 w-4 h-4" />
+                重置
+              </Button>
             )}
           </div>
-        ) : asrProcessing ? (
+        </div>
+
+        {/* ASR Processing State */}
+        {asrProcessing ? (
           <div className="text-center py-8">
             <FiRefreshCw className="w-12 h-12 mx-auto animate-spin text-blue-500 mb-4" />
             <p className="text-gray-900 font-medium mb-2">正在识别音频内容...</p>
@@ -631,6 +812,24 @@ export const InterviewReviewDetail: React.FC = () => {
                 <p className="mt-1">状态：{asrTask.status}</p>
               </div>
             )}
+          </div>
+        ) : hasAsrResult ? (
+          // 有识别结果 - 显示可编辑的文本框
+          <div className="space-y-4">         
+            {/* 可编辑的文本框 */}
+            <div className="rounded-lg border border-gray-200 overflow-hidden">
+              <textarea
+                value={editedSpeechText}
+                onChange={(e) => setEditedSpeechText(e.target.value)}
+                placeholder="识别结果将显示在这里..."
+                rows={15}
+                className="w-full px-4 py-3 text-sm text-gray-800 leading-relaxed resize-none focus:outline-none"
+                style={{ minHeight: '300px', maxHeight: '500px' }}
+              />
+              <div className="px-4 py-2 bg-gray-50 border-t border-gray-200 text-xs text-gray-500">
+                {editedSpeechText.length} 字 · {editedSpeechText.split('\n').filter(l => l.trim()).length} 行
+              </div>
+            </div>
           </div>
         ) : isTranscribing ? (
           // Transcribing but not actively polling - show resume button
@@ -675,7 +874,7 @@ export const InterviewReviewDetail: React.FC = () => {
         ) : (
           <div className="text-center py-8">
             <p className="text-gray-600 mb-4">点击下方按钮开始语音识别</p>
-            <Button onClick={startAsrProcessing} disabled={asrProcessing || !review}>
+            <Button onClick={startAsrProcessing} disabled={asrProcessing || !review} variant="primary">
               <FiRefreshCw className="mr-2" />
               开始识别
             </Button>
@@ -686,18 +885,27 @@ export const InterviewReviewDetail: React.FC = () => {
           <Button
             variant="outline"
             onClick={() => setCurrentStep(1)}
-            disabled={asrProcessing}
+            disabled={asrProcessing || savingSpeech}
           >
             <FiArrowLeft className="mr-2" />
             上一步
           </Button>
           <Button
-            onClick={() => setCurrentStep(3)}
-            disabled={!hasAsrResult || asrProcessing}
+            onClick={saveSpeechAndProceed}
+            disabled={!hasAsrResult || asrProcessing || savingSpeech || !editedSpeechText.trim()}
             variant="primary"
           >
-            下一步
-            <FiArrowRight className="ml-2" />
+            {savingSpeech ? (
+              <>
+                <FiRefreshCw className="mr-2 animate-spin" />
+                保存中...
+              </>
+            ) : (
+              <>
+                下一步
+                <FiArrowRight className="ml-2" />
+              </>
+            )}
           </Button>
         </div>
       </div>
@@ -705,26 +913,120 @@ export const InterviewReviewDetail: React.FC = () => {
   };
 
   /**
-   * Render Step 3: Analysis
+   * Render Step 3: Info Filling
+   */
+  const renderInfoStep = () => {
+    // const asrResult = localAsrResult || review?.metadata.asr_result;
+    // const hasAsrResult = !!asrResult;
+
+    return (
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">填写面试信息</h2>
+          <p className="text-gray-600">
+            填写面试相关信息，AI将根据这些信息提供更精准的分析建议
+          </p>
+        </div>
+
+        <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              职位名称
+            </label>
+            <Input
+              value={configForm.job_position}
+              onChange={(e) => setConfigForm(prev => ({ ...prev, job_position: e.target.value }))}
+              placeholder="例如：前端工程师、产品经理"
+              maxLength={100}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              公司名称
+            </label>
+            <Input
+              value={configForm.target_company}
+              onChange={(e) => setConfigForm(prev => ({ ...prev, target_company: e.target.value }))}
+              placeholder="例如：字节跳动、阿里巴巴（如敏感可使用指代性称呼）"
+              maxLength={100}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              职位描述
+            </label>
+            <textarea
+              value={configForm.job_description}
+              onChange={(e) => setConfigForm(prev => ({ ...prev, job_description: e.target.value }))}
+              placeholder="请粘贴职位JD或简要描述岗位要求..."
+              maxLength={2000}
+              rows={5}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              {configForm.job_description.length}/2000 字
+            </p>
+          </div>
+          <p className="text-xs text-gray-500">
+            如果公司信息敏感，可使用指代性称呼（如"某互联网大厂"、"某金融公司"）
+          </p>
+        </div>
+
+
+        <div className="flex justify-between">
+          <Button
+            variant="outline"
+            onClick={() => setCurrentStep(2)}
+          >
+            <FiArrowLeft className="mr-2" />
+            上一步
+          </Button>
+          <Button
+            onClick={saveInfoAndProceed}
+            disabled={savingConfig}
+            variant="primary"
+          >
+            {savingConfig ? (
+              <>
+                <FiRefreshCw className="mr-2 animate-spin" />
+                保存中...
+              </>
+            ) : (
+              <>
+                下一步
+                <FiArrowRight className="ml-2" />
+              </>
+            )}
+          </Button>
+        </div>
+      </div>
+    );
+  };
+
+  /**
+   * Render Step 4: Analysis
+   * Note: For step 4, only need to check if speech field exists (not asr_result)
    */
   const renderAnalyzeStep = () => {
     const isCompleted = review?.metadata.status === 'completed';
     const isAnalyzing = review?.metadata.status === 'analyzing';
-    const isFailed = review?.metadata.status === 'failed' && !!review?.metadata.asr_result;
-    const hasAsrResult = !!review?.metadata.asr_result;
+    // 第四步失败判断：状态为failed且有speech（说明是分析阶段失败）
+    const isFailed = review?.metadata.status === 'failed' && !!review?.metadata.speech;
+    // 第四步只需要检查是否有speech字段
+    const hasSpeech = !!review?.metadata.speech;
 
     return (
       <div className="space-y-6">
         <div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2">AI 面试分析</h2>
           <p className="text-gray-600">
-            基于语音识别结果，生成面试表现分析报告
+            基于语音识别结果和填写的面试信息，生成面试表现分析报告
           </p>
         </div>
 
         {isCompleted ? (
           <>
-            <AnalysisMarkdownRenderer content={review?.data || ''} />
+            <AnalysisMarkdownRenderer content={review?.data || {}} />
             <div className="flex justify-end">
               <Button
                 variant="outline"
@@ -771,43 +1073,38 @@ export const InterviewReviewDetail: React.FC = () => {
             </Button>
           </div>
         ) : (
-          <div className="py-6">
-            {/* Quick info form before analysis */}
-            <div className="bg-gray-50 border border-gray-200 rounded-lg p-5 mb-6">
-              <h3 className="text-base font-medium text-gray-900 mb-3">
-                填写面试信息（可选）
-              </h3>
-              <p className="text-sm text-gray-500 mb-4">
-                填写面试相关信息，AI将根据这些信息提供更精准的分析建议
-              </p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    目标岗位
-                  </label>
-                  <Input
-                    value={configForm.job_position}
-                    onChange={(e) => setConfigForm(prev => ({ ...prev, job_position: e.target.value }))}
-                    placeholder="例如：前端工程师、产品经理"
-                    maxLength={100}
-                  />
+          <div className="">
+            {/* Show job info summary */}
+            {(review?.metadata.job_position || review?.metadata.target_company || review?.metadata.job_description) && (
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-5 mb-6">
+                <h3 className="text-base font-medium text-gray-900 mb-3">
+                  面试信息
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                  {review?.metadata.job_position && (
+                    <div>
+                      <span className="text-gray-500">职位名称：</span>
+                      <span className="text-gray-900">{review.metadata.job_position}</span>
+                    </div>
+                  )}
+                  {review?.metadata.target_company && (
+                    <div>
+                      <span className="text-gray-500">公司名称：</span>
+                      <span className="text-gray-900">{review.metadata.target_company}</span>
+                    </div>
+                  )}
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    目标公司
-                  </label>
-                  <Input
-                    value={configForm.target_company}
-                    onChange={(e) => setConfigForm(prev => ({ ...prev, target_company: e.target.value }))}
-                    placeholder="例如：字节跳动、阿里巴巴"
-                    maxLength={100}
-                  />
-                </div>
+                {review?.metadata.job_description && (
+                  <div className="mt-3 text-sm">
+                    <span className="text-gray-500">职位描述：</span>
+                    <p className="text-gray-900 mt-1 whitespace-pre-wrap">{review.metadata.job_description}</p>
+                  </div>
+                )}
               </div>
-            </div>
+            )}
             
             <div className="text-center">
-              <Button onClick={handleStartAnalysisWithInfo} disabled={analyzing || !hasAsrResult}>
+              <Button onClick={handleStartAnalysis} disabled={analyzing || !hasSpeech} variant="primary">
                 {analyzing ? (
                   <>
                     <FiRefreshCw className="mr-2 animate-spin" />
@@ -824,18 +1121,21 @@ export const InterviewReviewDetail: React.FC = () => {
           </div>
         )}
 
-        {/* ASR Result Viewer */}
-        {review?.metadata.asr_result && !isCompleted && (
-          <ASRResultViewer asrResult={review.metadata.asr_result} defaultCollapsed={false} />
+        {/* ASR Result Viewer - only show if we have localAsrResult (from asr_tasks table) */}
+        {localAsrResult && !isCompleted && (
+          <ASRResultViewer
+            asrResult={localAsrResult}
+            defaultCollapsed={false}
+            initialSpeech={review?.metadata.speech}
+            onSave={saveSpeech}
+            editable={true}
+          />
         )}
-        {/* {review?.metadata.asr_result && isCompleted && (
-          <ASRResultViewer asrResult={review.metadata.asr_result} defaultCollapsed={true} />
-        )} */}
 
         <div className="flex justify-between">
           <Button
             variant="outline"
-            onClick={() => setCurrentStep(2)}
+            onClick={() => setCurrentStep(3)}
             disabled={isAnalyzing || analyzing}
           >
             <FiArrowLeft className="mr-2" />
@@ -866,7 +1166,7 @@ export const InterviewReviewDetail: React.FC = () => {
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-4xl mx-auto mt-12">
         {/* Header with back button */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-3">
           <div>
             <div className="flex items-center gap-3">
               <h1 className="text-3xl font-bold text-gray-900">
@@ -895,16 +1195,15 @@ export const InterviewReviewDetail: React.FC = () => {
             )}
           </div>
           <div className="flex items-center gap-2">
-            {review && (
-              <Button variant="outline" onClick={openConfigModal}>
-                <FiSettings className="mr-2" />
-                配置
-              </Button>
-            )}
             <Button variant="outline" onClick={() => navigate('/interview')}>
               <FiArrowLeft className="mr-2" />
               返回列表
             </Button>
+            {review && (
+              <Button variant="outline" onClick={openConfigModal}>
+                <FiSettings />
+              </Button>
+            )}
           </div>
         </div>
 
@@ -918,10 +1217,11 @@ export const InterviewReviewDetail: React.FC = () => {
         />
 
         {/* Step Content */}
-        <div className="bg-white rounded-lg shadow-lg p-8">
+        <div className="bg-white rounded-lg shadow-lg py-6 px-8">
           {currentStep === 1 && renderUploadStep()}
           {currentStep === 2 && renderAsrStep()}
-          {currentStep === 3 && renderAnalyzeStep()}
+          {currentStep === 3 && renderInfoStep()}
+          {currentStep === 4 && renderAnalyzeStep()}
         </div>
       </div>
 
@@ -930,7 +1230,7 @@ export const InterviewReviewDetail: React.FC = () => {
         open={configModalOpen}
         onClose={() => setConfigModalOpen(false)}
         title="面试信息配置"
-        size="sm"
+        size="md"
         onConfirm={saveConfig}
         confirmText="保存"
         cancelText="取消"
@@ -939,7 +1239,7 @@ export const InterviewReviewDetail: React.FC = () => {
         <div className="p-4 space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              目标岗位
+              职位名称
             </label>
             <Input
               value={configForm.job_position}
@@ -950,17 +1250,33 @@ export const InterviewReviewDetail: React.FC = () => {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              目标公司
+              公司名称
             </label>
             <Input
               value={configForm.target_company}
               onChange={(e) => setConfigForm(prev => ({ ...prev, target_company: e.target.value }))}
-              placeholder="例如：字节跳动、阿里巴巴"
+              placeholder="例如：字节跳动、阿里巴巴（如敏感可使用指代性称呼）"
               maxLength={100}
             />
           </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              职位描述
+            </label>
+            <textarea
+              value={configForm.job_description}
+              onChange={(e) => setConfigForm(prev => ({ ...prev, job_description: e.target.value }))}
+              placeholder="请粘贴职位JD或简要描述岗位要求..."
+              maxLength={2000}
+              rows={5}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              {configForm.job_description.length}/2000 字
+            </p>
+          </div>
           <p className="text-xs text-gray-500">
-            填写面试相关信息，AI将根据这些信息提供更精准的分析建议
+            填写面试相关信息，AI将根据这些信息提供更精准的分析建议。如果公司信息敏感，可使用指代性称呼。
           </p>
         </div>
       </Modal>
