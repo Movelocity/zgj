@@ -961,7 +961,7 @@ export const InterviewReviewDetail: React.FC = () => {
               placeholder="请粘贴职位JD或简要描述岗位要求..."
               maxLength={2000}
               rows={5}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:border-blue-500 resize-none"
             />
             <p className="text-xs text-gray-500 mt-1">
               {configForm.job_description.length}/2000 字

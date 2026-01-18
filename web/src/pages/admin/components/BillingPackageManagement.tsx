@@ -13,6 +13,7 @@ import type {
   PackageType,
 } from '@/types/billing';
 import { PACKAGE_TYPE_NAME_MAP } from '@/types/billing';
+import { cn } from '@/lib/utils';
 
 const BillingPackageManagement: React.FC = () => {
   const [loading, setLoading] = useState(false);
@@ -257,34 +258,37 @@ const BillingPackageManagement: React.FC = () => {
         confirmLoading={loading}
         confirmDisabled={!formData.name || !formData.package_type}
       >
-        <div className="p-6 space-y-5">
+        <div className="px-6 py-3 space-y-2">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              套餐名称 <span className="text-red-500">*</span>
-            </label>
             <Input
+              label="套餐名称"
+              required={true}
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               placeholder="例如：新用户体验包"
-              className="w-full"
+              className="w-full mb-2"
             />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">套餐描述</label>
-            <Input
+            {/* <Input
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               placeholder="请输入套餐描述，帮助用户了解套餐内容"
               className="w-full"
+            /> */}
+            <textarea
+              id="description"
+              rows={2}
+              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              placeholder="请输入套餐描述，帮助用户了解套餐内容"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
               套餐类型 <span className="text-red-500">*</span>
             </label>
-            <select
+            {/* <select
               className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               value={formData.package_type}
               onChange={(e) =>
@@ -293,51 +297,81 @@ const BillingPackageManagement: React.FC = () => {
             >
               <option value="credits">积分包 - 按积分消耗</option>
               <option value="duration">时长型 - 按时间有效</option>
-              <option value="hybrid">混合型 - 积分+时长</option>
-              <option value="permanent">永久型 - 永久有效</option>
-            </select>
+              <option value="hybrid">限时型 - 积分+有效时长 Deprecated</option>
+              <option value="permanent">永久型 - 永久有效 Deprecated</option>
+            </select> */}
+            <div className="grid grid-cols-2 gap-3">
+              {[
+                { value: 'credits', label: '积分包', desc: '按积分消耗' },
+                { value: 'duration', label: '时长型', desc: '按时间有效' },
+              ].map((option) => (
+                <div
+                  key={option.value}
+                  onClick={() => setFormData({ 
+                    ...formData, 
+                    package_type: option.value as PackageType,
+                    // 积分包时有效期为0，时长型默认30天
+                    validity_days: option.value === 'credits' ? 0 : (formData.package_type === 'credits' ? 30 : formData.validity_days)
+                  })}
+                  className={cn(
+                    'relative flex items-start p-3 border rounded-lg cursor-pointer transition-all',
+                    formData.package_type === option.value
+                      ? 'border-blue-500 bg-blue-50 '
+                      : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                  )}
+                >
+                  <div className={`
+                    flex-shrink-0 w-4 h-4 mt-0.5 mr-3 rounded-full border-2 flex items-center justify-center
+                    ${formData.package_type === option.value
+                      ? 'border-blue-500 bg-blue-500'
+                      : 'border-gray-300 bg-white'
+                    }
+                  `}>
+                    {formData.package_type === option.value && (
+                      <div className="w-1.5 h-1.5 rounded-full bg-white" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium text-gray-900">{option.label}</div>
+                    <div className="text-xs text-gray-500">{option.desc}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <Input
+              label="积分数量"
+              type="number"
+              value={formData.credits_amount}
+              onChange={(e) =>
+                setFormData({ ...formData, credits_amount: parseInt(e.target.value) || 0 })
+              }
+              min="1"
+              placeholder="10"
+              className="w-full"
+            />
+            <Input
+              label={formData.package_type === 'credits' ? '有效期（无限制）' : '有效期（天）'}
+              required={formData.package_type !== 'credits'}
+              type="number"
+              value={formData.validity_days}
+              onChange={(e) =>
+                setFormData({ ...formData, validity_days: parseInt(e.target.value) || 0 })
+              }
+              min="0"
+              placeholder={formData.package_type === 'credits' ? '积分包无需设置有效期' : '30'}
+              className="w-full"
+              disabled={formData.package_type === 'credits'}
+            />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                积分数量 <span className="text-red-500">*</span>
-              </label>
               <Input
-                type="number"
-                value={formData.credits_amount}
-                onChange={(e) =>
-                  setFormData({ ...formData, credits_amount: parseInt(e.target.value) || 0 })
-                }
-                min="1"
-                placeholder="10"
-                className="w-full"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                有效期（天）
-              </label>
-              <Input
-                type="number"
-                value={formData.validity_days}
-                onChange={(e) =>
-                  setFormData({ ...formData, validity_days: parseInt(e.target.value) || 0 })
-                }
-                min="0"
-                placeholder="0 表示永久有效"
-                className="w-full"
-              />
-              <p className="text-xs text-gray-500 mt-1">0 表示永久有效</p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                售价（分）<span className="text-red-500">*</span>
-              </label>
-              <Input
+                label="售价（分）"
+                required={true}
                 type="number"
                 value={formData.price}
                 onChange={(e) =>
@@ -371,54 +405,48 @@ const BillingPackageManagement: React.FC = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">管理员排序</label>
-              <Input
-                type="number"
-                value={formData.sort_order}
-                onChange={(e) =>
-                  setFormData({ ...formData, sort_order: parseInt(e.target.value) || 0 })
-                }
-                min="0"
-                placeholder="0"
-                className="w-full"
-              />
-              <p className="text-xs text-gray-500 mt-1">管理后台显示顺序，越小越靠前</p>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">用户展示排序</label>
-              <Input
-                type="number"
-                value={formData.display_order}
-                onChange={(e) =>
-                  setFormData({ ...formData, display_order: parseInt(e.target.value) || 100 })
-                }
-                min="0"
-                placeholder="0"
-                className="w-full"
-              />
-              <p className="text-xs text-gray-500 mt-1">用户前台显示顺序，越小越靠前</p>
-            </div>
-          </div>
-
           <div className="border-t pt-4">
-            <label className="block text-sm font-medium text-gray-700 mb-3">状态设置</label>
+            {/* <label className="block text-sm font-medium text-gray-700 mb-3">状态设置</label> */}
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">管理界面排序（越小越靠前）</label>
+                <Input
+                  type="number"
+                  value={formData.sort_order}
+                  onChange={(e) =>
+                    setFormData({ ...formData, sort_order: parseInt(e.target.value) || 0 })
+                  }
+                  min="0"
+                  placeholder="0"
+                  className="w-full"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">用户展示优先级（越小越靠前）</label>
+                <Input
+                  type="number"
+                  value={formData.display_order}
+                  onChange={(e) =>
+                    setFormData({ ...formData, display_order: parseInt(e.target.value) || 100 })
+                  }
+                  min="0"
+                  placeholder="0"
+                  className="w-full"
+                />
+              </div>
+            </div>
+
             <div className="space-y-3 flex gap-8">
+
               <label className="flex items-start cursor-pointer group">
                 <input
                   type="checkbox"
                   checked={formData.is_active}
                   onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
-                  className="mt-0.5 mr-3 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  className="mt-0.5 mr-2 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                 />
-                <div>
-                  <div className="text-sm font-medium text-gray-900 group-hover:text-gray-700">
-                    启用套餐
-                  </div>
-                  <div className="text-xs text-gray-500">
-                    启用后套餐才能被购买和使用
-                  </div>
+                <div className="text-sm font-medium text-gray-900 group-hover:text-gray-700">
+                  启用套餐
                 </div>
               </label>
               <label className="flex items-start cursor-pointer group">
@@ -426,15 +454,10 @@ const BillingPackageManagement: React.FC = () => {
                   type="checkbox"
                   checked={formData.is_visible}
                   onChange={(e) => setFormData({ ...formData, is_visible: e.target.checked })}
-                  className="mt-0.5 mr-3 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  className="mt-0.5 mr-2 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                 />
-                <div>
-                  <div className="text-sm font-medium text-gray-900 group-hover:text-gray-700">
-                    前台可见
-                  </div>
-                  <div className="text-xs text-gray-500">
-                    在用户升级页面显示此套餐
-                  </div>
+                <div className="text-sm font-medium text-gray-900 group-hover:text-gray-700">
+                  在用户升级页面显示此套餐
                 </div>
               </label>
             </div>

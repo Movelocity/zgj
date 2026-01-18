@@ -88,10 +88,10 @@ export const InterviewReviewList: React.FC = () => {
   const renderEmpty = () => (
     <div className="text-center py-16">
       <div className="text-gray-400 text-lg mb-4">暂无面试复盘记录</div>
-      <Button onClick={handleCreateNew}>
+      {/* <Button onClick={handleCreateNew} variant="primary">
         <FiPlus className="mr-2" />
         创建第一条记录
-      </Button>
+      </Button> */}
     </div>
   );
 
