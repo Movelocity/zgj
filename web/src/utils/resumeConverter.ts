@@ -2,7 +2,7 @@
  * Resume format converter between V1 and V2
  */
 
-import type { ResumeV2Data, ResumeBlock } from '@/types/resumeV2';
+import type { ResumeData, ResumeBlock } from '@/types/resume';
 
 /**
  * Check if data is V1 format (no version field)
@@ -25,14 +25,14 @@ export function isV1Format(data: any): boolean {
 /**
  * Check if data is V2 format (version: 2)
  */
-export function isV2Format(data: any): data is ResumeV2Data {
+export function isV2Format(data: any): data is ResumeData {
   return data && typeof data === 'object' && 'blocks' in data && data.version === 2;
 }
 
 /**
- * Convert V1 ResumeData to V2 ResumeV2Data
+ * Convert V1 ResumeData to V2 ResumeData
  */
-export function convertV1ToV2(v1Data: any): ResumeV2Data {
+export function convertV1ToV2(v1Data: any): ResumeData {
   const blocks: ResumeBlock[] = [];
 
   // 1. Personal Info - convert to text block

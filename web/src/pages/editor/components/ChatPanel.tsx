@@ -3,7 +3,7 @@ import {Button, Modal} from '@/components/ui';
 import AiMessageRenderer from './AiMessageRenderer';
 import { Send, Lightbulb, Sparkles, X } from 'lucide-react';
 import { FiMessageSquare, FiFileText } from 'react-icons/fi';
-import type { ResumeV2Data } from '@/types/resumeV2';
+import type { ResumeData } from '@/types/resume';
 import { workflowAPI } from '@/api/workflow';
 import { parseAndFixResumeJson } from '@/utils/helpers';
 import { generateAIResponse, generateSuggestions, truncate } from './utils';
@@ -24,8 +24,8 @@ interface Message {
 }
 
 interface ChatPanelProps {
-  resumeData:  ResumeV2Data;
-  onResumeDataChange: (data: ResumeV2Data, require_commit: boolean) => void;
+  resumeData:  ResumeData;
+  onResumeDataChange: (data: ResumeData, require_commit: boolean) => void;
   initialMessages?: Message[];
   onMessagesChange?: (messages: Message[]) => void;
   resumeId?: string; // 简历ID，用于保存pending_content
@@ -96,7 +96,7 @@ export default function ChatPanel({
   const [isFormatting, setIsFormatting] = useState(false);
   
   // 使用ref跟踪最新的简历数据，用于保存pending_content
-  const latestResumeDataRef = useRef<ResumeV2Data>(resumeData);
+  const latestResumeDataRef = useRef<ResumeData>(resumeData);
   
   // Chat message loading state
   // const [isLoadingMessages, setIsLoadingMessages] = useState(false);
@@ -243,7 +243,7 @@ export default function ChatPanel({
 
   // 监听 resume-update-detected 事件（直接解析成功的情况）
   useEffect(() => {
-    const handleResumeUpdate = (event: CustomEvent<{ blockId: string; content: string; data: ResumeV2Data; messageId: string }>) => {
+    const handleResumeUpdate = (event: CustomEvent<{ blockId: string; content: string; data: ResumeData; messageId: string }>) => {
       const { blockId, data } = event.detail;
       
       // 使用哈希表去重，防止重复处理
@@ -272,7 +272,7 @@ export default function ChatPanel({
 
   // 监听 resume-update-formatted 事件（格式化后的情况）
   useEffect(() => {
-    const handleResumeFormatted = (event: CustomEvent<{ blockId: string; data: ResumeV2Data; messageId: string }>) => {
+    const handleResumeFormatted = (event: CustomEvent<{ blockId: string; data: ResumeData; messageId: string }>) => {
       const { blockId, data } = event.detail;
       
       // 使用哈希表去重，防止重复处理
@@ -316,7 +316,7 @@ export default function ChatPanel({
       console.log('[ChatPanel] Action marker accepted:', event.detail);
 
       // Clone current resume data
-      const updatedData = JSON.parse(JSON.stringify(latestResumeDataRef.current)) as ResumeV2Data;
+      const updatedData = JSON.parse(JSON.stringify(latestResumeDataRef.current)) as ResumeData;
 
       try {
         if (type === 'ADD_PART') {

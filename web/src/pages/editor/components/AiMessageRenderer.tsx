@@ -4,13 +4,13 @@ import { FiFileText, FiCheckSquare, FiPlus, FiEdit, FiStar, FiInfo, FiChevronDow
 import { generateHash } from '@/utils/hash';
 import { parseAndFixResumeJson } from '@/utils/helpers';
 import { workflowAPI } from '@/api/workflow';
-import type { ResumeV2Data } from '@/types/resumeV2';
+import type { ResumeData } from '@/types/resume';
 
 interface AiMessageRendererProps {
   content: string;
   messageId: string;
   className?: string;
-  resumeData: ResumeV2Data;
+  resumeData: ResumeData;
   isHistorical?: boolean; // 是否为历史消息，历史消息不触发事件
   onQuestionClick?: (question: string) => void; // 当用户点击 DISPLAY marker 时触发，将问题传递到输入框
 }

@@ -5,24 +5,22 @@ import { ChevronLeft } from 'lucide-react';
 import { Button } from "@/components/ui";
 import { useAuthStore, useGlobalStore } from '@/store';
 import ChatPanel, { type Message } from './components/ChatPanel';
-import ResumeEditorV2 from './components/ResumeEditor';
+import ResumeEditor from './components/ResumeEditor';
 import FontSettingsDropdown from './components/FontSettingsDropdown';
 import ExportSplitButton from './components/ExportSplitButton';
 import VersionSelector from './components/VersionSelector';
 import TargetSelector, { type TargetType } from './components/TargetSelector';
 import { type FontSettings } from './components/FontSettingsPanel';
 import LoadingIndicator, { type LoadingStage } from '@/components/LoadingIndicator';
-import type { ResumeV2Data } from '@/types/resumeV2';
-import { defaultResumeV2Data } from '@/types/resumeV2';
+import { defaultResumeData, type ResumeData } from '@/types/resume';
 import { resumeAPI } from '@/api/resume';
 import { showError, showSuccess, showInfo } from '@/utils/toast';
-import { isV1Format, isV2Format, convertV1ToV2 } from '@/utils/resumeConverter';
 import { exportResumeToPDF, exportResumeToPDFViaCanvas } from '@/utils/pdfExport';
 import { workflowAPI } from '@/api/workflow';
 import { createExportTask, getExportTaskStatus, downloadExportPdf } from '@/api/pdfExport';
 import type { ProcessingStage, StepResult } from './types';
 import { TimeBasedProgressUpdater, RESUME_PROCESSING_STEPS } from '@/utils/progress';
-import { parseAndFixResumeJson, fixResumeBlockFormat } from '@/utils/helpers';
+import { parseAndFixResumeJson } from '@/utils/helpers';
 import { chatMessageAPI } from '@/api/chatMessage';
 
 
@@ -83,8 +81,8 @@ export default function ResumeDetails() {
   }, [resumeId]); // 只依赖 resumeId
 
   // Resume data state
-  const [resumeData, setResumeData] = useState<ResumeV2Data>(defaultResumeV2Data);
-  const [newResumeData, setNewResumeData] = useState<ResumeV2Data>(defaultResumeV2Data);  // AI优化后的内容，需人工确认后合并
+  const [resumeData, setResumeData] = useState<ResumeData>(defaultResumeData);
+  const [newResumeData, setNewResumeData] = useState<ResumeData>(defaultResumeData);  // AI优化后的内容，需人工确认后合并
   const [resumeName, setResumeName] = useState<string>('');
   const [resumeNumber, setResumeNumber] = useState<string>('');
   const [resumeVersion, setResumeVersion] = useState<number>(1);
@@ -347,27 +345,27 @@ export default function ResumeDetails() {
 
       // 文本太短，使用默认模板
       if (text_content && text_content.length <= 20) {
-        setResumeData(defaultResumeV2Data);
+        setResumeData(defaultResumeData);
         return;
       }
 
       // 有结构化数据，检查格式并自动转换版本
       if (structured_data && Object.keys(structured_data).length) {
-        if (isV2Format(structured_data)) {
+        // if (isV2Format(structured_data)) {
            // If V2 format, use directly
-          setResumeData(structured_data as ResumeV2Data);
+          setResumeData(structured_data as ResumeData);
           console.log('structured_data', structured_data);
-        } else if (isV1Format(structured_data)) { // If V1 format, convert to V2
-          console.log('检测到V1格式简历，转换为V2格式');
-          const convertedData = convertV1ToV2(structured_data);
-          setResumeData(convertedData);
-        } else { // Unknown format
-          if (structured_data.blocks) {
-            structured_data.blocks = fixResumeBlockFormat(structured_data.blocks) as any;
-          }
-          setResumeData(structured_data);
-          console.log('未知简历格式，使用默认模板', structured_data);
-        }
+        // } else if (isV1Format(structured_data)) { // If V1 format, convert to V2
+        //   console.log('检测到V1格式简历，转换为V2格式');
+        //   const convertedData = convertV1ToV2(structured_data);
+        //   setResumeData(convertedData);
+        // } else { // Unknown format
+        //   if (structured_data.blocks) {
+        //     structured_data.blocks = fixResumeBlockFormat(structured_data.blocks) as any;
+        //   }
+        //   setResumeData(structured_data);
+        //   console.log('未知简历格式，使用默认模板', structured_data);
+        // }
 
         // 步骤3：检查是否需要AI分析优化
         const currentMetadata = metadataRef.current;
@@ -385,7 +383,7 @@ export default function ResumeDetails() {
             const updater = initProgressUpdater();
             updater.startStep(2);
             
-            const processedData = structured_data as ResumeV2Data;
+            const processedData = structured_data as ResumeData;
             let analysisContent = currentMetadata.initialAnalysisContent;
             if (!analysisContent) {
               const analysisResult = await workflowAPI.executeWorkflow("common-analysis", {
@@ -625,7 +623,7 @@ export default function ResumeDetails() {
   };
 
   // Handle resume data change
-  const handleResumeDataChange = (newData: ResumeV2Data, require_commit: boolean) => {
+  const handleResumeDataChange = (newData: ResumeData, require_commit: boolean) => {
     if (require_commit) {
       setNewResumeData(newData);
     } else {
@@ -726,7 +724,7 @@ export default function ResumeDetails() {
           <>
             {/* Editor Panel */}
             <div className="w-full md:flex-1 border-gray-200 bg-white overflow-auto" style={{ height: 'calc(100vh - 48px)' }}>
-              <ResumeEditorV2
+              <ResumeEditor
                 resumeData={resumeData}
                 newResumeData={newResumeData}
                 onNewResumeDataChange={setNewResumeData}
@@ -740,7 +738,7 @@ export default function ResumeDetails() {
               initialMessages={chatMessages}
               onMessagesChange={setChatMessages}
               resumeData={resumeData}
-              onResumeDataChange={(data, require_commit) => handleResumeDataChange(data as ResumeV2Data, require_commit)}
+              onResumeDataChange={(data, require_commit) => handleResumeDataChange(data as ResumeData, require_commit)}
               resumeId={resumeId}
               currentTarget={currentTarget}
               updateMetadata={updateMetadata}

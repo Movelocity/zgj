@@ -1,6 +1,6 @@
 import { ChevronUp, ChevronDown, Trash2, Mail, Phone, MapPin, Plus, MoreVertical, Check, X } from 'lucide-react';
-import type { ResumeBlock, ResumeBlockListItem, ResumeV2Data } from '@/types/resumeV2';
-import { isListBlock, isTextBlock, isObjectBlock, createEmptyListItem } from '@/types/resumeV2';
+import type { ResumeBlock, ResumeBlockListItem, ResumeData } from '@/types/resume';
+import { isListBlock, isTextBlock, isObjectBlock, createEmptyListItem } from '@/types/resume';
 import { showSuccess } from '@/utils/toast';
 import { EditableText } from './EditableText';
 import { useEditing } from './useEditing';
@@ -11,23 +11,23 @@ import cn from 'classnames';
 import PortraitImageEditor from './PortraitImageEditor';
 import HoverOperationPanel from './HoverOperationPanel';
 
-interface ResumeEditorV2Props {
-  resumeData: ResumeV2Data;
-  newResumeData: ResumeV2Data;
-  onResumeDataChange?: (data: ResumeV2Data) => void;
-  onNewResumeDataChange?: (data: ResumeV2Data) => void;
+interface ResumeEditorProps {
+  resumeData: ResumeData;
+  newResumeData: ResumeData;
+  onResumeDataChange?: (data: ResumeData) => void;
+  onNewResumeDataChange?: (data: ResumeData) => void;
   fontSettings?: FontSettings;
   tightLayout?: boolean;
 }
 
-export default function ResumeEditorV2({ 
+export default function ResumeEditor({ 
   resumeData, 
   newResumeData,
   onResumeDataChange = () => {}, 
   onNewResumeDataChange = () => {},
   fontSettings = { titleSize: 'medium', labelSize: 'medium', contentSize: 'medium' },
   tightLayout = false,
-}: ResumeEditorV2Props) {
+}: ResumeEditorProps) {
   
   const editorState = useEditing(
     resumeData,
@@ -104,8 +104,6 @@ export default function ResumeEditorV2({
     newData.blocks[blockIndex] = updatedBlock;
     onResumeDataChange(newData);
   };
-
- 
 
   // Update block
   const updateBlock = (blockIndex: number, updatedBlock: ResumeBlock) => {

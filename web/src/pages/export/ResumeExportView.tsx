@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import apiClient from '@/api/client';
-import type { ResumeV2Data } from '@/types/resumeV2';
-import ResumeEditorV2 from '../editor/components/ResumeEditor';
+import type { ResumeData } from '@/types/resume';
+import ResumeEditor from '../editor/components/ResumeEditor';
 
 /**
  * 简历导出渲染页面
@@ -13,7 +13,7 @@ export default function ResumeExportView() {
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token');
 
-  const [resumeData, setResumeData] = useState<ResumeV2Data | null>(null);
+  const [resumeData, setResumeData] = useState<ResumeData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -99,7 +99,7 @@ export default function ResumeExportView() {
       `}</style>
       
       <div className="mx-auto">
-        <ResumeEditorV2
+        <ResumeEditor
           resumeData={resumeData}
           newResumeData={resumeData}
           onResumeDataChange={() => {}} // 只读，不处理变更

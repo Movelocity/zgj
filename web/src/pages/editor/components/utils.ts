@@ -1,4 +1,4 @@
-import type { ResumeV2Data, ResumeBlock } from '@/types/resumeV2';
+import type { ResumeData, ResumeBlock } from '@/types/resume';
 
 /**
  * Build a mapping from resumeData block indices to newResumeData block indices
@@ -12,8 +12,8 @@ import type { ResumeV2Data, ResumeBlock } from '@/types/resumeV2';
  * @returns Array where index is resumeData block index, value is newResumeData block index (-1 if no match)
  */
 export function buildBlockMatchMap(
-  resumeData: ResumeV2Data, 
-  newResumeData: ResumeV2Data
+  resumeData: ResumeData, 
+  newResumeData: ResumeData
 ): number[] {
   const matchMap: number[] = [];
   const usedNewIndices = new Set<number>();
@@ -62,7 +62,7 @@ export function buildBlockMatchMap(
  * @returns Array of newResumeData block indices that are new (not matched)
  */
 export function findNewBlocks(
-  newResumeData: ResumeV2Data,
+  newResumeData: ResumeData,
   matchMap: number[]
 ): number[] {
   const matchedNewIndices = new Set(matchMap.filter(idx => idx !== -1));

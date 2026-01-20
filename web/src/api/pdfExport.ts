@@ -1,12 +1,12 @@
 import apiClient from './client';
-import type { ResumeV2Data } from '@/types/resumeV2';
+import type { ResumeData } from '@/types/resume';
 
 /**
  * 创建PDF导出任务
  * @param resumeId 简历ID
  * @param resumeData 可选：当前简历数据快照（用于确保导出内容与当前编辑内容一致）
  */
-export const createExportTask = (resumeId: string, resumeData?: ResumeV2Data) => {
+export const createExportTask = (resumeId: string, resumeData?: ResumeData) => {
   return apiClient.post('/api/resume/export/create', { 
     resume_id: resumeId,
     resume_data: resumeData // 传递简历数据快照

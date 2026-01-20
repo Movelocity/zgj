@@ -1,6 +1,6 @@
 import { useState, useRef, useMemo } from 'react';
-import { isListBlock, isTextBlock, isObjectBlock } from '@/types/resumeV2';
-import type { ResumeV2Data } from '@/types/resumeV2';
+import { isListBlock, isTextBlock, isObjectBlock } from '@/types/resume';
+import type { ResumeData } from '@/types/resume';
 import { buildBlockMatchMap } from './utils';
 
 export interface EditorState {
@@ -16,10 +16,10 @@ export interface EditorState {
 }
 
 export const useEditing = (
-  resumeData: ResumeV2Data,
-  newResumeData: ResumeV2Data,
-  onResumeDataChange: (data: ResumeV2Data) => void,
-  onNewResumeDataChange: (data: ResumeV2Data) => void,
+  resumeData: ResumeData,
+  newResumeData: ResumeData,
+  onResumeDataChange: (data: ResumeData) => void,
+  onNewResumeDataChange: (data: ResumeData) => void,
 ): EditorState => {
   const [editingField, setEditingField] = useState<string | null>(null);
   const editingValueRef = useRef<string>('');

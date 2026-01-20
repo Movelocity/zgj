@@ -180,7 +180,7 @@ export const fixResumeBlockFormat = (blocks: any[]): any[] => {
 /**
  * 智能解析并修正 JSON 格式
  * 结合 smartJsonParser 和 fixResumeBlockFormat，自动处理异常格式
- * 确保返回的数据总是有效的 ResumeV2Data 格式
+ * 确保返回的数据总是有效的 ResumeData 格式
  */
 export const parseAndFixResumeJson = (json: string): any => {
   try {
