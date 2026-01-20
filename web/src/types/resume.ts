@@ -311,7 +311,7 @@ export const defaultResumeData: ResumeData = {
   ]
 };
 
-export const specialV2Data: ResumeData = {
+export const specialData: ResumeData = {
   version: 2,
   blocks: [
     {

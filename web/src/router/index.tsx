@@ -29,6 +29,7 @@ const ServerError = lazy(() => import('@/pages/error/ServerError'));
 const AllTests = lazy(() => import('@/pages/test/AllTests'));
 const InterviewReviews = lazy(() => import('@/pages/interview/InterviewReviews'));
 const InterviewReviewList = lazy(() => import('@/pages/interview/InterviewReviewList'));
+const TemplateDemo = lazy(() => import('@/pages/test/TemplateDemo'));
 
 // 路由错误处理组件
 function RouteErrorBoundary() {
@@ -102,14 +103,10 @@ export const routes = [
     path: '/interview/reviews',
     element: <InterviewReviews />,
   },
-  // {
-  //   path: '/test/tos',
-  //   element: <TOSTest />,
-  // },
-  // {
-  //   path: '/test/asr',
-  //   element: <ASRTest />,
-  // },
+  {
+    path: '/test/templates',
+    element: <TemplateDemo />,
+  },
   {
     path: '/test/all',
     element: <AllTests />,
