@@ -183,27 +183,16 @@ export default function ResumeEditor({
     onResumeDataChange(newData);
   };
 
-  // Toggle block type
-  // const toggleBlockType = (blockIndex: number) => {
-  //   const block = resumeData.blocks[blockIndex];
-  //   const newBlock: ResumeBlock = {
-  //     ...block,
-  //     type: block.type === 'list' ? 'text' : 'list',
-  //     data: block.type === 'list' ? '' : []
-  //   };
-  //   updateBlock(blockIndex, newBlock);
-  // };
-
   // Render list block
   const renderListBlock = (block: ResumeBlock & { data: ResumeBlockListItem[] }, blockIndex: number) => {
     return (
-      <div className="">
+      <div>
         {block.data.map((item, itemIndex) => {
           return (
-            <div key={item.id} className="relative pl-4 break-inside-avoid group/item">
+            <div key={item.id} className="relative pl-4 break-inside-avoid ">
               <div className="flex justify-between items-start">
                 <div className="flex-1">
-                  <h4 className={`text-gray-800 font-medium ${fontSizeClasses.label} inline-flex items-center gap-2`}>
+                  <h4 className={`text-gray-800 font-medium group/item ${fontSizeClasses.label} inline-flex items-center gap-2`}>
                     <EditableText
                       editorState={editorState}
                       fieldId={`block${blockIndex}-${item.id}-name`}
@@ -413,7 +402,7 @@ export default function ResumeEditor({
     <div className="h-full bg-white">
       <div className={cn("mx-auto", tightLayout ? '' : 'py-8 px-6 max-w-4xl')} data-resume-editor>
         {/* Blocks Section */}
-        <div className="">
+        <div>
           {personalInfoBlock && personalInfoBlockIndex >= 0 && (
             <div key={personalInfoBlock.title} className="mb-3 rounded-lg relative group">
               {renderPersonalInfoBlock(personalInfoBlock, personalInfoBlockIndex)}
@@ -424,9 +413,9 @@ export default function ResumeEditor({
             if (block.type === 'object') return null;
             
             return (
-              <div key={originalIndex} className="relative group/block">
+              <div key={originalIndex} className="relative">
                 {/* Block Header with left border */}
-                <div className="relative">
+                <div className="relative group/block">
                   <h3 className={`text-gray-800 border-l-4 border-blue-600 pl-2 inline-flex items-center gap-2 font-semibold ${fontSizeClasses.title}`}>
                     <EditableText
                       editorState={editorState}
