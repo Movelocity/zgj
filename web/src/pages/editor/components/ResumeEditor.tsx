@@ -513,7 +513,7 @@ export default function ResumeEditorV2({
                       title="确认添加到简历"
                     >
                       <Check size={12} />
-                      <span>接收</span>
+                      <span>确认</span>
                     </button>
                     <button
                       onClick={() => rejectNewBlock(newBlockIdx)}
