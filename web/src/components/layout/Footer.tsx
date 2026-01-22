@@ -2,6 +2,9 @@ import { ROUTES } from '@/utils/constants';
 import React from 'react';
 import { Link } from 'react-router-dom';
 
+// 从环境变量获取备案信息
+const icp = import.meta.env.VITE_ICP_FILING;
+
 const Footer: React.FC = () => {
   return (
     <footer className="bg-gray-800 text-white">
@@ -16,6 +19,19 @@ const Footer: React.FC = () => {
             <p className="text-gray-400 text-sm">
               © 2024 职管加. All rights reserved.
             </p>
+            {/* 备案信息 - 仅在有值时显示 */}
+            {icp && (
+              <p className="text-gray-400 text-sm mt-2">
+                <a 
+                  href="https://beian.miit.gov.cn/" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="hover:text-white transition-colors"
+                >
+                  {icp}
+                </a>
+              </p>
+            )}
           </div>
 
           {/* 产品功能 */}
@@ -77,7 +93,7 @@ const Footer: React.FC = () => {
         </div>
 
         <div className="border-t border-gray-700 mt-8 pt-8 text-center text-gray-400 text-sm">
-          <p>技术支持：AI 驱动的简历优化系统</p>
+          <p>技术支持：职管加团队</p>
         </div>
       </div>
     </footer>
