@@ -70,7 +70,7 @@ export const ClassicTemplate: React.FC<ResumeTemplateProps> = ({ resumeData, cla
             <div key={index} className="resume-section">
               {/* 区块标题 */}
               {block.title && (
-                <h2 className="text-2xl font-bold text-gray-900 mb-4 uppercase tracking-wide border-b border-gray-300 pb-2">
+                <h2 className="text-2xl font-bold text-gray-900 mb-2 uppercase tracking-wide border-b border-gray-300 pb-1">
                   {block.title}
                 </h2>
               )}

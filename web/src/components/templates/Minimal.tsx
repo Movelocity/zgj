@@ -13,10 +13,10 @@ export const MinimalTemplate: React.FC<ResumeTemplateProps> = ({ resumeData, cla
 
   return (
     <div className={`bg-white min-h-screen ${className}`}>
-      <div className="max-w-3xl mx-auto p-16">
+      <div className="max-w-3xl mx-auto py-12 px-6">
         {/* 个人信息 - 极简展示 */}
         {personalInfoBlock && isObjectBlock(personalInfoBlock) && (
-          <div className="mb-16">
+          <div className="mb-8">
             <div className="flex items-start space-x-8">
               {/* 头像 */}
               {personalInfoBlock.data.photo && (
@@ -24,7 +24,7 @@ export const MinimalTemplate: React.FC<ResumeTemplateProps> = ({ resumeData, cla
                   <img
                     src={personalInfoBlock.data.photo}
                     alt="Profile"
-                    className="w-24 h-24 rounded-sm object-cover border border-gray-200"
+                    className="w-30 h-36 object-cover border border-gray-200"
                   />
                 </div>
               )}
@@ -37,7 +37,7 @@ export const MinimalTemplate: React.FC<ResumeTemplateProps> = ({ resumeData, cla
 
                 {/* 职位 */}
                 {personalInfoBlock.data.title && (
-                  <p className="text-lg text-gray-600 mb-6 font-light">
+                  <p className="text-lg text-gray-600 font-light">
                     {personalInfoBlock.data.title}
                   </p>
                 )}
@@ -54,12 +54,12 @@ export const MinimalTemplate: React.FC<ResumeTemplateProps> = ({ resumeData, cla
         )}
 
         {/* 主内容区 */}
-        <div className="space-y-12">
+        <div className="space-y-3">
           {otherBlocks.map((block, index) => (
             <div key={index} className="resume-section">
               {/* 区块标题 */}
               {block.title && (
-                <div className="mb-6 flex items-center">
+                <div className="mb-1 flex items-center">
                   <div className="w-1 h-6 bg-green-500 mr-4"></div>
                   <h2 className="text-xl font-light text-gray-900 tracking-wide">
                     {block.title}
@@ -78,10 +78,10 @@ export const MinimalTemplate: React.FC<ResumeTemplateProps> = ({ resumeData, cla
 
               {/* 列表类型 */}
               {isListBlock(block) && (
-                <div className="space-y-8 pl-5">
+                <div className="space-y-4 pl-5">
                   {block.data.map((item) => (
                     <div key={item.id}>
-                      <div className="flex justify-between items-baseline mb-2">
+                      <div className="flex justify-between items-baseline">
                         <h3 className="text-base font-medium text-gray-900">{item.name}</h3>
                         {item.time && (
                           <span className="text-xs text-gray-500 whitespace-nowrap ml-4 font-light">
@@ -90,12 +90,12 @@ export const MinimalTemplate: React.FC<ResumeTemplateProps> = ({ resumeData, cla
                         )}
                       </div>
                       {item.description && (
-                        <p className="text-sm text-gray-600 leading-loose whitespace-pre-wrap font-light mb-2">
+                        <p className="text-base text-gray-600 leading-relaxed whitespace-pre-wrap font-light">
                           {item.description}
                         </p>
                       )}
                       {item.highlight && (
-                        <div className="flex flex-wrap gap-3 mt-3">
+                        <div className="flex flex-wrap gap-3 mt-1">
                           {item.highlight.split(',').map((tag, idx) => (
                             <span
                               key={idx}

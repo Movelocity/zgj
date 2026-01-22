@@ -15,7 +15,7 @@ export const FeriyTemplate: React.FC<ResumeTemplateProps> = ({ resumeData, class
     <div className={`bg-gray-50 min-h-screen ${className}`}>
       {/* 顶部横幅 - 个人信息 */}
       {personalInfoBlock && isObjectBlock(personalInfoBlock) && (
-        <div className="bg-gradient-to-r from-purple-600 via-pink-600 to-red-500 text-white p-10">
+        <div className="bg-gradient-to-r from-purple-600 via-pink-600 to-red-500 text-white px-10 py-8">
           <div className="max-w-6xl mx-auto">
             <div className="flex items-center space-x-8">
               {/* 头像 */}
@@ -24,18 +24,18 @@ export const FeriyTemplate: React.FC<ResumeTemplateProps> = ({ resumeData, class
                   <img
                     src={personalInfoBlock.data.photo}
                     alt="Profile"
-                    className="w-40 h-40 rounded-2xl object-cover border-4 border-white shadow-2xl"
+                    className="w-32 h-40 object-cover border-4 border-white shadow-2xl"
                   />
                 </div>
               )}
 
               {/* 个人信息 */}
               <div className="flex-1">
-                <h1 className="text-5xl font-bold mb-3 drop-shadow-lg">
+                <h1 className="text-4xl font-bold mb-3 drop-shadow-lg">
                   {personalInfoBlock.data.name}
                 </h1>
                 {personalInfoBlock.data.title && (
-                  <p className="text-2xl font-light mb-6 opacity-90">
+                  <p className="text-2xl font-light mb-3 opacity-90">
                     {personalInfoBlock.data.title}
                   </p>
                 )}
@@ -68,17 +68,17 @@ export const FeriyTemplate: React.FC<ResumeTemplateProps> = ({ resumeData, class
       )}
 
       {/* 主内容区 */}
-      <div className="max-w-6xl mx-auto p-10">
-        <div className="space-y-8">
+      <div className="max-w-6xl mx-auto px-12 py-4">
+        <div className="space-y-3">
           {otherBlocks.map((block, index) => (
             <div
               key={index}
-              className="bg-white rounded-2xl shadow-lg p-8 hover:shadow-xl transition-shadow"
+              className="p-2"
             >
               {/* 区块标题 */}
               {block.title && (
-                <div className="flex items-center mb-6">
-                  <div className="w-2 h-8 bg-gradient-to-b from-purple-500 to-pink-500 rounded-full mr-4"></div>
+                <div className="flex items-center mb-3">
+                  <div className="w-2 h-8 bg-gradient-to-b from-purple-500 to-pink-500 mr-3"></div>
                   <h2 className="text-2xl font-bold text-gray-800">{block.title}</h2>
                 </div>
               )}
@@ -94,16 +94,14 @@ export const FeriyTemplate: React.FC<ResumeTemplateProps> = ({ resumeData, class
 
               {/* 列表类型 */}
               {isListBlock(block) && (
-                <div className="space-y-6">
+                <div className="space-y-3">
                   {block.data.map((item, idx) => (
                     <div
                       key={item.id}
-                      className={`${
-                        idx !== 0 ? 'border-t border-gray-100 pt-6' : ''
-                      }`}
+                      className={`${idx !== 0 ? 'border-t border-gray-100' : ''}`}
                     >
-                      <div className="flex justify-between items-start mb-3">
-                        <h3 className="text-xl font-semibold text-gray-800 flex-1">
+                      <div className="flex justify-between items-start">
+                        <h3 className="text-xl font-semibold text-gray-800 flex-1 mb-0.5">
                           {item.name}
                         </h3>
                         {item.time && (
@@ -113,7 +111,7 @@ export const FeriyTemplate: React.FC<ResumeTemplateProps> = ({ resumeData, class
                         )}
                       </div>
                       {item.description && (
-                        <p className="text-gray-600 leading-relaxed whitespace-pre-wrap mb-3">
+                        <p className="text-gray-600 leading-relaxed whitespace-pre-wrap mb-1">
                           {item.description}
                         </p>
                       )}

@@ -15,7 +15,7 @@ export const ModernTemplate: React.FC<ResumeTemplateProps> = ({ resumeData, clas
     <div className={`bg-white ${className}`}>
       <div className="flex min-h-screen">
         {/* 左侧边栏 */}
-        <div className="w-80 bg-gray-900 text-white p-8">
+        <div className="w-64 bg-gray-900 text-white p-8">
           {personalInfoBlock && isObjectBlock(personalInfoBlock) && (
             <div className="space-y-6">
               {/* 头像 */}
@@ -24,7 +24,7 @@ export const ModernTemplate: React.FC<ResumeTemplateProps> = ({ resumeData, clas
                   <img
                     src={personalInfoBlock.data.photo}
                     alt="Profile"
-                    className="w-36 h-36 rounded-lg object-cover border-2 border-orange-500 shadow-lg"
+                    className="w-30 h-36 object-cover border-2 border-orange-500"
                   />
                 </div>
               )}
@@ -70,14 +70,14 @@ export const ModernTemplate: React.FC<ResumeTemplateProps> = ({ resumeData, clas
         </div>
 
         {/* 右侧主内容区 */}
-        <div className="flex-1 p-12 bg-gray-50">
-          <div className="max-w-4xl space-y-10">
+        <div className="flex-1 p-8 bg-gray-50">
+          <div className="max-w-4xl space-y-3">
             {otherBlocks.map((block, index) => (
               <div key={index} className="resume-section">
                 {/* 区块标题 */}
                 {block.title && (
-                  <div className="mb-6">
-                    <h2 className="text-2xl font-bold text-gray-900 inline-block border-b-4 border-orange-500 pb-2">
+                  <div className="mb-3">
+                    <h2 className="text-2xl font-bold text-gray-900 inline-block border-b-4 border-orange-500">
                       {block.title}
                     </h2>
                   </div>
@@ -85,7 +85,7 @@ export const ModernTemplate: React.FC<ResumeTemplateProps> = ({ resumeData, clas
 
                 {/* 文本类型 */}
                 {isTextBlock(block) && (
-                  <div className="bg-white rounded-lg shadow-sm p-6">
+                  <div className="prose max-w-none">
                     <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
                       {block.data}
                     </p>
@@ -96,11 +96,8 @@ export const ModernTemplate: React.FC<ResumeTemplateProps> = ({ resumeData, clas
                 {isListBlock(block) && (
                   <div className="space-y-6">
                     {block.data.map((item) => (
-                      <div
-                        key={item.id}
-                        className="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow"
-                      >
-                        <div className="flex justify-between items-start mb-3">
+                      <div key={item.id}>
+                        <div className="flex justify-between items-start mb-1">
                           <h3 className="text-xl font-bold text-gray-900">{item.name}</h3>
                           {item.time && (
                             <span className="text-sm font-semibold text-orange-600 whitespace-nowrap ml-4">
@@ -109,12 +106,12 @@ export const ModernTemplate: React.FC<ResumeTemplateProps> = ({ resumeData, clas
                           )}
                         </div>
                         {item.description && (
-                          <p className="text-gray-700 leading-relaxed whitespace-pre-wrap mb-3">
+                          <p className="text-gray-700 leading-relaxed whitespace-pre-wrap mb-2">
                             {item.description}
                           </p>
                         )}
                         {item.highlight && (
-                          <div className="flex flex-wrap gap-2 mt-3">
+                          <div className="flex flex-wrap gap-2">
                             {item.highlight.split(',').map((tag, idx) => (
                               <span
                                 key={idx}

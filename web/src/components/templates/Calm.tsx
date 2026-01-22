@@ -15,7 +15,7 @@ export const CalmTemplate: React.FC<ResumeTemplateProps> = ({ resumeData, classN
     <div className={`bg-white ${className}`}>
       <div className="flex min-h-screen">
         {/* 左侧边栏 - 个人信息 */}
-        <div className="w-1/3 bg-gradient-to-b from-blue-50 to-blue-100 p-8">
+        <div className="w-64 bg-gradient-to-b from-blue-50 to-blue-100 p-8">
           {personalInfoBlock && isObjectBlock(personalInfoBlock) && (
             <div className="space-y-6">
               {/* 头像 */}
@@ -72,13 +72,13 @@ export const CalmTemplate: React.FC<ResumeTemplateProps> = ({ resumeData, classN
         </div>
 
         {/* 右侧主内容区 */}
-        <div className="w-2/3 p-10">
-          <div className="space-y-8">
+        <div className="w-2/3 px-10 py-8">
+          <div className="space-y-4">
             {otherBlocks.map((block, index) => (
               <div key={index} className="resume-section">
                 {/* 区块标题 */}
                 {block.title && (
-                  <h2 className="text-2xl font-bold text-gray-800 mb-4 pb-2 border-b-2 border-blue-500">
+                  <h2 className="text-2xl font-bold text-gray-800 mb-2 pb-1 border-b-2 border-blue-500">
                     {block.title}
                   </h2>
                 )}
@@ -94,10 +94,10 @@ export const CalmTemplate: React.FC<ResumeTemplateProps> = ({ resumeData, classN
 
                 {/* 列表类型 */}
                 {isListBlock(block) && (
-                  <div className="space-y-6">
+                  <div className="space-y-3">
                     {block.data.map((item) => (
-                      <div key={item.id} className="border-l-4 border-blue-300 pl-4">
-                        <div className="flex justify-between items-start mb-2">
+                      <div key={item.id} className="">
+                        <div className="flex justify-between items-start">
                           <h3 className="text-lg font-semibold text-gray-800">
                             {item.name}
                           </h3>
@@ -111,18 +111,6 @@ export const CalmTemplate: React.FC<ResumeTemplateProps> = ({ resumeData, classN
                           <p className="text-gray-700 leading-relaxed whitespace-pre-wrap mb-2">
                             {item.description}
                           </p>
-                        )}
-                        {item.highlight && (
-                          <div className="flex flex-wrap gap-2 mt-2">
-                            {item.highlight.split(',').map((tag, idx) => (
-                              <span
-                                key={idx}
-                                className="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded"
-                              >
-                                {tag.trim()}
-                              </span>
-                            ))}
-                          </div>
                         )}
                       </div>
                     ))}
