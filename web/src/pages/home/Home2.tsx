@@ -9,6 +9,9 @@ import { ROUTES } from '@/utils/constants';
 import { Link } from 'react-router-dom';
 import { useSiteVariable } from '@/hooks/useSiteVariable';
 
+const icp = import.meta.env.VITE_ICP_FILING;
+
+
 const Home2: React.FC = () => {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuthStore();
@@ -622,8 +625,22 @@ const Home2: React.FC = () => {
             </div>
           </div>
           <Separator className="my-8 bg-slate-700" />
-          <div className="text-center text-slate-400">
+          <div className="w-full text-slate-400 flex items-center justify-center">
             <p>&copy; 2025 职管加。保留所有权利。</p>
+
+            {/* 备案信息 - 仅在有值时显示 */}
+            {icp && (
+              <p className="text-gray-400 text-base">
+                <a 
+                  href="https://beian.miit.gov.cn/" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="hover:underline"
+                >
+                  {icp}
+                </a>
+              </p>
+            )}
           </div>
         </div>
       </footer>

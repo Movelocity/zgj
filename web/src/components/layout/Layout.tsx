@@ -2,7 +2,7 @@ import React from 'react';
 import { Outlet } from 'react-router-dom';
 import { useGlobalStore } from '@/store';
 import Header2 from './Header2';
-import Footer from './Footer';
+// import Footer from './Footer';
 
 const Layout: React.FC = () => {
   const { showBanner } = useGlobalStore();
@@ -18,7 +18,7 @@ const Layout: React.FC = () => {
         <Outlet />
       </main>
       {/* 页脚 */}
-      <Footer />
+      {/* <Footer /> */}
     </div>
   );
 };

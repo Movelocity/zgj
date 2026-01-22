@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { useSiteVariable } from '@/hooks/useSiteVariable';
 import Loading from '@/components/ui/Loading';
-import Footer from '@/components/layout/Footer';
+// import Footer from '@/components/layout/Footer';
 
 const Contact: React.FC = () => {
   const { value: contactImg, loading: imgLoading } = useSiteVariable('contact_img');
@@ -89,7 +89,7 @@ const Contact: React.FC = () => {
       </div>
 
       {/* Footer Section */}
-      <Footer />
+      {/* <Footer /> */}
     </div>
   );
 };
