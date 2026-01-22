@@ -381,27 +381,15 @@ const Home2: React.FC = () => {
             {/* <Badge className="mb-4 bg-emerald-100 text-emerald-700 hover:bg-emerald-100">
               价格方案
             </Badge> */}
-            <h2 className="w-fit mx-auto text-5xl font-bold bg-gradient-to-r from-blue-800 to-cyan-400 bg-clip-text text-transparent mb-4">
+            {/* <h2 className="w-fit mx-auto text-5xl font-bold bg-gradient-to-r from-blue-800 to-cyan-400 bg-clip-text text-transparent mb-4">
               简单透明的定价
-            </h2>
+            </h2> */}
             <p className="text-xl text-slate-600">
               从免费开始，按需升级，零隐藏费用
             </p>
           </div>
           
-          <Card className="relative bg-gradient-to-br from-blue-50 to-emerald-50 border-2 border-blue-200 shadow-xl">
-            {/* <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-              <Badge variant="none" className="bg-gradient-to-r from-blue-800 to-cyan-400 text-white px-6 py-2">
-                最受欢迎
-              </Badge>
-            </div> */}
-            <CardHeader className="text-center pb-4 flex items-end justify-around flex-row">
-              <div className="text-3xl font-bold">限时免费试用</div>
-              <div>
-                <span className="text-5xl font-bold text-slate-900">¥0</span>
-                <span className="text-xl text-slate-600">/月</span>
-              </div>
-            </CardHeader>
+          <Card className="relative bg-gradient-to-br from-blue-50 to-gray-50 border-2 border-blue-200 shadow-xl">
             <CardContent>
               <ul className="space-y-4 mb-8">
                 <li className="flex items-center">
