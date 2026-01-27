@@ -928,7 +928,7 @@ export const InterviewReviewDetail: React.FC = () => {
           </p>
         </div>
 
-        <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 space-y-4">
+        <div className="p-3 space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               职位名称

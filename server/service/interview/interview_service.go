@@ -507,7 +507,7 @@ func (s *interviewService) TriggerAnalysis(reviewID int64, userID string) (*mode
 	// analysisResult, err := s.executeAnalysisWorkflow(workflow.ID, userID, asrResult)
 	// 构建输入参数
 	inputs := map[string]interface{}{
-		"interview_text":  speech,
+		"speech":          speech,
 		"company_name":    company,
 		"job_title":       jobPosition,
 		"job_description": jobDescription,
