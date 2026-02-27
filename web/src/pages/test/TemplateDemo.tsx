@@ -34,7 +34,7 @@ export const TemplateDemo: React.FC = () => {
                     : 'border-gray-200 hover:border-gray-300 hover:shadow'
                 }`}
               >
-                <div className="font-semibold text-gray-900 mb-1">{template.name}</div>
+                <div className="font-semibold text-gray-900 mb-1">{template.name.includes("-")? template.name.split("-")[0] : template.name}</div>
                 {/* <div className="text-xs text-gray-600">{template.description}</div> */}
               </button>
             ))}
