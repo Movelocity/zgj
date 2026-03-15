@@ -139,49 +139,45 @@ function ActionMarkerDisplay({
 
       {/* Expanded content */}
       {marker.isExpanded && (
-        <div className="p-2 bg-gray-50 border-t border-gray-200">
+        <div className="bg-gray-50 border-gray-200">
           {marker.type === 'ADD_PART' && (
             <div className="space-y-1 text-xs text-gray-600">
               <div>
-                <span className="font-medium">标题:</span> {marker.title}
+                <span className="font-bold px-2">{marker.title}</span> 
               </div>
-              <div className="mt-0.5 p-2 bg-white border border-gray-200 rounded text-gray-700 whitespace-pre-wrap">
+              <div className="px-2 text-gray-700 whitespace-pre-wrap">
                 {marker.content}
               </div>
             </div>
           )}
           {marker.type === 'NEW_SECTION' && (
-            <div className="space-y-2">
+            <div className="">
               <div className="text-xs text-gray-600">
-                <span className="font-medium">板块名称:</span> {marker.section}
+                <span className="font-medium ml-2">板块名称:</span> {marker.section}
               </div>
-              <div className="text-xs text-gray-600">
-                <span className="font-medium">内容:</span>
-                <div className="mt-1 p-2 bg-white border border-gray-200 rounded text-gray-700 whitespace-pre-wrap">
+              <div className="text-xs text-gray-600 bg-green-100">
+                {/* <span className="font-medium">内容:</span> */}
+                <div className="mt-1 p-2 text-gray-700 whitespace-pre-wrap">
                   {marker.content}
                 </div>
               </div>
             </div>
           )}
           {marker.type === 'EDIT' && (
-            <div className="space-y-1">
+            <div className="">
               {/* <div className="text-xs text-gray-600">
                 <span className="font-medium">板块:</span> {marker.section}
               </div> */}
-              <div className="text-xs text-gray-600">
+              {/* <div className="text-xs text-gray-600">
                 {marker.title}
-              </div>
-              <div className="text-xs text-gray-600">
-                {/* <span className="font-medium">匹配模式 (正则):</span> */}
-                <div className="mt-1 p-2 bg-white border border-gray-200 rounded text-gray-700 font-mono text-xs">
+              </div> */}
+              <div className="text-xs text-gray-600 bg-red-100 p-2 roundedfont-mono">
+                <div className="">
                   {marker.regex}
                 </div>
               </div>
-              <div className="text-xs text-gray-600">
-                {/* <span className="font-medium">替换为:</span> */}
-                <div className="mt-1 p-2 bg-white border border-gray-200 rounded text-gray-700 whitespace-pre-wrap">
-                  {marker.replacement}
-                </div>
+              <div className="text-xs text-gray-600 bg-green-100 p-2 roundedfont-mono">
+                {marker.replacement}
               </div>
             </div>
           )}
@@ -189,8 +185,8 @@ function ActionMarkerDisplay({
       )}
 
       {/* Action buttons */}
-      {marker.isExpanded || isActionable && (
-        <div className="p-2 pt-1 flex items-center justify-end gap-2">
+      { true && (
+        <div className="px-2 pb-1 flex items-center justify-end gap-2">
           {marker.status === 'accepted' && (
             <div className="flex items-center gap-1 text-xs text-green-600">
               <FiCheck className="w-4 h-4" />
@@ -374,7 +370,7 @@ export default function AiMessageRenderer({
           title: null,
           message: params.join('|'), // Rejoin in case message contains pipes
           status: 'pending',
-          isExpanded: false,
+          isExpanded: true,
         };
       } else if (type === 'ADD_PART' && params.length >= 3) {
         marker = {
@@ -384,7 +380,7 @@ export default function AiMessageRenderer({
           title: params[1],
           content: params.slice(2).join('|'), // Rejoin remaining as content
           status: 'pending',
-          isExpanded: false,
+          isExpanded: true,
         };
       } else if (type === 'NEW_SECTION' && params.length >= 3) {
         marker = {
@@ -394,19 +390,34 @@ export default function AiMessageRenderer({
           title: params[1] === 'null' ? null : params[1],
           content: params.slice(2).join('|'),
           status: 'pending',
-          isExpanded: false,
+          isExpanded: true,
         };
-      } else if (type === 'EDIT' && params.length >= 4) {
-        marker = {
-          id: markerId,
-          type: 'EDIT',
-          section: params[0],
-          title: params[1],
-          regex: params[2],
-          replacement: params.slice(3).join('|'), // Rejoin remaining as replacement
-          status: 'pending',
-          isExpanded: false,
-        };
+      } else if (type === 'EDIT' && params.length >= 3) {
+        if (params.length >= 4) {
+          // Full format: [[ACTION:EDIT|section|title|regex|replacement]]
+          marker = {
+            id: markerId,
+            type: 'EDIT',
+            section: params[0],
+            title: params[1],
+            regex: params[2],
+            replacement: params.slice(3).join('|'), // Rejoin remaining as replacement
+            status: 'pending',
+            isExpanded: true,
+          };
+        } else {
+          // Compact format: [[ACTION:EDIT|section|regex|replacement]] (no separate title)
+          marker = {
+            id: markerId,
+            type: 'EDIT',
+            section: params[0],
+            title: null,
+            regex: params[1],
+            replacement: params.slice(2).join('|'), // Rejoin remaining as replacement
+            status: 'pending',
+            isExpanded: true,
+          };
+        }
       }
 
       if (marker) {

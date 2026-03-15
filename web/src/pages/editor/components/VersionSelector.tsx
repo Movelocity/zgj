@@ -110,7 +110,7 @@ export default function VersionSelector({
                 暂无版本记录
               </div>
             ) : (
-              <div className="py-1">
+              <div className="pb-1">
                 {versions.map((resume) => (
                   <button
                     key={resume.id}

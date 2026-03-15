@@ -146,10 +146,10 @@ export const EditableText = ({
         {/* Action buttons */}
         <div 
           className={cn(
-            "transition-opacity whitespace-nowrap z-20 flex items-center p-1 gap-1",
+            "transition-opacity whitespace-nowrap z-20 flex items-center gap-1",
             "absolute bg-white border border-gray-200 rounded-md shadow-lg",
             isHoverOpen ? "opacity-100" : "opacity-0",
-            multiline? "top-full right-0" : "top-0 left-full"
+            multiline? "top-full pt-1 right-0" : "top-0 left-full"
           )}
         >
           {/* Toggle button */}
@@ -158,7 +158,7 @@ export const EditableText = ({
               e.stopPropagation();
               setShowingOriginal(!showingOriginal);
             }}
-            className="bg-gray-100 hover:bg-gray-200 rounded text-gray-700 text-sm px-1 cursor-pointer"
+            className="bg-gray-100 hover:bg-gray-200 rounded text-gray-700 text-md px-1 cursor-pointer"
             title={showingOriginal ? "查看AI优化版本" : "查看原始版本"}
           >
             {showingOriginal ? "查看新版" : "查看原版"}
@@ -170,7 +170,7 @@ export const EditableText = ({
               e.stopPropagation();
               handleAcceptUpdate();
             }}
-            className="bg-green-100 hover:bg-green-200 rounded text-green-700 text-sm px-1 cursor-pointer"
+            className="bg-green-100 hover:bg-green-200 rounded text-green-700 text-md px-1 cursor-pointer"
             title="接收AI优化版本"
           >
             接收
@@ -182,7 +182,7 @@ export const EditableText = ({
               e.stopPropagation();
               handleRejectUpdate();
             }}
-            className="bg-red-100 hover:bg-red-200 rounded text-red-700 text-sm px-1 transition-colors cursor-pointer"
+            className="bg-red-100 hover:bg-red-200 rounded text-red-700 text-md px-1 transition-colors cursor-pointer"
             title="保留原版本"
           >
             拒绝
@@ -207,7 +207,7 @@ export const EditableText = ({
         <ReactMarkdown
           components={{
             p: ({ children, ...props }) => (
-              <p className="" {...props}>{children}</p>
+              <p className="whitespace-pre-wrap" {...props}>{children}</p>
             ),
             strong: ({ children, ...props }) => (
               <strong className="font-semibold" {...props}>{children}</strong>
