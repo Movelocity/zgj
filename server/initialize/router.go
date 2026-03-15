@@ -31,6 +31,7 @@ func InitRouter() *gin.Engine {
 	r.Static("/assets", filepath.Join(staticPath, "assets"))
 	r.Static("/images", filepath.Join(staticPath, "images"))
 	r.StaticFile("/favicon.ico", filepath.Join(staticPath, "favicon.ico"))
+	r.StaticFile("/sitemap.xml", filepath.Join(staticPath, "sitemap.xml"))
 
 	// 注册API路由
 	router.InitRoutes(r)
