@@ -402,8 +402,9 @@ export default function ChatPanel({
         }
 
         // Update resume data
+        // EDIT modifies existing blocks directly; ADD_PART/NEW_SECTION add new blocks for approval
         latestResumeDataRef.current = updatedData;
-        onResumeDataChange(updatedData, true);
+        onResumeDataChange(updatedData, type === 'EDIT' ? false : true);
         console.log('[ChatPanel] Resume data updated from action marker');
       } catch (error) {
         console.error('[ChatPanel] Error processing action marker:', error);
