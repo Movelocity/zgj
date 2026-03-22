@@ -768,7 +768,14 @@ func (s *appService) callWorkflowStreamAPIDirect(ctx context.Context, c *gin.Con
 	req.Header.Set("Accept", "text/event-stream")
 
 	// 创建HTTP客户端并发送请求
-	client := &http.Client{Timeout: 300 * time.Second} // 5分钟超时
+	// 注意：不设置 http.Client.Timeout，因为它会限制整个请求生命周期（包括读取流式响应体）
+	// 对于 SSE 流式响应，超时应由 context 和 Transport 控制
+	client := &http.Client{
+		Transport: &http.Transport{
+			ResponseHeaderTimeout: 60 * time.Second,  // 等待响应头的超时
+			IdleConnTimeout:       600 * time.Second,  // 空闲连接超时
+		},
+	}
 	resp, err := client.Do(req)
 	if err != nil {
 		return fmt.Errorf("发送HTTP请求失败: %w", err)
@@ -837,6 +844,10 @@ func (s *appService) processSSEStreamDirect(ctx context.Context, c *gin.Context,
 	if err := scanner.Err(); err != nil {
 		errorMessage = err.Error()
 		finalStatus = "failed"
+		// 向前端发送 error 事件，而不是直接断连
+		errEvent := fmt.Sprintf(`{"event": "error", "data": {"message": "上游连接中断: %s"}}`, err.Error())
+		fmt.Fprintf(c.Writer, "data: %s\n\n", errEvent)
+		c.Writer.Flush()
 	}
 
 	// 记录执行日志
