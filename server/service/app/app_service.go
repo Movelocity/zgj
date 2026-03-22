@@ -794,60 +794,101 @@ func (s *appService) callWorkflowStreamAPIDirect(ctx context.Context, c *gin.Con
 
 // processSSEStreamDirect 直接处理SSE流并转发到gin.Context
 func (s *appService) processSSEStreamDirect(ctx context.Context, c *gin.Context, streamCtx *StreamContext, body io.ReadCloser) error {
-	scanner := bufio.NewScanner(body)
-	scanner.Split(bufio.ScanLines)
-
 	var finalOutputs map[string]interface{}
 	var finalStatus string
 	var errorMessage string
 
-	for scanner.Scan() {
+	// 用 channel 将上游 SSE 数据从 scanner goroutine 传递到主循环
+	type scanResult struct {
+		line string
+		err  error
+		done bool
+	}
+	lineCh := make(chan scanResult, 10)
+
+	// 后台 goroutine 读取上游 Dify 的 SSE 流
+	go func() {
+		defer close(lineCh)
+		scanner := bufio.NewScanner(body)
+		scanner.Split(bufio.ScanLines)
+		for scanner.Scan() {
+			lineCh <- scanResult{line: scanner.Text()}
+		}
+		if err := scanner.Err(); err != nil {
+			lineCh <- scanResult{err: err}
+		}
+		lineCh <- scanResult{done: true}
+	}()
+
+	// 心跳定时器：每 15 秒发送一个 SSE 注释行保持连接活跃
+	heartbeat := time.NewTicker(15 * time.Second)
+	defer heartbeat.Stop()
+
+	streamDone := false
+	for !streamDone {
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
-		default:
-		}
 
-		line := scanner.Text()
-		if len(line) == 0 {
-			continue
-		}
+		case <-heartbeat.C:
+			// SSE 注释行（以 : 开头），客户端会忽略，但能保持连接不被中间层掐断
+			fmt.Fprintf(c.Writer, ": heartbeat\n\n")
+			c.Writer.Flush()
 
-		// 处理SSE数据行
-		if strings.HasPrefix(line, "data: ") {
-			data := strings.TrimPrefix(line, "data: ")
-			data = strings.TrimSuffix(data, "\r")
-
-			if data == "[DONE]" {
+		case result, ok := <-lineCh:
+			if !ok {
+				// channel 已关闭
+				streamDone = true
+				break
+			}
+			if result.done {
+				streamDone = true
+				break
+			}
+			if result.err != nil {
+				errorMessage = result.err.Error()
+				finalStatus = "failed"
+				// 向前端发送 error 事件，而不是直接断连
+				errEvent := fmt.Sprintf(`{"event": "error", "data": {"message": "上游连接中断: %s"}}`, result.err.Error())
+				fmt.Fprintf(c.Writer, "data: %s\n\n", errEvent)
+				c.Writer.Flush()
+				streamDone = true
 				break
 			}
 
-			// 转发给客户端
-			fmt.Fprintf(c.Writer, "data: %s\n\n", data)
-			c.Writer.Flush()
-
-			// 检查是否为workflow_finished事件
-			if strings.HasPrefix(data, `{"event": "workflow_finished"`) {
-				outputs, status, err := s.parseWorkflowFinishedEvent(data)
-				if err == nil {
-					finalOutputs = outputs
-					finalStatus = status
-				}
+			line := result.line
+			if len(line) == 0 {
+				continue
 			}
-		} else if strings.HasPrefix(line, "event: ") {
-			// 转发事件行
-			fmt.Fprintf(c.Writer, "%s\n", line)
-			c.Writer.Flush()
-		}
-	}
 
-	if err := scanner.Err(); err != nil {
-		errorMessage = err.Error()
-		finalStatus = "failed"
-		// 向前端发送 error 事件，而不是直接断连
-		errEvent := fmt.Sprintf(`{"event": "error", "data": {"message": "上游连接中断: %s"}}`, err.Error())
-		fmt.Fprintf(c.Writer, "data: %s\n\n", errEvent)
-		c.Writer.Flush()
+			// 处理SSE数据行
+			if strings.HasPrefix(line, "data: ") {
+				data := strings.TrimPrefix(line, "data: ")
+				data = strings.TrimSuffix(data, "\r")
+
+				if data == "[DONE]" {
+					streamDone = true
+					break
+				}
+
+				// 转发给客户端
+				fmt.Fprintf(c.Writer, "data: %s\n\n", data)
+				c.Writer.Flush()
+
+				// 检查是否为workflow_finished事件
+				if strings.HasPrefix(data, `{"event": "workflow_finished"`) {
+					outputs, status, err := s.parseWorkflowFinishedEvent(data)
+					if err == nil {
+						finalOutputs = outputs
+						finalStatus = status
+					}
+				}
+			} else if strings.HasPrefix(line, "event: ") {
+				// 转发事件行
+				fmt.Fprintf(c.Writer, "%s\n", line)
+				c.Writer.Flush()
+			}
+		}
 	}
 
 	// 记录执行日志
