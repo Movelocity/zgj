@@ -395,6 +395,24 @@ export default function ChatPanel({
                   sectionBlock.data = sectionBlock.data.replace(regex, replacement);
                 }
               }
+            } else if (sectionBlock.type === 'object' && typeof sectionBlock.data === 'object') {
+              // For object blocks (e.g. 个人信息), apply regex on JSON string then parse back
+              if (regex && replacement !== undefined) {
+                try {
+                  const jsonStr = JSON.stringify(sectionBlock.data);
+                  const regexObj = new RegExp(regex);
+                  const updatedJson = jsonStr.replace(regexObj, replacement);
+                  console.log(`[ChatPanel] EDIT object block "${section}"`);
+                  console.log(`[ChatPanel]   regex:       ${regex}`);
+                  console.log(`[ChatPanel]   replacement: ${replacement}`);
+                  console.log(`[ChatPanel]   before: ${jsonStr}`);
+                  console.log(`[ChatPanel]   after:  ${updatedJson}`);
+                  sectionBlock.data = JSON.parse(updatedJson);
+                  console.log(`[ChatPanel]   parsed OK:`, sectionBlock.data);
+                } catch (error) {
+                  console.error('[ChatPanel] Failed to edit object block:', section, error);
+                }
+              }
             }
           } else {
             console.warn(`[ChatPanel] Section not found: ${section}`);
