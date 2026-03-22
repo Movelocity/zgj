@@ -233,9 +233,16 @@ export default function ResumeDetails() {
         current_resume: content,
         resume_edit: "请先结构化原文"
       }
-      const structuredResumeResult = await workflowAPI.executeWorkflow("smart-format-2", uploadData, true);
+      const structuredResumeResult = await workflowAPI.executeWorkflow_v2({
+        id: "smart-format-2",
+        inputs: uploadData,
+        idAsName: true,
+        onNodeEvent: (event) => {
+          console.log(`[executeWorkflow_v2] [smart-format-2] ${event.type}${event.nodeName ? ': ' + event.nodeName : ''}`);
+        },
+      });
       if (structuredResumeResult.code !== 0) {
-        console.error('Execution error:', structuredResumeResult.data.message);
+        console.error('Execution error:', structuredResumeResult.msg);
         return { success: false, error: '数据结构化失败' };
       }
       const structuredResumeData = structuredResumeResult.data.data.outputs?.output;
@@ -386,11 +393,18 @@ export default function ResumeDetails() {
             const processedData = structured_data as ResumeData;
             let analysisContent = currentMetadata.initialAnalysisContent;
             if (!analysisContent) {
-              const analysisResult = await workflowAPI.executeWorkflow("common-analysis", {
-                origin_resume: JSON.stringify(processedData),
-                job_description: metadataRef.current.jobDescription || '',
-                scene: metadataRef.current.currentTarget || '',
-              }, true);
+              const analysisResult = await workflowAPI.executeWorkflow_v2({
+                id: "common-analysis",
+                inputs: {
+                  origin_resume: JSON.stringify(processedData),
+                  job_description: metadataRef.current.jobDescription || '',
+                  scene: metadataRef.current.currentTarget || '',
+                },
+                idAsName: true,
+                onNodeEvent: (event) => {
+                  console.log(`[executeWorkflow_v2] [common-analysis] ${event.type}${event.nodeName ? ': ' + event.nodeName : ''}`);
+                },
+              });
               
               if (analysisResult.code !== 0) {
                 throw new Error('简历分析失败');
