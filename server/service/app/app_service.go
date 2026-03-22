@@ -886,6 +886,7 @@ func (s *appService) setSSEHeaders(c *gin.Context) {
 	c.Header("Content-Type", "text/event-stream")
 	c.Header("Cache-Control", "no-cache")
 	c.Header("Connection", "keep-alive")
+	c.Header("X-Accel-Buffering", "no") // 关键：告诉 Nginx 禁用代理缓冲，直接透传 SSE 流
 	c.Header("Access-Control-Allow-Origin", "*")
 	c.Header("Access-Control-Allow-Headers", "Cache-Control")
 }
