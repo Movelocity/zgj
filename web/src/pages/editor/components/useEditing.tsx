@@ -42,7 +42,7 @@ export const useEditing = (
   // Save edit
   const saveEdit = (fieldId: string, inputElement: HTMLInputElement | HTMLTextAreaElement) => {
     const currentValue = inputElement.value;
-    const newData = { ...resumeData };
+    const newData = JSON.parse(JSON.stringify(resumeData)) as ResumeData;
     
     const [blockIdx, itemId, field] = fieldId.split('-');
     const blockIndex = parseInt(blockIdx.replace('block', ''));
@@ -71,7 +71,7 @@ export const useEditing = (
     const newBlockIndex = blockMatchMap[blockIndex];
     if (newBlockIndex !== undefined && newBlockIndex !== -1 && 
         newBlockIndex >= 0 && newBlockIndex < newResumeData.blocks.length) {
-      const clearedNewData = { ...newResumeData };
+      const clearedNewData = JSON.parse(JSON.stringify(newResumeData)) as ResumeData;
       const clearedBlock = clearedNewData.blocks[newBlockIndex];
       
       if (clearedBlock && typeof clearedBlock === 'object') {
@@ -148,21 +148,22 @@ export const useEditing = (
   const acceptUpdate = (blockIndex: number, itemId?: string, field?: string) => {
     // Use block match map to find corresponding block in newResumeData
     const newBlockIndex = blockMatchMap[blockIndex];
-    
+
     // No matching block found in newResumeData
     if (newBlockIndex === undefined || newBlockIndex === -1) {
       console.warn(`No matching block found for blockIndex ${blockIndex}`);
       return;
     }
-    
-    const newData = { ...resumeData };
-    const clearedNewData = { ...newResumeData };
-    
+
+    // 深拷贝，确保不会修改原始状态引用，React 才能正确检测变化并重新渲染
+    const newData = JSON.parse(JSON.stringify(resumeData)) as ResumeData;
+    const clearedNewData = JSON.parse(JSON.stringify(newResumeData)) as ResumeData;
+
     if (blockIndex < 0 || blockIndex >= newData.blocks.length) return;
     if (newBlockIndex < 0 || newBlockIndex >= newResumeData.blocks.length) return;
-    
+
     const block = newData.blocks[blockIndex];
-    const newBlock = newResumeData.blocks[newBlockIndex];
+    const newBlock = clearedNewData.blocks[newBlockIndex];
     const clearedBlock = clearedNewData.blocks[newBlockIndex];
     
     // 优先处理 object 类型的字段更新（包括 title 字段）
@@ -222,8 +223,7 @@ export const useEditing = (
       return;
     }
     
-    const newData = { ...newResumeData };
-    
+    const newData = JSON.parse(JSON.stringify(newResumeData)) as ResumeData;    
     if (blockIndex < 0 || blockIndex >= resumeData.blocks.length) return;
     if (newBlockIndex < 0 || newBlockIndex >= newData.blocks.length) return;
     
