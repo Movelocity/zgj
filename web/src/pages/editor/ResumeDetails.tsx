@@ -642,6 +642,9 @@ export default function ResumeDetails() {
       setNewResumeData(newData);
     } else {
       setResumeData(newData);
+      // 同步 newResumeData，防止 EDIT action marker 更新 resumeData 后
+      // newResumeData 保留旧值导致"原版"和"新版"显示反转
+      setNewResumeData(newData);
     }
   };
 
