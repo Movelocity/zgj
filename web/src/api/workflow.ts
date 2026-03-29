@@ -17,6 +17,7 @@ type ExecuteWorkflowV2Params = {
   inputs: Record<string, unknown>,
   idAsName?: boolean,
   onNodeEvent?: (event: { type: string; nodeName?: string; nodeId?: string }) => void,
+  signal?: AbortSignal,
 }
 
 export const workflowAPI = {
@@ -59,6 +60,7 @@ export const workflowAPI = {
     inputs,
     idAsName = false,
     onNodeEvent,
+    signal,
   }: ExecuteWorkflowV2Params): Promise<ApiResponse<any>> => {
     const tag = `[executeWorkflow_v2] [${id}]`;
     console.log(`${tag} 开始执行`);
@@ -74,6 +76,7 @@ export const workflowAPI = {
         'Accept': 'text/event-stream',
       },
       body: JSON.stringify(body),
+      signal,
     });
 
     if (!response.ok) {

@@ -22,6 +22,8 @@ import type { ProcessingStage, StepResult } from './types';
 import { TimeBasedProgressUpdater, RESUME_PROCESSING_STEPS } from '@/utils/progress';
 import { parseAndFixResumeJson } from '@/utils/helpers';
 import { chatMessageAPI } from '@/api/chatMessage';
+import { useSmartFormat } from '@/hooks/useSmartFormat';
+import SmartFormatIndicator from '@/components/SmartFormatIndicator';
 
 
 export default function ResumeDetails() {
@@ -83,6 +85,14 @@ export default function ResumeDetails() {
   // Resume data state
   const [resumeData, setResumeData] = useState<ResumeData>(defaultResumeData);
   const [newResumeData, setNewResumeData] = useState<ResumeData>(defaultResumeData);  // AI优化后的内容，需人工确认后合并
+
+  // 异步 smart-format-2 格式化流程，结果写入修改区（newResumeData）
+  const { isFormatting, format: triggerSmartFormat } = useSmartFormat((data) => {
+    setNewResumeData(data);
+  });
+  // 用 ref 暴露给 loadResumeDetail 闭包（避免修改其依赖数组）
+  const triggerSmartFormatRef = useRef(triggerSmartFormat);
+  triggerSmartFormatRef.current = triggerSmartFormat;
   const [resumeName, setResumeName] = useState<string>('');
   const [resumeNumber, setResumeNumber] = useState<string>('');
   const [resumeVersion, setResumeVersion] = useState<number>(1);
@@ -427,26 +437,11 @@ export default function ResumeDetails() {
               }, true); // 暂存到服务器，防止下面的步骤炸了这里又要重来
             }
             
-            // Format result
-            console.log('格式化优化后的简历...');
+            // 异步触发格式化，不阻塞后续流程
+            console.log('异步触发格式化优化后的简历...');
             setCurrentStage('exporting');
             updater.startStep(3);
-            // const formatResult = await workflowAPI.executeWorkflow("smart-format-2", {
-            //   current_resume: JSON.stringify(processedData),
-            //   resume_edit: analysisContent
-            // }, true);
-            
-            // if (formatResult.code !== 0) {
-            //   throw new Error('简历格式化失败');
-            // }
-            
-            // const formattedResult = formatResult.data.data.outputs?.output;
-            // if (!formattedResult) {
-            //   throw new Error('格式化结果为空');
-            // }
-            
-            // const formattedResumeData = parseAndFixResumeJson(formattedResult);
-            // setNewResumeData(formattedResumeData);
+            triggerSmartFormatRef.current(processedData, analysisContent);
             
             // Mark initialization complete and update processing stage
             await updateMetadata({
@@ -756,6 +751,7 @@ export default function ResumeDetails() {
               onMessagesChange={setChatMessages}
               resumeData={resumeData}
               onResumeDataChange={(data, require_commit) => handleResumeDataChange(data as ResumeData, require_commit)}
+              onSmartFormat={triggerSmartFormat}
               resumeId={resumeId}
               currentTarget={currentTarget}
               updateMetadata={updateMetadata}
@@ -782,6 +778,8 @@ export default function ResumeDetails() {
           />
         )}
       </div>
+
+      <SmartFormatIndicator visible={isFormatting} />
     </div>
   );
 }
