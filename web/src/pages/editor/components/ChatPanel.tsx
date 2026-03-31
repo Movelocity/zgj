@@ -2,9 +2,10 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import {Button, Modal} from '@/components/ui';
 import AiMessageRenderer from './AiMessageRenderer';
 import { Send, Lightbulb, Sparkles, X } from 'lucide-react';
-import { FiMessageSquare } from 'react-icons/fi';
+import { FiMessageSquare, FiFileText } from 'react-icons/fi';
 import type { ResumeData } from '@/types/resume';
 import { workflowAPI } from '@/api/workflow';
+import { parseAndFixResumeJson } from '@/utils/helpers';
 import { generateAIResponse, generateSuggestions, truncate } from './utils';
 import { previewPrintContent } from '@/utils/pdfExport';
 import { resumeAPI } from '@/api/resume';
@@ -25,7 +26,6 @@ interface Message {
 interface ChatPanelProps {
   resumeData:  ResumeData;
   onResumeDataChange: (data: ResumeData, require_commit: boolean) => void;
-  onSmartFormat?: (currentResume: ResumeData, content: string) => void; // 触发异步格式化流程
   initialMessages?: Message[];
   onMessagesChange?: (messages: Message[]) => void;
   resumeId?: string; // 简历ID，用于保存pending_content
@@ -64,10 +64,9 @@ const getChatConfig = (currentTarget?: string) => {
   }
 };
 
-export default function ChatPanel({
-  resumeData,
+export default function ChatPanel({ 
+  resumeData, 
   onResumeDataChange,
-  onSmartFormat,
   initialMessages,
   onMessagesChange,
   resumeId,
@@ -94,7 +93,8 @@ export default function ChatPanel({
   const scrollGradientBottomRef = useRef<HTMLDivElement>(null);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [isResponding, setIsResponding] = useState(false);
-
+  const [isFormatting, setIsFormatting] = useState(false);
+  
   // 使用ref跟踪最新的简历数据，用于保存pending_content
   const latestResumeDataRef = useRef<ResumeData>(resumeData);
   
@@ -648,7 +648,7 @@ export default function ChatPanel({
       textareaRef.current.style.height = 'auto';
     }
     
-    if (isResponding) return;
+    if (isResponding || isFormatting) return;
 
     if (query.startsWith("/")) { // 处理斜杠命令
       handleSlashCommand(query);
@@ -750,7 +750,7 @@ export default function ChatPanel({
           onError: onError,
         });
 
-        onSmartFormat?.(latestResumeDataRef.current, aiResponse.content);
+        postProcess(aiResponse.content);
       } else {  // 通用对话应用
         setIsResponding(true);
         const inputs: any = {
@@ -780,6 +780,46 @@ export default function ChatPanel({
       setIsTyping(false);
       setIsResponding(false);
       lastAbortScrollMessageId.current = '';
+    }
+  };
+
+  /** 已得到输出，重新调用阻塞式api，得到结构化的简历内容 */
+  const postProcess = async (content: string): Promise<void> => {
+    try{
+      setIsFormatting(true);
+      setTimeout(() => {
+        // 滚动到底部
+        if (scrollRef.current) {
+          scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+        }
+      }, 100);
+      console.log("开始解析格式化简历...")
+      // 1. 创建原有简历摘要，自由基本信息和id
+      // const lightResume = parseResumeSummary(resumeData as ResumeData);
+      // 2. 调用阻塞式api，得到结构化的简历内容
+      const uploadData = {
+        current_resume: JSON.stringify(latestResumeDataRef.current),
+        resume_edit: content
+      }
+      const structuredResumeResult = await workflowAPI.executeWorkflow("smart-format-2", uploadData, true);
+      if (structuredResumeResult.code !== 0) {
+        console.error('Execution error:', structuredResumeResult.data.message);
+        return;
+      }
+      const structuredResumeData = structuredResumeResult.data.data.outputs?.output;
+      console.log('structuredResumeData', structuredResumeData);
+
+      if (structuredResumeData && typeof structuredResumeData === 'string') {
+        // 使用 parseAndFixResumeJson 确保数据安全性和格式正确性
+        const finalResumeData = parseAndFixResumeJson(structuredResumeData as string);
+        // 更新ref以跟踪最新数据
+        latestResumeDataRef.current = finalResumeData;
+        onResumeDataChange(finalResumeData, true);
+      }
+    } catch (error) {
+      console.error('Execution error:', error);
+    } finally {
+      setIsFormatting(false);
     }
   };
 
@@ -958,6 +998,32 @@ export default function ChatPanel({
                 </div>
               ))}
 
+              {isFormatting && (
+                <div className="w-full px-4 animate-in fade-in-0 slide-in-from-bottom-2 duration-300">
+                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow duration-200">
+                    <div className="flex items-center space-x-3 mb-3">
+                      <div className="relative">
+                        <FiFileText className="w-5 h-5 text-blue-600 animate-pulse" />
+                        <div className="absolute -top-1 -right-1 w-2 h-2 bg-blue-500 rounded-full animate-ping"></div>
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="text-sm font-medium text-blue-900 mb-1">将内容更新到编辑区</h4>
+                      </div>
+                      <div className="text-xs text-blue-500 font-mono bg-blue-100 px-2 py-1 rounded">
+                        AI
+                      </div>
+                    </div>
+                    
+                    {/* 进度条动画 */}
+                    <div className="w-full bg-blue-100 rounded-full h-2 overflow-hidden mb-3">
+                      <div className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full animate-pulse relative">
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer"></div>
+                      </div>
+                    </div>
+                    
+                  </div>
+                </div>
+              )}
 
               {/* 打字指示器，在首字响应前显示 */}
               {isTyping && (
