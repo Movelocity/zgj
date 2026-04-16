@@ -143,10 +143,11 @@ check_database() {
     echo ""
     echo -e "${BLUE}🔍 检查数据库状态...${NC}"
     
-    # 检查Docker容器是否存在并运行
-    if docker ps -q -f name=pgsql > /dev/null 2>&1; then
+    # 检查 Docker 容器 pgsql：docker ps 在无匹配时仍返回 0，须按容器名判断状态
+    PG_RUNNING=$(docker inspect -f '{{.State.Running}}' pgsql 2>/dev/null || true)
+    if [ "${PG_RUNNING}" = "true" ]; then
         echo -e "${GREEN}✅ 数据库容器已在运行${NC}"
-    elif docker ps -a -q -f name=pgsql > /dev/null 2>&1; then
+    elif docker inspect pgsql >/dev/null 2>&1; then
         echo -e "${YELLOW}⚠️  数据库容器已存在但未运行，正在启动...${NC}"
         docker start pgsql
         if [ $? -eq 0 ]; then
@@ -203,7 +204,7 @@ export_database() {
     echo -e "${BLUE}📁 导出文件: ${BACKUP_FILE}${NC}"
     
     # 执行导出
-    if docker exec pgsql pg_dump -U postgres -d d1 > "${BACKUP_FILE}"; then
+    if docker exec pgsql pg_dump -U postgres -d postgres > "${BACKUP_FILE}"; then
         echo -e "${GREEN}✅ 数据库导出成功${NC}"
         echo -e "${BLUE}💡 备份文件保存在: ${BACKUP_FILE}${NC}"
     else
