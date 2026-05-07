@@ -56,3 +56,18 @@ The system SHALL provide an admin rebuild flow for the opportunity vector index.
 #### Scenario: Rebuild after Chroma downtime
 - **WHEN** ChromaDB was unavailable during previous opportunity writes
 - **THEN** an administrator SHALL be able to run rebuild to restore the vector index from PostgreSQL
+
+### Requirement: Frontend Resume Matching Display
+
+The system SHALL expose resume-to-opportunity matching on the public opportunity page.
+
+#### Scenario: User matches pasted resume
+- **GIVEN** a logged-in user is viewing `/opportunities`
+- **WHEN** the user pastes resume content and starts matching
+- **THEN** the page SHALL call the resume opportunity matching API
+- **AND** the opportunity list SHALL display match scores and reasons for returned matches
+- **AND** matched opportunities SHALL be ordered ahead of unmatched opportunities by descending score
+
+#### Scenario: Match failure is visible
+- **WHEN** the matching request fails because the user is not logged in or the vector service returns an error
+- **THEN** the page SHALL show a clear error message without clearing the existing opportunity list

@@ -12,7 +12,7 @@ The project now stores job opportunities in PostgreSQL and exposes them through 
   - Keep Go as the source of truth for opportunity CRUD and PostgreSQL persistence.
 - Non-Goals:
   - Replace PostgreSQL opportunity listing/search.
-  - Build a full recommendation UI in this change.
+  - Build a separate full recommendation center beyond the existing opportunity page.
   - Use DeepSeek chat completions as an embedding model.
 
 ## Decisions

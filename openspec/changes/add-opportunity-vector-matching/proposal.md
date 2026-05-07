@@ -18,6 +18,7 @@
   - 输入简历文本或结构化简历 JSON
   - 输出 Top N 岗位、相似度分数、岗位元数据和简短匹配原因
 - Go 后端在岗位创建、更新、批量上传、下架后调用 LangChain 服务同步向量。
+- 前端岗位机会页新增简历匹配入口，展示匹配分数、原因，并按匹配度排序岗位列表。
 - README 增加 ChromaDB 启动与环境变量说明。
 
 ## Impact
@@ -32,6 +33,9 @@
   - `server/service/opportunity/opportunity_service.go`
   - `server/api/opportunity/opportunity.go`
   - `server/router/opportunity.go`
+  - `web/src/api/opportunity.ts`
+  - `web/src/types/opportunity.ts`
+  - `web/src/pages/opportunities/Opportunities.tsx`
   - `README.md`
 
 ## Notes

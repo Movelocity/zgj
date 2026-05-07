@@ -22,3 +22,10 @@
 - [x] 3.2 Run `npm run typecheck` and smoke test in `langchain-service`.
 - [x] 3.3 Run `go build -o server .` in `server`.
 - [x] 3.4 Verify matching with the seeded opportunities and a sample resume.
+
+## 4. Frontend
+
+- [x] 4.1 Add TypeScript types and API wrapper for opportunity matching.
+- [x] 4.2 Add resume paste and match controls to `/opportunities`.
+- [x] 4.3 Display match scores and reasons in the list/detail views.
+- [x] 4.4 Sort matched opportunities by descending score while preserving keyword filters.

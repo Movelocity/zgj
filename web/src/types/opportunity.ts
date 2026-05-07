@@ -54,3 +54,30 @@ export interface OpportunityUpsertRequest {
 export interface OpportunityBatchCreateRequest {
   items: OpportunityUpsertRequest[];
 }
+
+export interface OpportunityVectorMatchRequest {
+  resume: string | Record<string, unknown>;
+  top_k?: number;
+}
+
+export interface OpportunityVectorMatch {
+  id: string;
+  opportunity_id: number;
+  company: string;
+  title: string;
+  category: string;
+  location: string;
+  contact_email: string;
+  status: OpportunityStatus;
+  distance: number | null;
+  score: number;
+  document: string;
+  reason: string;
+}
+
+export interface OpportunityVectorMatchResponse {
+  total: number;
+  matches: OpportunityVectorMatch[];
+  embedding_model: string;
+  collection: string;
+}

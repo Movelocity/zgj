@@ -2,13 +2,15 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Badge, Button, Input } from '@/components/ui';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Briefcase, Building2, ListFilter, Mail, MapPin, Search, Sparkles, Tags, X } from 'lucide-react';
+import { Briefcase, Building2, Loader2, ListFilter, Mail, MapPin, Search, Sparkles, Tags, X } from 'lucide-react';
 import { opportunityAPI } from '@/api/opportunity';
-import type { JobOpportunity } from '@/types/opportunity';
+import type { JobOpportunity, OpportunityVectorMatch } from '@/types/opportunity';
 
 const ALL_VALUE = 'all';
 
 const normalize = (value?: string) => (value || '').trim().toLowerCase();
+
+const scoreLabel = (score?: number) => `${Math.round((score || 0) * 100)}%`;
 
 const getSearchText = (opportunity: JobOpportunity) => [
   opportunity.company,
@@ -63,6 +65,11 @@ const Opportunities: React.FC = () => {
   const [companyFilter, setCompanyFilter] = useState(ALL_VALUE);
   const [categoryFilter, setCategoryFilter] = useState(ALL_VALUE);
   const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [resumeText, setResumeText] = useState('');
+  const [matching, setMatching] = useState(false);
+  const [matchError, setMatchError] = useState('');
+  const [matchResults, setMatchResults] = useState<OpportunityVectorMatch[]>([]);
+  const [matchMeta, setMatchMeta] = useState<{ embeddingModel: string; collection: string } | null>(null);
 
   const loadOpportunities = async () => {
     try {
@@ -108,30 +115,100 @@ const Opportunities: React.FC = () => {
     });
   }, [categoryFilter, companyFilter, opportunities, searchKeyword]);
 
+  const matchByOpportunityId = useMemo(() => {
+    return new Map(matchResults.map((item, index) => [item.opportunity_id, { ...item, rank: index + 1 }]));
+  }, [matchResults]);
+
+  const displayOpportunities = useMemo(() => {
+    if (matchResults.length === 0) {
+      return filteredOpportunities;
+    }
+
+    return [...filteredOpportunities].sort((a, b) => {
+      const matchA = matchByOpportunityId.get(a.id);
+      const matchB = matchByOpportunityId.get(b.id);
+      if (matchA && matchB) {
+        return matchB.score - matchA.score;
+      }
+      if (matchA) return -1;
+      if (matchB) return 1;
+      return a.sort_order - b.sort_order;
+    });
+  }, [filteredOpportunities, matchByOpportunityId, matchResults.length]);
+
   useEffect(() => {
-    if (filteredOpportunities.length === 0) {
+    if (displayOpportunities.length === 0) {
       if (selectedId !== null) {
         setSelectedId(null);
       }
       return;
     }
 
-    if (!filteredOpportunities.some((item) => item.id === selectedId)) {
-      setSelectedId(filteredOpportunities[0].id);
+    if (!displayOpportunities.some((item) => item.id === selectedId)) {
+      setSelectedId(displayOpportunities[0].id);
     }
-  }, [filteredOpportunities, selectedId]);
+  }, [displayOpportunities, selectedId]);
 
   const selectedOpportunity = useMemo(
-    () => filteredOpportunities.find((item) => item.id === selectedId) || filteredOpportunities[0] || null,
-    [filteredOpportunities, selectedId]
+    () => displayOpportunities.find((item) => item.id === selectedId) || displayOpportunities[0] || null,
+    [displayOpportunities, selectedId]
   );
 
+  const selectedMatch = selectedOpportunity ? matchByOpportunityId.get(selectedOpportunity.id) : undefined;
+
   const hasFilters = Boolean(searchKeyword.trim()) || companyFilter !== ALL_VALUE || categoryFilter !== ALL_VALUE;
+  const hasMatchResults = matchResults.length > 0;
 
   const clearFilters = () => {
     setSearchKeyword('');
     setCompanyFilter(ALL_VALUE);
     setCategoryFilter(ALL_VALUE);
+  };
+
+  const clearMatch = () => {
+    setResumeText('');
+    setMatchError('');
+    setMatchResults([]);
+    setMatchMeta(null);
+  };
+
+  const handleMatch = async () => {
+    const content = resumeText.trim();
+    if (!content) {
+      setMatchError('请先粘贴简历内容后再匹配。');
+      return;
+    }
+
+    try {
+      setMatching(true);
+      setMatchError('');
+      const response = await opportunityAPI.matchOpportunities({
+        resume: content,
+        top_k: Math.min(Math.max(opportunities.length, 5), 20),
+      });
+      if (response.code !== 0) {
+        setMatchError(response.msg || '岗位匹配失败');
+        return;
+      }
+
+      const matches = response.data.matches || [];
+      setMatchResults(matches);
+      setMatchMeta({
+        embeddingModel: response.data.embedding_model,
+        collection: response.data.collection,
+      });
+      if (matches[0]?.opportunity_id) {
+        setSelectedId(matches[0].opportunity_id);
+      }
+      if (matches.length === 0) {
+        setMatchError('暂无匹配结果，请稍后重试或联系管理员重建岗位向量。');
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : '岗位匹配失败';
+      setMatchError(message.includes('登录') ? '请先登录后再进行岗位匹配。' : message);
+    } finally {
+      setMatching(false);
+    }
   };
 
   return (
@@ -202,6 +279,61 @@ const Opportunities: React.FC = () => {
             </CardContent>
           </Card>
 
+          <Card className="mb-6 border-slate-200 bg-white/95 shadow-sm backdrop-blur">
+            <CardContent className="grid gap-4 p-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+              <div className="grid gap-2">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <label htmlFor="resume-match-text" className="text-sm font-medium leading-none text-slate-900">
+                    简历匹配岗位
+                  </label>
+                  {hasMatchResults && (
+                    <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100">
+                      已匹配 {matchResults.length} 个岗位
+                    </Badge>
+                  )}
+                </div>
+                <textarea
+                  id="resume-match-text"
+                  value={resumeText}
+                  rows={5}
+                  placeholder="粘贴你的简历文本或核心经历，系统会按语义匹配岗位并排序"
+                  onChange={(event) => setResumeText(event.target.value)}
+                  className="min-h-[132px] resize-y rounded-md border border-slate-200 bg-white px-3 py-2 text-sm leading-6 text-slate-700 shadow-xs outline-none transition-[color,box-shadow] placeholder:text-slate-400 focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
+                />
+                <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                  <span>匹配后会优先展示分数更高的岗位。</span>
+                  {matchMeta && <span>模型：{matchMeta.embeddingModel}</span>}
+                </div>
+                {matchError && (
+                  <p className="rounded-md border border-red-100 bg-red-50 px-3 py-2 text-sm text-red-700">
+                    {matchError}
+                  </p>
+                )}
+              </div>
+              <div className="flex gap-2 lg:justify-end">
+                <Button
+                  type="button"
+                  onClick={handleMatch}
+                  disabled={matching || !resumeText.trim()}
+                  className="gap-2"
+                >
+                  {matching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                  {matching ? '匹配中' : '开始匹配'}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={matching && !hasMatchResults}
+                  onClick={clearMatch}
+                  className="gap-2"
+                >
+                  <X className="h-4 w-4" />
+                  清除
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
           {loading && (
             <Card className="border-slate-200 bg-white">
               <CardContent className="py-12 text-center text-slate-500">正在加载岗位机会...</CardContent>
@@ -232,19 +364,20 @@ const Opportunities: React.FC = () => {
                       <ListFilter className="h-5 w-5" />
                       岗位列表
                     </CardTitle>
-                    <Badge variant="secondary">{filteredOpportunities.length} / {opportunities.length}</Badge>
+                    <Badge variant="secondary">{displayOpportunities.length} / {opportunities.length}</Badge>
                   </div>
                 </CardHeader>
 
                 <CardContent className="grid gap-3">
-                  {filteredOpportunities.length === 0 && (
+                  {displayOpportunities.length === 0 && (
                     <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50 px-4 py-10 text-center text-sm text-slate-500">
                       没有匹配的岗位，换个关键词或清空筛选试试。
                     </div>
                   )}
 
-                  {filteredOpportunities.map((opportunity) => {
+                  {displayOpportunities.map((opportunity) => {
                     const active = selectedOpportunity?.id === opportunity.id;
+                    const match = matchByOpportunityId.get(opportunity.id);
                     return (
                       <button
                         key={opportunity.id}
@@ -266,10 +399,20 @@ const Opportunities: React.FC = () => {
                             <Tags className="h-3.5 w-3.5" />
                             {opportunity.category}
                           </Badge>
+                          {match && (
+                            <Badge className="gap-1 bg-emerald-100 text-emerald-700 hover:bg-emerald-100">
+                              匹配度 {scoreLabel(match.score)}
+                            </Badge>
+                          )}
                         </div>
                         <div className="text-base font-semibold leading-6 text-slate-950">{opportunity.title}</div>
                         {opportunity.summary && (
                           <p className="mt-2 line-clamp-2 text-sm leading-6 text-slate-600">{opportunity.summary}</p>
+                        )}
+                        {match?.reason && (
+                          <p className="mt-2 rounded-md bg-emerald-50 px-3 py-2 text-sm leading-6 text-emerald-800">
+                            {match.reason}
+                          </p>
                         )}
                         <div className="mt-3 grid gap-2 text-sm text-slate-500 sm:grid-cols-2">
                           <span className="inline-flex min-w-0 items-center gap-1.5">
@@ -302,6 +445,11 @@ const Opportunities: React.FC = () => {
                               <Tags className="h-3.5 w-3.5" />
                               {selectedOpportunity.category}
                             </Badge>
+                            {selectedMatch && (
+                              <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100">
+                                匹配度 {scoreLabel(selectedMatch.score)}
+                              </Badge>
+                            )}
                           </div>
                           <CardTitle className="text-2xl text-slate-950">{selectedOpportunity.title}</CardTitle>
                           {selectedOpportunity.summary && (
@@ -339,6 +487,16 @@ const Opportunities: React.FC = () => {
                           {selectedOpportunity.note && <p className="mt-2 text-sm leading-6 text-slate-600">{selectedOpportunity.note}</p>}
                         </div>
                       </div>
+
+                      {selectedMatch?.reason && (
+                        <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4">
+                          <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-emerald-950">
+                            <Sparkles className="h-4 w-4" />
+                            匹配原因
+                          </div>
+                          <p className="text-sm leading-6 text-emerald-800">{selectedMatch.reason}</p>
+                        </div>
+                      )}
 
                       <Separator />
 

@@ -6,11 +6,17 @@ import type {
   OpportunityListParams,
   OpportunityListResponse,
   OpportunityUpsertRequest,
+  OpportunityVectorMatchRequest,
+  OpportunityVectorMatchResponse,
 } from '@/types/opportunity';
 
 export const opportunityAPI = {
   getPublicOpportunities: (params?: OpportunityListParams): Promise<ApiResponse<OpportunityListResponse>> => {
     return apiClient.get('/api/opportunities', { params });
+  },
+
+  matchOpportunities: (data: OpportunityVectorMatchRequest): Promise<ApiResponse<OpportunityVectorMatchResponse>> => {
+    return apiClient.post('/api/opportunities/match', data);
   },
 
   getAdminOpportunities: (params?: OpportunityListParams): Promise<ApiResponse<OpportunityListResponse>> => {
