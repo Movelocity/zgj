@@ -45,6 +45,10 @@ func InitRouter() *gin.Engine {
 			return
 		}
 		// 其他所有路由都返回前端的 index.html (SPA)
+		// index.html 是 Vite 的入口清单，必须禁用缓存，避免浏览器继续加载旧 chunk。
+		c.Header("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate")
+		c.Header("Pragma", "no-cache")
+		c.Header("Expires", "0")
 		c.File(filepath.Join(staticPath, "index.html"))
 	})
 
