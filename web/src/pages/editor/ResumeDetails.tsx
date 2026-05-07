@@ -29,7 +29,7 @@ import { workflowAPI } from '@/api/workflow';
 import { createExportTask, getExportTaskStatus, downloadExportPdf } from '@/api/pdfExport';
 import type { ProcessingStage, StepResult } from './types';
 import { TimeBasedProgressUpdater, RESUME_PROCESSING_STEPS } from '@/utils/progress';
-import { parseAndFixResumeJson } from '@/utils/helpers';
+import { isUsableResumeData, parseAndFixResumeJson } from '@/utils/helpers';
 import { chatMessageAPI } from '@/api/chatMessage';
 
 
@@ -318,8 +318,10 @@ export default function ResumeDetails() {
       // 恢复pending_content中的聊天记录和简历数据
       if (pending_content) {
         console.log('[ResumeDetails] 发现pending_content，恢复数据:', pending_content);
-        if (pending_content.newResumeData) {
+        if (isUsableResumeData(pending_content.newResumeData)) {
           setNewResumeData(pending_content.newResumeData);
+        } else if (pending_content.newResumeData) {
+          console.warn('[ResumeDetails] pending_content 中的 AI 修改不是可用简历 JSON，已忽略');
         }
       }
 
@@ -469,7 +471,7 @@ export default function ResumeDetails() {
             }
             
             const formattedResumeData = parseAndFixResumeJson(formattedResult) as ResumeData;
-            if (!formattedResumeData?.blocks?.length) {
+            if (!isUsableResumeData(formattedResumeData)) {
               throw new Error('格式化结果没有可用简历内容');
             }
 

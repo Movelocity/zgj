@@ -15,7 +15,7 @@ import { Send, Lightbulb, Sparkles, X } from 'lucide-react';
 import { FiMessageSquare, FiFileText } from 'react-icons/fi';
 import type { ResumeData } from '@/types/resume';
 import { workflowAPI } from '@/api/workflow';
-import { parseAndFixResumeJson } from '@/utils/helpers';
+import { isUsableResumeData, parseAndFixResumeJson } from '@/utils/helpers';
 import { generateAIResponse, generateSuggestions, truncate } from './utils';
 import { previewPrintContent } from '@/utils/pdfExport';
 import { resumeAPI } from '@/api/resume';
@@ -274,11 +274,13 @@ export default function ChatPanel({
       processedBlocksRef.current.add(blockId);
       console.log(`[ChatPanel] 处理更新块: ${blockId}`, data);
       
-      if (data && data.blocks && data.blocks.length > 0) {
+      if (isUsableResumeData(data)) {
         // 更新ref以跟踪最新数据
         latestResumeDataRef.current = data;
         onResumeDataChange(data, true);
         console.log(`[ChatPanel] 简历数据已更新`);
+      } else {
+        console.warn(`[ChatPanel] 更新块不是可用简历 JSON，已跳过: ${blockId}`);
       }
     };
 
@@ -303,11 +305,13 @@ export default function ChatPanel({
       processedBlocksRef.current.add(`formatted-${blockId}`);
       console.log(`[ChatPanel] 处理格式化块: ${blockId}`, data);
       
-      if (data && data.blocks && data.blocks.length > 0) {
+      if (isUsableResumeData(data)) {
         // 更新ref以跟踪最新数据
         latestResumeDataRef.current = data;
         onResumeDataChange(data, true);
         console.log(`[ChatPanel] 格式化后的简历数据已更新`);
+      } else {
+        console.warn(`[ChatPanel] 格式化块不是可用简历 JSON，已跳过: ${blockId}`);
       }
     };
 
@@ -542,7 +546,7 @@ export default function ChatPanel({
     }
 
     const finalResumeData = parseAndFixResumeJson(latestBlock) as ResumeData;
-    if (!finalResumeData?.blocks?.length) {
+    if (!isUsableResumeData(finalResumeData)) {
       console.warn('[ChatPanel] resume-update 内容解析后没有可用 blocks，跳过自动应用');
       return false;
     }

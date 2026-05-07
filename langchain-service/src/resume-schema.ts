@@ -87,24 +87,69 @@ export function parseJsonObject(text: string, originalText = ""): ResumeData {
   }
 
   const raw = String(text).trim();
-  const jsonStart = raw.indexOf("{");
-  const jsonEnd = raw.lastIndexOf("}");
+  const candidates = extractJsonObjectCandidates(raw);
 
-  if (jsonStart === -1 || jsonEnd === -1 || jsonEnd <= jsonStart) {
-    return fallbackResume(originalText);
-  }
-
-  try {
-    const parsed = JSON.parse(raw.slice(jsonStart, jsonEnd + 1));
-    if (!parsed.blocks || !Array.isArray(parsed.blocks)) {
-      return fallbackResume(originalText);
+  for (const candidate of candidates) {
+    try {
+      const parsed = JSON.parse(candidate);
+      if (!parsed.blocks || !Array.isArray(parsed.blocks)) {
+        continue;
+      }
+      return {
+        version: parsed.version || 2,
+        portrait_img: parsed.portrait_img || "",
+        blocks: parsed.blocks,
+      };
+    } catch {
+      // Try the next balanced object. Model replies often contain prose before or after JSON.
     }
-    return {
-      version: parsed.version || 2,
-      portrait_img: parsed.portrait_img || "",
-      blocks: parsed.blocks,
-    };
-  } catch {
-    return fallbackResume(originalText);
   }
+
+  return fallbackResume(originalText);
+}
+
+function extractJsonObjectCandidates(raw: string): string[] {
+  const candidates: string[] = [];
+  let depth = 0;
+  let start = -1;
+  let inString = false;
+  let escaped = false;
+
+  for (let i = 0; i < raw.length; i += 1) {
+    const char = raw[i];
+
+    if (inString) {
+      if (escaped) {
+        escaped = false;
+      } else if (char === "\\") {
+        escaped = true;
+      } else if (char === "\"") {
+        inString = false;
+      }
+      continue;
+    }
+
+    if (char === "\"") {
+      inString = true;
+      continue;
+    }
+
+    if (char === "{") {
+      if (depth === 0) {
+        start = i;
+      }
+      depth += 1;
+      continue;
+    }
+
+    if (char === "}" && depth > 0) {
+      depth -= 1;
+      if (depth === 0 && start >= 0) {
+        candidates.push(raw.slice(start, i + 1));
+        start = -1;
+      }
+    }
+  }
+
+  return candidates;
 }

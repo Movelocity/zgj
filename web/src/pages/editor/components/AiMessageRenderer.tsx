@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import MarkdownRenderer from '@/components/ui/Markdown';
 import { FiFileText, FiCheckSquare, FiPlus, FiEdit, FiStar, FiInfo, FiChevronDown, FiChevronUp, FiCheck, FiX } from 'react-icons/fi';
 import { generateHash } from '@/utils/hash';
-import { parseAndFixResumeJson } from '@/utils/helpers';
+import { isUsableResumeData, parseAndFixResumeJson } from '@/utils/helpers';
 import { workflowAPI } from '@/api/workflow';
 import type { ResumeData } from '@/types/resume';
 
@@ -481,17 +481,20 @@ export default function AiMessageRenderer({
           );
         }
 
-        // 触发格式化完成事件
-        const event = new CustomEvent('resume-update-formatted', {
-          detail: {
-            blockId,
-            data: finalResumeData,
-            messageId
-          }
-        });
-        window.dispatchEvent(event);
-        
-        console.log(`[Resume Update] 格式化块 ${blockId} 完成，已触发事件`);
+        if (isUsableResumeData(finalResumeData)) {
+          // 触发格式化完成事件
+          const event = new CustomEvent('resume-update-formatted', {
+            detail: {
+              blockId,
+              data: finalResumeData,
+              messageId
+            }
+          });
+          window.dispatchEvent(event);
+          console.log(`[Resume Update] 格式化块 ${blockId} 完成，已触发事件`);
+        } else {
+          console.warn(`[Resume Update] 格式化块 ${blockId} 不是可用简历 JSON，已跳过应用`);
+        }
       }
     } catch (error) {
       console.error('[Resume Update] 格式化过程出错:', error);
@@ -561,7 +564,7 @@ export default function AiMessageRenderer({
           try {
             const resumeUpdateData = parseAndFixResumeJson(currentBlockContent);
             
-            if (resumeUpdateData.blocks && resumeUpdateData.blocks.length > 0) {
+            if (isUsableResumeData(resumeUpdateData)) {
               // 解析成功
               blockStatus = 'completed';
               
@@ -771,4 +774,3 @@ export default function AiMessageRenderer({
 
   return <div className="w-full">{renderContent()}</div>;
 }
-

@@ -12,6 +12,13 @@ const normalize = (value?: string) => (value || '').trim().toLowerCase();
 
 const scoreLabel = (score?: number) => `${Math.round((score || 0) * 100)}%`;
 
+const getInitialMatchProgress = (hasFile: boolean) => ({
+  active: true,
+  progress: hasFile ? 18 : 35,
+  title: hasFile ? '上传并解析简历' : '读取简历文本',
+  description: hasFile ? '正在上传文件并提取简历文本，请稍等。' : '正在读取文本内容，准备进行岗位匹配。',
+});
+
 const getSearchText = (opportunity: JobOpportunity) => [
   opportunity.company,
   opportunity.title,
@@ -70,6 +77,12 @@ const Opportunities: React.FC = () => {
   const [matching, setMatching] = useState(false);
   const [matchError, setMatchError] = useState('');
   const [matchResults, setMatchResults] = useState<OpportunityVectorMatch[]>([]);
+  const [matchProgress, setMatchProgress] = useState({
+    active: false,
+    progress: 0,
+    title: '',
+    description: '',
+  });
 
   const loadOpportunities = async () => {
     try {
@@ -170,6 +183,7 @@ const Opportunities: React.FC = () => {
     setResumeFile(null);
     setMatchError('');
     setMatchResults([]);
+    setMatchProgress({ active: false, progress: 0, title: '', description: '' });
   };
 
   const handleMatch = async () => {
@@ -182,18 +196,57 @@ const Opportunities: React.FC = () => {
     try {
       setMatching(true);
       setMatchError('');
+      setMatchProgress(getInitialMatchProgress(Boolean(resumeFile)));
+
+      const progressTimers: ReturnType<typeof setTimeout>[] = [
+        setTimeout(() => {
+          setMatchProgress({
+            active: true,
+            progress: 58,
+            title: '生成简历语义特征',
+            description: '正在理解简历中的技能、经历和岗位偏好。',
+          });
+        }, 600),
+        setTimeout(() => {
+          setMatchProgress({
+            active: true,
+            progress: 78,
+            title: '匹配岗位库',
+            description: '正在与已收录岗位计算匹配度并排序。',
+          });
+        }, 1800),
+      ];
+
       const topK = Math.min(Math.max(opportunities.length, 5), 20);
-      const response = resumeFile
-        ? await opportunityAPI.matchOpportunitiesByFile(resumeFile, topK)
-        : await opportunityAPI.matchOpportunities({
-          resume: content,
-          top_k: topK,
-        });
+      let response;
+      try {
+        response = resumeFile
+          ? await opportunityAPI.matchOpportunitiesByFile(resumeFile, topK)
+          : await opportunityAPI.matchOpportunities({
+            resume: content,
+            top_k: topK,
+          });
+      } finally {
+        progressTimers.forEach((timer) => clearTimeout(timer));
+      }
+
       if (response.code !== 0) {
         setMatchError(response.msg || '岗位匹配失败');
+        setMatchProgress({
+          active: true,
+          progress: 100,
+          title: '匹配失败',
+          description: response.msg || '岗位匹配失败，请稍后重试。',
+        });
         return;
       }
 
+      setMatchProgress({
+        active: true,
+        progress: 100,
+        title: '匹配完成',
+        description: '已按匹配度更新岗位列表。',
+      });
       const matches = response.data.matches || [];
       setMatchResults(matches);
       if (matches[0]?.opportunity_id) {
@@ -205,8 +258,21 @@ const Opportunities: React.FC = () => {
     } catch (err) {
       const message = err instanceof Error ? err.message : '岗位匹配失败';
       setMatchError(message.includes('登录') ? '请先登录后再进行岗位匹配。' : message);
+      setMatchProgress({
+        active: true,
+        progress: 100,
+        title: '匹配失败',
+        description: message.includes('登录') ? '请先登录后再进行岗位匹配。' : message,
+      });
     } finally {
       setMatching(false);
+      setTimeout(() => {
+        setMatchProgress((current) => (
+          current.title === '匹配完成'
+            ? { active: false, progress: 0, title: '', description: '' }
+            : current
+        ));
+      }, 1800);
     }
   };
 
@@ -355,6 +421,28 @@ const Opportunities: React.FC = () => {
                   <p className="rounded-md border border-red-100 bg-red-50 px-3 py-2 text-sm text-red-700">
                     {matchError}
                   </p>
+                )}
+                {matchProgress.active && (
+                  <div className="rounded-lg border border-blue-100 bg-blue-50 p-3">
+                    <div className="mb-2 flex items-center justify-between gap-3">
+                      <div className="flex min-w-0 items-center gap-2 text-sm font-medium text-blue-950">
+                        {matching && <Loader2 className="h-4 w-4 shrink-0 animate-spin" />}
+                        <span className="truncate">{matchProgress.title}</span>
+                      </div>
+                      <span className="shrink-0 text-xs font-medium text-blue-700">
+                        {Math.round(matchProgress.progress)}%
+                      </span>
+                    </div>
+                    <div className="h-2 overflow-hidden rounded-full bg-white">
+                      <div
+                        className="h-full rounded-full bg-blue-600 transition-all duration-500"
+                        style={{ width: `${matchProgress.progress}%` }}
+                      />
+                    </div>
+                    {matchProgress.description && (
+                      <p className="mt-2 text-xs leading-5 text-blue-700">{matchProgress.description}</p>
+                    )}
+                  </div>
                 )}
               </div>
               <div className="flex gap-2 lg:justify-end">
