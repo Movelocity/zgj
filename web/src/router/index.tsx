@@ -14,6 +14,7 @@ const Auth = lazy(() => import('@/pages/auth/Auth2'));
 const CodeAuth = lazy(() => import('@/pages/auth/CodeAuth'));
 const SimpleResume = lazy(() => import('@/pages/resume/SimpleResume'));
 const JobResume = lazy(() => import('@/pages/resume/JobResume'));
+const Opportunities = lazy(() => import('@/pages/opportunities/Opportunities'));
 const ResumeList = lazy(() => import('@/pages/resume/ResumeList'));
 const ResumeCardView = lazy(() => import('@/pages/resume/ResumeCardView'));
 const ResumeDetail = lazy(() => import('@/pages/resume/ResumeDetail'));
@@ -62,6 +63,10 @@ export const routes = [
   {
     path: '/job-resume',
     element: <JobResume />,
+  },
+  {
+    path: '/opportunities',
+    element: <Opportunities />,
   },
   {
     path: '/resumes',

@@ -18,6 +18,7 @@ export const ROUTES = {
   CODE_AUTH: '/code-auth',
   SIMPLE_RESUME: '/simple-resume',
   JOB_RESUME: '/job-resume',
+  OPPORTUNITIES: '/opportunities',
   PROFILE: '/profile',
   ADMINISTRATOR: '/administrator',
   CONTACT: '/contact',
