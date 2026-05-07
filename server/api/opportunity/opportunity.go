@@ -43,6 +43,33 @@ func MatchOpportunities(c *gin.Context) {
 	utils.OkWithData(result, c)
 }
 
+// MatchOpportunitiesByFile 上传简历文件并匹配岗位机会
+func MatchOpportunitiesByFile(c *gin.Context) {
+	file, err := c.FormFile("file")
+	if err != nil {
+		utils.FailWithMessage("请上传简历文件", c)
+		return
+	}
+
+	topK := 0
+	if rawTopK := c.PostForm("top_k"); rawTopK != "" {
+		parsedTopK, err := strconv.Atoi(rawTopK)
+		if err != nil {
+			utils.FailWithMessage("top_k 参数无效", c)
+			return
+		}
+		topK = parsedTopK
+	}
+
+	result, err := opportunityService.OpportunityService.MatchResumeFile(file, topK)
+	if err != nil {
+		utils.FailWithMessage(err.Error(), c)
+		return
+	}
+
+	utils.OkWithData(result, c)
+}
+
 // ListAdminOpportunities 获取管理员岗位列表
 func ListAdminOpportunities(c *gin.Context) {
 	var req opportunityService.OpportunityListRequest

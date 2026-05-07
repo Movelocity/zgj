@@ -40,6 +40,11 @@ The system SHALL match a resume against the opportunity vector index and return 
 - **THEN** the system SHALL return up to `top_k` opportunity matches ordered by semantic similarity
 - **AND** each match SHALL include opportunity metadata, distance, and normalized score
 
+#### Scenario: Match uploaded resume file
+- **WHEN** an authenticated user uploads a supported resume file for matching
+- **THEN** the system SHALL extract text from the file through the LangChain service
+- **AND** return ranked opportunity matches using the extracted resume text
+
 #### Scenario: Empty resume rejected
 - **WHEN** the submitted resume content is empty
 - **THEN** the system SHALL reject the request with a clear validation error
@@ -67,6 +72,12 @@ The system SHALL expose resume-to-opportunity matching on the public opportunity
 - **THEN** the page SHALL call the resume opportunity matching API
 - **AND** the opportunity list SHALL display match scores and reasons for returned matches
 - **AND** matched opportunities SHALL be ordered ahead of unmatched opportunities by descending score
+
+#### Scenario: User matches uploaded resume
+- **GIVEN** a logged-in user is viewing `/opportunities`
+- **WHEN** the user selects a supported resume file and starts matching
+- **THEN** the page SHALL upload the file through the backend matching API
+- **AND** display the returned match scores and reasons without exposing embedding model or collection names
 
 #### Scenario: Match failure is visible
 - **WHEN** the matching request fails because the user is not logged in or the vector service returns an error

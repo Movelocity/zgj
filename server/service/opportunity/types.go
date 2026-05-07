@@ -59,8 +59,6 @@ type OpportunityVectorMatch struct {
 }
 
 type OpportunityVectorMatchResponse struct {
-	Total          int                      `json:"total"`
-	Matches        []OpportunityVectorMatch `json:"matches"`
-	EmbeddingModel string                   `json:"embedding_model"`
-	Collection     string                   `json:"collection"`
+	Total   int                      `json:"total"`
+	Matches []OpportunityVectorMatch `json:"matches"`
 }

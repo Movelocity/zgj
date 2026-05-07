@@ -29,3 +29,5 @@
 - [x] 4.2 Add resume paste and match controls to `/opportunities`.
 - [x] 4.3 Display match scores and reasons in the list/detail views.
 - [x] 4.4 Sort matched opportunities by descending score while preserving keyword filters.
+- [x] 4.5 Add direct resume file upload matching on `/opportunities`.
+- [x] 4.6 Hide embedding model and collection metadata from the user-facing UI/API response.

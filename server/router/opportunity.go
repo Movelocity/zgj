@@ -16,6 +16,7 @@ func InitOpportunityRouter(privateGroup *gin.RouterGroup, publicGroup *gin.Route
 	PrivateOpportunityRouter := privateGroup.Group("/api/opportunities")
 	{
 		PrivateOpportunityRouter.POST("/match", opportunity.MatchOpportunities)
+		PrivateOpportunityRouter.POST("/match/upload", opportunity.MatchOpportunitiesByFile)
 	}
 
 	AdminOpportunityRouter := adminGroup.Group("/api/admin/opportunities")

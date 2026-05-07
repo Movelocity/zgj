@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Badge, Button, Input } from '@/components/ui';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Briefcase, Building2, Loader2, ListFilter, Mail, MapPin, Search, Sparkles, Tags, X } from 'lucide-react';
+import { Briefcase, Building2, FileText, Loader2, ListFilter, Mail, MapPin, Search, Sparkles, Tags, Upload, X } from 'lucide-react';
 import { opportunityAPI } from '@/api/opportunity';
 import type { JobOpportunity, OpportunityVectorMatch } from '@/types/opportunity';
 
@@ -66,10 +66,10 @@ const Opportunities: React.FC = () => {
   const [categoryFilter, setCategoryFilter] = useState(ALL_VALUE);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [resumeText, setResumeText] = useState('');
+  const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [matching, setMatching] = useState(false);
   const [matchError, setMatchError] = useState('');
   const [matchResults, setMatchResults] = useState<OpportunityVectorMatch[]>([]);
-  const [matchMeta, setMatchMeta] = useState<{ embeddingModel: string; collection: string } | null>(null);
 
   const loadOpportunities = async () => {
     try {
@@ -167,25 +167,28 @@ const Opportunities: React.FC = () => {
 
   const clearMatch = () => {
     setResumeText('');
+    setResumeFile(null);
     setMatchError('');
     setMatchResults([]);
-    setMatchMeta(null);
   };
 
   const handleMatch = async () => {
     const content = resumeText.trim();
-    if (!content) {
-      setMatchError('请先粘贴简历内容后再匹配。');
+    if (!content && !resumeFile) {
+      setMatchError('请先上传简历文件或粘贴简历内容后再匹配。');
       return;
     }
 
     try {
       setMatching(true);
       setMatchError('');
-      const response = await opportunityAPI.matchOpportunities({
-        resume: content,
-        top_k: Math.min(Math.max(opportunities.length, 5), 20),
-      });
+      const topK = Math.min(Math.max(opportunities.length, 5), 20);
+      const response = resumeFile
+        ? await opportunityAPI.matchOpportunitiesByFile(resumeFile, topK)
+        : await opportunityAPI.matchOpportunities({
+          resume: content,
+          top_k: topK,
+        });
       if (response.code !== 0) {
         setMatchError(response.msg || '岗位匹配失败');
         return;
@@ -193,10 +196,6 @@ const Opportunities: React.FC = () => {
 
       const matches = response.data.matches || [];
       setMatchResults(matches);
-      setMatchMeta({
-        embeddingModel: response.data.embedding_model,
-        collection: response.data.collection,
-      });
       if (matches[0]?.opportunity_id) {
         setSelectedId(matches[0].opportunity_id);
       }
@@ -292,17 +291,65 @@ const Opportunities: React.FC = () => {
                     </Badge>
                   )}
                 </div>
+                <div className="flex flex-col gap-3 rounded-lg border border-dashed border-slate-300 bg-slate-50/80 p-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-white text-slate-700 shadow-sm">
+                      <FileText className="h-5 w-5" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="truncate text-sm font-medium text-slate-900">
+                        {resumeFile ? resumeFile.name : '上传 PDF / DOCX / TXT 简历'}
+                      </div>
+                      <div className="text-xs leading-5 text-slate-500">
+                        上传后直接用于岗位匹配，不在页面展示模型信息。
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <input
+                      id="resume-match-file"
+                      type="file"
+                      accept=".pdf,.docx,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
+                      className="hidden"
+                      onChange={(event) => {
+                        setResumeFile(event.target.files?.[0] || null);
+                        setMatchError('');
+                      }}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="gap-2"
+                      disabled={matching}
+                      onClick={() => document.getElementById('resume-match-file')?.click()}
+                    >
+                      <Upload className="h-4 w-4" />
+                      选择文件
+                    </Button>
+                    {resumeFile && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        disabled={matching}
+                        onClick={() => setResumeFile(null)}
+                        aria-label="移除已选简历文件"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
                 <textarea
                   id="resume-match-text"
                   value={resumeText}
                   rows={5}
-                  placeholder="粘贴你的简历文本或核心经历，系统会按语义匹配岗位并排序"
+                  placeholder="也可以粘贴简历文本或核心经历，系统会按语义匹配岗位并排序"
                   onChange={(event) => setResumeText(event.target.value)}
                   className="min-h-[132px] resize-y rounded-md border border-slate-200 bg-white px-3 py-2 text-sm leading-6 text-slate-700 shadow-xs outline-none transition-[color,box-shadow] placeholder:text-slate-400 focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
                 />
                 <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
                   <span>匹配后会优先展示分数更高的岗位。</span>
-                  {matchMeta && <span>模型：{matchMeta.embeddingModel}</span>}
                 </div>
                 {matchError && (
                   <p className="rounded-md border border-red-100 bg-red-50 px-3 py-2 text-sm text-red-700">
@@ -314,7 +361,7 @@ const Opportunities: React.FC = () => {
                 <Button
                   type="button"
                   onClick={handleMatch}
-                  disabled={matching || !resumeText.trim()}
+                  disabled={matching || (!resumeText.trim() && !resumeFile)}
                   className="gap-2"
                 >
                   {matching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}

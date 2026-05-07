@@ -78,6 +78,4 @@ export interface OpportunityVectorMatch {
 export interface OpportunityVectorMatchResponse {
   total: number;
   matches: OpportunityVectorMatch[];
-  embedding_model: string;
-  collection: string;
 }

@@ -19,6 +19,19 @@ export const opportunityAPI = {
     return apiClient.post('/api/opportunities/match', data);
   },
 
+  matchOpportunitiesByFile: (file: File, topK?: number): Promise<ApiResponse<OpportunityVectorMatchResponse>> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    if (topK) {
+      formData.append('top_k', String(topK));
+    }
+    return apiClient.post('/api/opportunities/match/upload', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
+
   getAdminOpportunities: (params?: OpportunityListParams): Promise<ApiResponse<OpportunityListResponse>> => {
     return apiClient.get('/api/admin/opportunities', { params });
   },

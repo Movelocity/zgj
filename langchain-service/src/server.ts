@@ -4,7 +4,7 @@ import multer from "multer";
 import path from "node:path";
 import { v4 as uuidv4 } from "uuid";
 import { config } from "./config.js";
-import { saveUploadedFile, ensureUploadDir } from "./documents.js";
+import { saveUploadedFile, ensureUploadDir, extractUploadedText } from "./documents.js";
 import {
   streamError,
   streamFinished,
@@ -115,6 +115,25 @@ app.post("/v1/opportunities/vector/match", async (req: Request, res: Response) =
     res.json({ ok: true, ...result });
   } catch (error) {
     res.status(400).json({ error: errorMessage(error) || "opportunity vector match failed" });
+  }
+});
+
+app.post("/v1/opportunities/vector/match-file", upload.single("file"), async (req: Request, res: Response) => {
+  try {
+    if (!req.file) {
+      res.status(400).json({ error: "file is required" });
+      return;
+    }
+
+    const meta = await saveUploadedFile(req.file);
+    const resumeText = await extractUploadedText(meta.id);
+    const result = await matchResumeToOpportunities({
+      resume: resumeText,
+      top_k: req.body?.top_k ? Number(req.body.top_k) : undefined,
+    });
+    res.json({ ok: true, ...result });
+  } catch (error) {
+    res.status(400).json({ error: errorMessage(error) || "opportunity vector file match failed" });
   }
 });
 

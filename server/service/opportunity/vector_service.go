@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"mime/multipart"
 	"net/http"
 	"strings"
 	"time"
@@ -138,6 +139,72 @@ func postVectorService(path string, payload interface{}, target interface{}) err
 	return json.Unmarshal(respBody, target)
 }
 
+func postVectorFileService(path string, fileHeader *multipart.FileHeader, fields map[string]string, target interface{}) error {
+	baseURL := vectorServiceBaseURL()
+	if baseURL == "" {
+		return errors.New("LangChain 服务地址未配置")
+	}
+
+	file, err := fileHeader.Open()
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	var body bytes.Buffer
+	writer := multipart.NewWriter(&body)
+	part, err := writer.CreateFormFile("file", fileHeader.Filename)
+	if err != nil {
+		return err
+	}
+	if _, err := io.Copy(part, file); err != nil {
+		return err
+	}
+	for key, value := range fields {
+		if strings.TrimSpace(value) == "" {
+			continue
+		}
+		if err := writer.WriteField(key, value); err != nil {
+			return err
+		}
+	}
+	if err := writer.Close(); err != nil {
+		return err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, baseURL+path, &body)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+	if token := strings.TrimSpace(global.CONFIG.LangChainService.ServiceToken); token != "" {
+		req.Header.Set("Authorization", "Bearer "+token)
+	}
+
+	client := &http.Client{Timeout: vectorServiceTimeout()}
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		var errorResponse vectorErrorResponse
+		if err := json.Unmarshal(respBody, &errorResponse); err == nil && errorResponse.Error != "" {
+			return errors.New(errorResponse.Error)
+		}
+		return fmt.Errorf("LangChain 服务返回 HTTP %d: %s", resp.StatusCode, string(respBody))
+	}
+	if target == nil {
+		return nil
+	}
+	return json.Unmarshal(respBody, target)
+}
+
 func (s *opportunityService) syncOpportunityVectors(opportunities []model.JobOpportunity) {
 	if len(opportunities) == 0 {
 		return
@@ -204,9 +271,34 @@ func (s *opportunityService) MatchResume(req *OpportunityVectorMatchRequest) (*O
 	}
 
 	return &OpportunityVectorMatchResponse{
-		Total:          response.Total,
-		Matches:        response.Matches,
-		EmbeddingModel: response.EmbeddingModel,
-		Collection:     response.Collection,
+		Total:   response.Total,
+		Matches: response.Matches,
+	}, nil
+}
+
+func (s *opportunityService) MatchResumeFile(fileHeader *multipart.FileHeader, topK int) (*OpportunityVectorMatchResponse, error) {
+	if fileHeader == nil {
+		return nil, errors.New("请上传简历文件")
+	}
+	if topK <= 0 {
+		topK = 5
+	}
+	if topK > 20 {
+		topK = 20
+	}
+
+	var response vectorMatchResponse
+	if err := postVectorFileService("/v1/opportunities/vector/match-file", fileHeader, map[string]string{
+		"top_k": fmt.Sprintf("%d", topK),
+	}, &response); err != nil {
+		return nil, fmt.Errorf("匹配岗位失败: %w", err)
+	}
+	if response.Error != "" {
+		return nil, errors.New(response.Error)
+	}
+
+	return &OpportunityVectorMatchResponse{
+		Total:   response.Total,
+		Matches: response.Matches,
 	}, nil
 }
