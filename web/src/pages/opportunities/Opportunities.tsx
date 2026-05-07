@@ -1,24 +1,68 @@
-import React, { useEffect, useState } from 'react';
-import { Badge, Button } from '@/components/ui';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Badge, Button, Input } from '@/components/ui';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Briefcase, Building2, Mail, MapPin, Sparkles, Tags } from 'lucide-react';
+import { Briefcase, Building2, ListFilter, Mail, MapPin, Search, Sparkles, Tags, X } from 'lucide-react';
 import { opportunityAPI } from '@/api/opportunity';
 import type { JobOpportunity } from '@/types/opportunity';
 
-const categoryCards = [
-  { label: '企业', description: '公司名称与业务场景' },
-  { label: '岗位', description: '岗位名称与实习方向' },
-  { label: '地点/到岗', description: 'Base、到岗天数和周期' },
-  { label: '职责', description: '核心工作内容' },
-  { label: '要求', description: '能力、经验和偏好条件' },
-  { label: '联系方式', description: '简历投递邮箱和备注' },
-];
+const ALL_VALUE = 'all';
+
+const normalize = (value?: string) => (value || '').trim().toLowerCase();
+
+const getSearchText = (opportunity: JobOpportunity) => [
+  opportunity.company,
+  opportunity.title,
+  opportunity.category,
+  opportunity.location,
+  opportunity.cadence,
+  opportunity.summary,
+  opportunity.contact_email,
+  opportunity.note,
+  ...opportunity.responsibilities,
+  ...opportunity.requirements,
+].join(' ').toLowerCase();
+
+interface DetailListProps {
+  title: string;
+  icon: React.ReactNode;
+  items: string[];
+  emptyText: string;
+}
+
+const DetailList: React.FC<DetailListProps> = ({ title, icon, items, emptyText }) => (
+  <div>
+    <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-950">
+      {icon}
+      {title}
+    </div>
+    {items.length > 0 ? (
+      <ul className="grid gap-2">
+        {items.map((item, index) => (
+          <li
+            key={`${item}-${index}`}
+            className="rounded-md border border-slate-200 bg-white px-3 py-2 text-sm leading-6 text-slate-700"
+          >
+            {item}
+          </li>
+        ))}
+      </ul>
+    ) : (
+      <p className="rounded-md border border-dashed border-slate-200 bg-white px-3 py-3 text-sm text-slate-500">
+        {emptyText}
+      </p>
+    )}
+  </div>
+);
 
 const Opportunities: React.FC = () => {
   const [opportunities, setOpportunities] = useState<JobOpportunity[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [searchKeyword, setSearchKeyword] = useState('');
+  const [companyFilter, setCompanyFilter] = useState(ALL_VALUE);
+  const [categoryFilter, setCategoryFilter] = useState(ALL_VALUE);
+  const [selectedId, setSelectedId] = useState<number | null>(null);
 
   const loadOpportunities = async () => {
     try {
@@ -26,7 +70,9 @@ const Opportunities: React.FC = () => {
       setError('');
       const response = await opportunityAPI.getPublicOpportunities({ page: 1, page_size: 100 });
       if (response.code === 0) {
-        setOpportunities(response.data.list || []);
+        const list = response.data.list || [];
+        setOpportunities(list);
+        setSelectedId(list[0]?.id || null);
       } else {
         setError(response.msg || '加载实习机会失败');
       }
@@ -41,33 +87,120 @@ const Opportunities: React.FC = () => {
     loadOpportunities();
   }, []);
 
+  const companies = useMemo(
+    () => Array.from(new Set(opportunities.map((item) => item.company).filter(Boolean))).sort(),
+    [opportunities]
+  );
+
+  const categories = useMemo(
+    () => Array.from(new Set(opportunities.map((item) => item.category).filter(Boolean))).sort(),
+    [opportunities]
+  );
+
+  const filteredOpportunities = useMemo(() => {
+    const keyword = normalize(searchKeyword);
+
+    return opportunities.filter((opportunity) => {
+      const matchesKeyword = !keyword || getSearchText(opportunity).includes(keyword);
+      const matchesCompany = companyFilter === ALL_VALUE || opportunity.company === companyFilter;
+      const matchesCategory = categoryFilter === ALL_VALUE || opportunity.category === categoryFilter;
+      return matchesKeyword && matchesCompany && matchesCategory;
+    });
+  }, [categoryFilter, companyFilter, opportunities, searchKeyword]);
+
+  useEffect(() => {
+    if (filteredOpportunities.length === 0) {
+      if (selectedId !== null) {
+        setSelectedId(null);
+      }
+      return;
+    }
+
+    if (!filteredOpportunities.some((item) => item.id === selectedId)) {
+      setSelectedId(filteredOpportunities[0].id);
+    }
+  }, [filteredOpportunities, selectedId]);
+
+  const selectedOpportunity = useMemo(
+    () => filteredOpportunities.find((item) => item.id === selectedId) || filteredOpportunities[0] || null,
+    [filteredOpportunities, selectedId]
+  );
+
+  const hasFilters = Boolean(searchKeyword.trim()) || companyFilter !== ALL_VALUE || categoryFilter !== ALL_VALUE;
+
+  const clearFilters = () => {
+    setSearchKeyword('');
+    setCompanyFilter(ALL_VALUE);
+    setCategoryFilter(ALL_VALUE);
+  };
+
   return (
-    <main className="min-h-screen bg-slate-50">
-      <section className="px-4 py-16 sm:px-6 lg:px-8">
+    <main className="min-h-screen bg-slate-50 bg-[radial-gradient(circle_at_1px_1px,rgba(15,23,42,0.08)_1px,transparent_0)] [background-size:24px_24px]">
+      <section className="px-4 py-12 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
-          <div className="mb-10 max-w-3xl">
+          <div className="mb-8 max-w-3xl">
             <Badge className="mb-4 bg-blue-100 text-blue-700 hover:bg-blue-100">
-              <Sparkles className="mr-1" />
+              <Sparkles className="mr-1 h-3.5 w-3.5" />
               实习内推
             </Badge>
             <h1 className="text-4xl font-bold tracking-tight text-slate-950 md:text-5xl">
               内容与 AI 产品实习机会
             </h1>
             <p className="mt-4 text-lg leading-8 text-slate-600">
-              收录适合产品、内容、用研、市场方向同学的实习信息，按企业、岗位、地点、职责、要求和投递方式整理。
+              按企业、岗位、类别、地点和联系方式整理，可搜索后快速查看岗位详情。
             </p>
           </div>
 
-          <div className="mb-12 grid gap-4 md:grid-cols-3 lg:grid-cols-6">
-            {categoryCards.map((item) => (
-              <Card key={item.label} className="border-slate-200 bg-white">
-                <CardHeader className="gap-2">
-                  <CardTitle className="text-base">{item.label}</CardTitle>
-                  <CardDescription>{item.description}</CardDescription>
-                </CardHeader>
-              </Card>
-            ))}
-          </div>
+          <Card className="mb-6 border-slate-200 bg-white/95 shadow-sm backdrop-blur">
+            <CardContent className="grid gap-4 p-4 lg:grid-cols-[1.4fr_0.8fr_0.8fr_auto] lg:items-end">
+              <Input
+                label="搜索岗位"
+                value={searchKeyword}
+                leftIcon={<Search className="h-4 w-4" />}
+                placeholder="搜索企业、岗位、地点、要求或邮箱"
+                onChange={(event) => setSearchKeyword(event.target.value)}
+              />
+
+              <div className="grid gap-1.5">
+                <label className="text-sm font-medium leading-none text-slate-900">企业</label>
+                <select
+                  value={companyFilter}
+                  onChange={(event) => setCompanyFilter(event.target.value)}
+                  className="h-9 rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700 shadow-xs outline-none transition-[color,box-shadow] focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
+                >
+                  <option value={ALL_VALUE}>全部企业</option>
+                  {companies.map((company) => (
+                    <option key={company} value={company}>{company}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="grid gap-1.5">
+                <label className="text-sm font-medium leading-none text-slate-900">类别</label>
+                <select
+                  value={categoryFilter}
+                  onChange={(event) => setCategoryFilter(event.target.value)}
+                  className="h-9 rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700 shadow-xs outline-none transition-[color,box-shadow] focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
+                >
+                  <option value={ALL_VALUE}>全部类别</option>
+                  {categories.map((category) => (
+                    <option key={category} value={category}>{category}</option>
+                  ))}
+                </select>
+              </div>
+
+              <Button
+                type="button"
+                variant="outline"
+                disabled={!hasFilters}
+                onClick={clearFilters}
+                className="gap-2"
+              >
+                <X className="h-4 w-4" />
+                清空
+              </Button>
+            </CardContent>
+          </Card>
 
           {loading && (
             <Card className="border-slate-200 bg-white">
@@ -91,88 +224,143 @@ const Opportunities: React.FC = () => {
           )}
 
           {!loading && !error && opportunities.length > 0 && (
-            <div className="grid gap-6">
-              {opportunities.map((opportunity) => (
-                <Card key={opportunity.id} className="overflow-hidden border-slate-200 bg-white shadow-sm">
-                  <CardHeader className="gap-4">
-                    <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-                      <div>
+            <div className="grid gap-6 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.25fr)] lg:items-start">
+              <Card className="border-slate-200 bg-white/95 shadow-sm backdrop-blur">
+                <CardHeader className="space-y-2 pb-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <CardTitle className="flex items-center gap-2 text-xl text-slate-950">
+                      <ListFilter className="h-5 w-5" />
+                      岗位列表
+                    </CardTitle>
+                    <Badge variant="secondary">{filteredOpportunities.length} / {opportunities.length}</Badge>
+                  </div>
+                </CardHeader>
+
+                <CardContent className="grid gap-3">
+                  {filteredOpportunities.length === 0 && (
+                    <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50 px-4 py-10 text-center text-sm text-slate-500">
+                      没有匹配的岗位，换个关键词或清空筛选试试。
+                    </div>
+                  )}
+
+                  {filteredOpportunities.map((opportunity) => {
+                    const active = selectedOpportunity?.id === opportunity.id;
+                    return (
+                      <button
+                        key={opportunity.id}
+                        type="button"
+                        onClick={() => setSelectedId(opportunity.id)}
+                        className={[
+                          'w-full rounded-lg border p-4 text-left transition-all',
+                          active
+                            ? 'border-blue-300 bg-blue-50 shadow-sm ring-2 ring-blue-100'
+                            : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50'
+                        ].join(' ')}
+                      >
                         <div className="mb-3 flex flex-wrap items-center gap-2">
-                          <Badge variant="secondary">
-                            <Building2 />
+                          <Badge variant="secondary" className="gap-1">
+                            <Building2 className="h-3.5 w-3.5" />
                             {opportunity.company}
                           </Badge>
-                          <Badge variant="outline">
-                            <Tags />
+                          <Badge variant="outline" className="gap-1">
+                            <Tags className="h-3.5 w-3.5" />
                             {opportunity.category}
                           </Badge>
                         </div>
-                        <CardTitle className="text-2xl text-slate-950">{opportunity.title}</CardTitle>
-                        <CardDescription className="mt-2 text-base">{opportunity.summary}</CardDescription>
-                      </div>
-                      <a
-                        href={`mailto:${opportunity.contact_email}`}
-                        className="inline-flex items-center gap-2 rounded-md border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
-                      >
-                        <Mail />
-                        投递简历
-                      </a>
-                    </div>
-                  </CardHeader>
+                        <div className="text-base font-semibold leading-6 text-slate-950">{opportunity.title}</div>
+                        {opportunity.summary && (
+                          <p className="mt-2 line-clamp-2 text-sm leading-6 text-slate-600">{opportunity.summary}</p>
+                        )}
+                        <div className="mt-3 grid gap-2 text-sm text-slate-500 sm:grid-cols-2">
+                          <span className="inline-flex min-w-0 items-center gap-1.5">
+                            <MapPin className="h-4 w-4 shrink-0" />
+                            <span className="truncate">{opportunity.location || '地点未注明'}</span>
+                          </span>
+                          <span className="inline-flex min-w-0 items-center gap-1.5">
+                            <Mail className="h-4 w-4 shrink-0" />
+                            <span className="truncate">{opportunity.contact_email}</span>
+                          </span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </CardContent>
+              </Card>
 
-                  <CardContent className="grid gap-6 lg:grid-cols-[0.8fr_1fr_1fr]">
-                    <div className="flex flex-col gap-4 rounded-lg bg-slate-50 p-4">
-                      <div>
-                        <div className="mb-2 flex items-center gap-2 text-sm font-medium text-slate-900">
-                          <MapPin />
-                          地点/到岗
+              <Card className="sticky top-24 border-slate-200 bg-white/95 shadow-sm backdrop-blur">
+                {selectedOpportunity ? (
+                  <>
+                    <CardHeader className="gap-4">
+                      <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                        <div>
+                          <div className="mb-3 flex flex-wrap items-center gap-2">
+                            <Badge variant="secondary" className="gap-1">
+                              <Building2 className="h-3.5 w-3.5" />
+                              {selectedOpportunity.company}
+                            </Badge>
+                            <Badge variant="outline" className="gap-1">
+                              <Tags className="h-3.5 w-3.5" />
+                              {selectedOpportunity.category}
+                            </Badge>
+                          </div>
+                          <CardTitle className="text-2xl text-slate-950">{selectedOpportunity.title}</CardTitle>
+                          {selectedOpportunity.summary && (
+                            <p className="mt-3 text-sm leading-6 text-slate-600">{selectedOpportunity.summary}</p>
+                          )}
                         </div>
-                        <p className="text-sm leading-6 text-slate-600">{opportunity.location || '未注明'}</p>
-                        <p className="mt-2 text-sm leading-6 text-slate-600">{opportunity.cadence || '到岗要求未注明'}</p>
-                      </div>
-                      <Separator />
-                      <div>
-                        <div className="mb-2 flex items-center gap-2 text-sm font-medium text-slate-900">
-                          <Mail />
-                          联系方式
-                        </div>
-                        <a className="text-sm font-medium text-blue-700 hover:underline" href={`mailto:${opportunity.contact_email}`}>
-                          {opportunity.contact_email}
+                        <a
+                          href={`mailto:${selectedOpportunity.contact_email}`}
+                          className="inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-md bg-slate-950 px-4 text-sm font-medium text-white transition-colors hover:bg-slate-800"
+                        >
+                          <Mail className="h-4 w-4" />
+                          投递简历
                         </a>
-                        {opportunity.note && <p className="mt-2 text-sm leading-6 text-slate-600">{opportunity.note}</p>}
                       </div>
-                    </div>
+                    </CardHeader>
 
-                    <div>
-                      <div className="mb-3 flex items-center gap-2 font-semibold text-slate-950">
-                        <Briefcase />
-                        岗位职责
+                    <CardContent className="grid gap-6">
+                      <div className="grid gap-3 rounded-lg border border-slate-200 bg-slate-50 p-4 sm:grid-cols-2">
+                        <div>
+                          <div className="mb-1 flex items-center gap-2 text-sm font-medium text-slate-900">
+                            <MapPin className="h-4 w-4" />
+                            地点/到岗
+                          </div>
+                          <p className="text-sm leading-6 text-slate-600">{selectedOpportunity.location || '未注明'}</p>
+                          <p className="text-sm leading-6 text-slate-600">{selectedOpportunity.cadence || '到岗要求未注明'}</p>
+                        </div>
+                        <div>
+                          <div className="mb-1 flex items-center gap-2 text-sm font-medium text-slate-900">
+                            <Mail className="h-4 w-4" />
+                            联系方式
+                          </div>
+                          <a className="break-all text-sm font-medium text-blue-700 hover:underline" href={`mailto:${selectedOpportunity.contact_email}`}>
+                            {selectedOpportunity.contact_email}
+                          </a>
+                          {selectedOpportunity.note && <p className="mt-2 text-sm leading-6 text-slate-600">{selectedOpportunity.note}</p>}
+                        </div>
                       </div>
-                      <ul className="flex flex-col gap-2">
-                        {opportunity.responsibilities.map((item) => (
-                          <li key={item} className="rounded-md border border-slate-100 bg-white px-3 py-2 text-sm leading-6 text-slate-700">
-                            {item}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
 
-                    <div>
-                      <div className="mb-3 flex items-center gap-2 font-semibold text-slate-950">
-                        <Sparkles />
-                        任职要求
-                      </div>
-                      <ul className="flex flex-col gap-2">
-                        {opportunity.requirements.map((item) => (
-                          <li key={item} className="rounded-md border border-slate-100 bg-white px-3 py-2 text-sm leading-6 text-slate-700">
-                            {item}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                      <Separator />
+
+                      <DetailList
+                        title="岗位职责"
+                        icon={<Briefcase className="h-4 w-4" />}
+                        items={selectedOpportunity.responsibilities}
+                        emptyText="岗位职责暂未补充。"
+                      />
+
+                      <DetailList
+                        title="任职要求"
+                        icon={<Sparkles className="h-4 w-4" />}
+                        items={selectedOpportunity.requirements}
+                        emptyText="任职要求暂未补充。"
+                      />
+                    </CardContent>
+                  </>
+                ) : (
+                  <CardContent className="py-12 text-center text-slate-500">请选择左侧岗位查看详情。</CardContent>
+                )}
+              </Card>
             </div>
           )}
         </div>
