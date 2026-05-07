@@ -1,0 +1,8 @@
+.markdown-content li > p {
+  display: inline;
+  margin: 0;
+}
+
+.markdown-content ul li::marker {
+  content: "• ";
+}

@@ -30,6 +30,11 @@ interface ChatPanelProps {
   onMessagesChange?: (messages: Message[]) => void;
   resumeId?: string; // 简历ID，用于保存pending_content
   currentTarget?: 'jd' | 'normal' | 'foreign'; // 当前任务类型
+  processingStatus?: {
+    active: boolean;
+    title?: string;
+    description?: string;
+  };
   emptyComponent?: React.ReactNode; // 无消息时显示的组件
 
   metadata?: Record<string, any>;
@@ -71,6 +76,7 @@ export default function ChatPanel({
   onMessagesChange,
   resumeId,
   currentTarget,
+  processingStatus,
   emptyComponent,
   saveMessageToBackend,
   updateMetadata,
@@ -514,6 +520,26 @@ export default function ChatPanel({
       setIsTyping(false);
     }
   };
+
+  const applyResumeUpdateFromContent = useCallback((content: string): boolean => {
+    const blocks = [...content.matchAll(/```resume-update\s*([\s\S]*?)```/g)];
+    const latestBlock = blocks.at(-1)?.[1]?.trim();
+
+    if (!latestBlock) {
+      return false;
+    }
+
+    const finalResumeData = parseAndFixResumeJson(latestBlock) as ResumeData;
+    if (!finalResumeData?.blocks?.length) {
+      console.warn('[ChatPanel] resume-update 内容解析后没有可用 blocks，跳过自动应用');
+      return false;
+    }
+
+    latestResumeDataRef.current = finalResumeData;
+    onResumeDataChange(finalResumeData, true);
+    console.log('[ChatPanel] 已将 resume-update 写入待确认修改区');
+    return true;
+  }, [onResumeDataChange]);
   
   const handleSlashCommand = (command: string) => {
     command = command.replace("/", "");
@@ -685,6 +711,7 @@ export default function ChatPanel({
           setIsTyping(false);
           setIsResponding(false);
           console.log(`[${aiResponse.id}] 工作流完成`);
+          const appliedResumeUpdate = applyResumeUpdateFromContent(aiResponse.content);
           
           // Save AI message to backend when workflow is finished
           if (aiResponse.content.trim()) {
@@ -692,7 +719,7 @@ export default function ChatPanel({
           }
           
           // Auto-save: 工作流完成时自动保存pending_content和messages
-          if (resumeId) {
+          if (resumeId && appliedResumeUpdate) {
             const pendingData = {
               newResumeData: latestResumeDataRef.current,
               lastUpdate: new Date().toISOString()
@@ -1021,6 +1048,34 @@ export default function ChatPanel({
                       </div>
                     </div>
                     
+                  </div>
+                </div>
+              )}
+
+              {processingStatus?.active && (
+                <div className="w-full px-4 animate-in fade-in-0 slide-in-from-bottom-2 duration-300">
+                  <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 shadow-sm">
+                    <div className="mb-3 flex items-center gap-3">
+                      <div className="relative">
+                        <Sparkles className="w-5 h-5 text-blue-600 animate-pulse" />
+                        <div className="absolute -right-1 -top-1 size-2 rounded-full bg-blue-500 animate-ping"></div>
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <h4 className="text-sm font-medium text-blue-950">
+                          {processingStatus.title || '正在处理简历'}
+                        </h4>
+                        {processingStatus.description && (
+                          <p className="text-xs text-blue-700">{processingStatus.description}</p>
+                        )}
+                      </div>
+                      <div className="rounded bg-blue-100 px-2 py-1 font-mono text-xs text-blue-600">
+                        AI
+                      </div>
+                    </div>
+
+                    <div className="h-2 w-full overflow-hidden rounded-full bg-blue-100">
+                      <div className="h-full w-2/3 rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 animate-pulse"></div>
+                    </div>
                   </div>
                 </div>
               )}

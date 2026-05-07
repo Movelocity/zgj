@@ -1,7 +1,19 @@
-import { useState, useRef, useEffect } from 'react';
+import { useRef, useEffect } from 'react';
 import { useHover } from '@/utils/hover';
 import cn from 'classnames';
 import ReactMarkdown from 'react-markdown';
+import { Check, X } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/Button';
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
 import type { EditorState } from './useEditing';
 
 // EditableText component with AI optimization support
@@ -36,11 +48,8 @@ export const EditableText = ({
   const newValue = blockIndex !== undefined ? getNewValue(blockIndex, itemId, field) : '';
   const hasNewContent = newValue && newValue !== value;
   
-  // State: showing original or new content
-  const [showingOriginal, setShowingOriginal] = useState(false);
-  
   // Current display value
-  const currentDisplayValue = hasNewContent ? (showingOriginal ? value : newValue) : value;
+  const currentDisplayValue = hasNewContent ? newValue : value;
 
   const { isHoverOpen, handleMouseEnter, handleMouseLeave } = useHover()
   
@@ -64,8 +73,6 @@ export const EditableText = ({
     if (blockIndex !== undefined) {
       // acceptUpdate 会同时更新 resumeData 和清除 newResumeData 中的对应字段
       acceptUpdate(blockIndex, itemId, field);
-      // 重置显示状态
-      setShowingOriginal(false);
     }
   };
   
@@ -74,8 +81,6 @@ export const EditableText = ({
     if (blockIndex !== undefined) {
       // 清除 newResumeData 中的对应字段，避免编辑时重新识别
       clearNewValue(blockIndex, itemId, field);
-      // 重置显示状态
-      setShowingOriginal(false);
     }
   };
   
@@ -131,63 +136,75 @@ export const EditableText = ({
     return (
       <div 
         className={cn(
-          'cursor-pointer hover:bg-gray-100 px-1 py-0.5 rounded transition-colors relative',
+          'relative cursor-default transition-colors',
           baseClasses, 
           className, 
-          !currentDisplayValue ? 'text-gray-400 italic' : '',
-          'bg-yellow-50 border border-yellow-200 hover:bg-yellow-100/80'
+          !currentDisplayValue ? 'text-muted-foreground italic' : ''
         )}
         // onClick={() => startEditing(fieldId, currentDisplayValue)} 不允许点击编辑
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
       >
-        {content}
-
-        {/* Action buttons */}
-        <div 
+        <Card
           className={cn(
-            "transition-opacity whitespace-nowrap z-20 flex items-center gap-1",
-            "absolute bg-white border border-gray-200 rounded-md shadow-lg",
-            isHoverOpen ? "opacity-100" : "opacity-0",
-            multiline? "top-full pt-1 right-0" : "top-0 left-full"
+            'relative gap-3 overflow-hidden rounded-lg border-border/80 bg-background/95 py-3 shadow-sm',
+            'bg-[radial-gradient(circle_at_1px_1px,color-mix(in_oklab,var(--muted-foreground)_18%,transparent)_1px,transparent_0),linear-gradient(color-mix(in_oklab,var(--border)_38%,transparent)_1px,transparent_1px),linear-gradient(90deg,color-mix(in_oklab,var(--border)_38%,transparent)_1px,transparent_1px)]',
+            'bg-[length:12px_12px,24px_24px,24px_24px]'
           )}
         >
-          {/* Toggle button */}
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setShowingOriginal(!showingOriginal);
-            }}
-            className="bg-gray-100 hover:bg-gray-200 rounded text-gray-700 text-md px-1 cursor-pointer"
-            title={showingOriginal ? "查看AI优化版本" : "查看原始版本"}
-          >
-            {showingOriginal ? "查看新版" : "查看原版"}
-          </button>
-          
-          {/* Accept button */}
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              handleAcceptUpdate();
-            }}
-            className="bg-green-100 hover:bg-green-200 rounded text-green-700 text-md px-1 cursor-pointer"
-            title="接收AI优化版本"
-          >
-            接收
-          </button>
-          
-          {/* Reject button */}
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              handleRejectUpdate();
-            }}
-            className="bg-red-100 hover:bg-red-200 rounded text-red-700 text-md px-1 transition-colors cursor-pointer"
-            title="保留原版本"
-          >
-            拒绝
-          </button>
-        </div>
+          <CardHeader className="gap-1 px-3">
+            <CardTitle className="text-xs">AI 修改建议</CardTitle>
+            <CardDescription className="text-xs">确认后应用到简历</CardDescription>
+            <CardAction
+              className={cn(
+                'flex items-center gap-1 rounded-md border bg-background/95 p-1 shadow-sm transition-opacity',
+                isHoverOpen ? 'opacity-100' : 'opacity-0'
+              )}
+            >
+              <Button
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleAcceptUpdate();
+                }}
+                title="接收AI优化版本"
+              >
+                <Check data-icon="inline-start" />
+                接收
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleRejectUpdate();
+                }}
+                title="保留原版本"
+              >
+                <X data-icon="inline-start" />
+                拒绝
+              </Button>
+            </CardAction>
+          </CardHeader>
+
+          <CardContent className="flex flex-col gap-3 px-3">
+            <div className="rounded-md border bg-background/85 p-3">
+              <div className="mb-2 flex items-center gap-2">
+                <Badge variant="secondary">原始内容</Badge>
+              </div>
+              <div className="whitespace-pre-wrap break-words text-muted-foreground">{value || placeholder}</div>
+            </div>
+
+            <Separator />
+
+            <div className="rounded-md border bg-card/95 p-3 shadow-xs">
+              <div className="mb-2 flex items-center gap-2">
+                <Badge variant="default">修改内容</Badge>
+              </div>
+              <div className="whitespace-pre-wrap break-words text-card-foreground">{content}</div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
