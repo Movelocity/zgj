@@ -34,4 +34,5 @@ func InitRoutes(r *gin.Engine) {
 	InitTOSRouter(PrivateGroup, PublicGroup, AdminGroup)
 	InitASRRouter(PrivateGroup, PublicGroup, AdminGroup)
 	InitInterviewRouter(PrivateGroup, PublicGroup, AdminGroup)
+	InitOpportunityRouter(PrivateGroup, PublicGroup, AdminGroup)
 }

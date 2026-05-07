@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { FiSettings, FiUsers, FiFolder, FiGift, FiDatabase, FiActivity, FiPackage } from 'react-icons/fi';
+import { FiSettings, FiUsers, FiFolder, FiGift, FiDatabase, FiActivity, FiPackage, FiBriefcase } from 'react-icons/fi';
 import { 
   WorkflowManagement, 
   UserManagement, 
@@ -8,12 +8,13 @@ import {
   InvitationManagement, 
   SiteVariableManagement, 
   EventLogManagement,
+  OpportunityManagement,
   BillingPackageManagement,
   UserBillingPackageList
 } from './components';
 import { Button } from '@/components/ui/Button';
 
-type TabType = 'workflows' | 'users' | 'files' | 'invitations' | 'variables' | 'eventlogs' | 'billing' | 'user-billing-packages';
+type TabType = 'workflows' | 'users' | 'files' | 'invitations' | 'variables' | 'eventlogs' | 'opportunities' | 'billing' | 'user-billing-packages';
 
 const Administrator: React.FC = () => {
   const location = useLocation();
@@ -22,7 +23,7 @@ const Administrator: React.FC = () => {
   // 从 URL hash 中获取初始 tab，如果没有则默认为 'users'
   const getInitialTab = (): TabType => {
     const hash = location.hash.replace('#', '');
-    const validTabs: TabType[] = ['workflows', 'users', 'files', 'invitations', 'variables', 'eventlogs', 'billing'];
+    const validTabs: TabType[] = ['workflows', 'users', 'files', 'invitations', 'variables', 'eventlogs', 'opportunities', 'billing', 'user-billing-packages'];
     return validTabs.includes(hash as TabType) ? (hash as TabType) : 'users';
   };
 
@@ -35,6 +36,7 @@ const Administrator: React.FC = () => {
     { id: 'files' as TabType, name: '文件管理', icon: FiFolder },
     { id: 'variables' as TabType, name: '网站变量', icon: FiDatabase },
     { id: 'eventlogs' as TabType, name: '事件日志', icon: FiActivity },
+    { id: 'opportunities' as TabType, name: '实习机会', icon: FiBriefcase },
     { id: 'billing' as TabType, name: '套餐管理', icon: FiPackage },
     { id: 'user-billing-packages' as TabType, name: '用户套餐管理', icon: FiPackage },
   ];
@@ -42,7 +44,7 @@ const Administrator: React.FC = () => {
   // 监听 URL hash 变化
   useEffect(() => {
     const hash = location.hash.replace('#', '');
-    const validTabs: TabType[] = ['workflows', 'users', 'files', 'invitations', 'variables', 'eventlogs', 'billing'];
+    const validTabs: TabType[] = ['workflows', 'users', 'files', 'invitations', 'variables', 'eventlogs', 'opportunities', 'billing', 'user-billing-packages'];
     if (hash && validTabs.includes(hash as TabType)) {
       setActiveTab(hash as TabType);
     }
@@ -68,6 +70,8 @@ const Administrator: React.FC = () => {
         return <SiteVariableManagement />;
       case 'eventlogs':
         return <EventLogManagement />;
+      case 'opportunities':
+        return <OpportunityManagement />;
       case 'billing':
         return <BillingPackageManagement />;
       case 'user-billing-packages':
