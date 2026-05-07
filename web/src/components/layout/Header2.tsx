@@ -31,7 +31,7 @@ const NAV_ITEMS: NavItem[] = [
   },
   {
     path: ROUTES.OPPORTUNITIES,
-    label: '实习机会',
+    label: '岗位机会',
   },
   {
     path: '/resumes',

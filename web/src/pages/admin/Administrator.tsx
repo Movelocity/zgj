@@ -36,7 +36,7 @@ const Administrator: React.FC = () => {
     { id: 'files' as TabType, name: '文件管理', icon: FiFolder },
     { id: 'variables' as TabType, name: '网站变量', icon: FiDatabase },
     { id: 'eventlogs' as TabType, name: '事件日志', icon: FiActivity },
-    { id: 'opportunities' as TabType, name: '实习机会', icon: FiBriefcase },
+    { id: 'opportunities' as TabType, name: '岗位机会', icon: FiBriefcase },
     { id: 'billing' as TabType, name: '套餐管理', icon: FiPackage },
     { id: 'user-billing-packages' as TabType, name: '用户套餐管理', icon: FiPackage },
   ];

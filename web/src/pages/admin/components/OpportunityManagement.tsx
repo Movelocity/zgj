@@ -192,8 +192,8 @@ const OpportunityManagement: React.FC = () => {
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900">实习机会管理</h1>
-          <p className="mt-1 text-sm text-gray-500">管理首页导航“实习机会”展示的岗位内容，共 {total} 条。</p>
+          <h1 className="text-2xl font-semibold text-gray-900">岗位机会管理</h1>
+          <p className="mt-1 text-sm text-gray-500">管理首页导航“岗位机会”展示的职位内容，共 {total} 条。</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" onClick={() => loadOpportunities()} disabled={loading}>

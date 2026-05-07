@@ -74,10 +74,10 @@ const Opportunities: React.FC = () => {
         setOpportunities(list);
         setSelectedId(list[0]?.id || null);
       } else {
-        setError(response.msg || '加载实习机会失败');
+        setError(response.msg || '加载岗位机会失败');
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : '加载实习机会失败');
+      setError(err instanceof Error ? err.message : '加载岗位机会失败');
     } finally {
       setLoading(false);
     }
@@ -141,13 +141,13 @@ const Opportunities: React.FC = () => {
           <div className="mb-8 max-w-3xl">
             <Badge className="mb-4 bg-blue-100 text-blue-700 hover:bg-blue-100">
               <Sparkles className="mr-1 h-3.5 w-3.5" />
-              实习内推
+              岗位内推
             </Badge>
             <h1 className="text-4xl font-bold tracking-tight text-slate-950 md:text-5xl">
-              内容与 AI 产品实习机会
+              内容与 AI 职位机会
             </h1>
             <p className="mt-4 text-lg leading-8 text-slate-600">
-              按企业、岗位、类别、地点和联系方式整理，可搜索后快速查看岗位详情。
+              收录实习与正式岗位，按企业、岗位、类别、地点和联系方式整理，可搜索后快速查看岗位详情。
             </p>
           </div>
 
@@ -204,7 +204,7 @@ const Opportunities: React.FC = () => {
 
           {loading && (
             <Card className="border-slate-200 bg-white">
-              <CardContent className="py-12 text-center text-slate-500">正在加载实习机会...</CardContent>
+              <CardContent className="py-12 text-center text-slate-500">正在加载岗位机会...</CardContent>
             </Card>
           )}
 
@@ -219,7 +219,7 @@ const Opportunities: React.FC = () => {
 
           {!loading && !error && opportunities.length === 0 && (
             <Card className="border-slate-200 bg-white">
-              <CardContent className="py-12 text-center text-slate-500">暂无实习机会，后续有新岗位会在这里更新。</CardContent>
+              <CardContent className="py-12 text-center text-slate-500">暂无岗位机会，后续有新岗位会在这里更新。</CardContent>
             </Card>
           )}
 
