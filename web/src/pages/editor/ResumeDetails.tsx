@@ -1,8 +1,18 @@
 import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { FiSave } from 'react-icons/fi';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ChevronLeft } from 'lucide-react';
+import { ChevronLeft, FileText, Loader2, Sparkles } from 'lucide-react';
 import { Button } from "@/components/ui";
+import { Badge } from '@/components/ui/badge';
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
 import { useAuthStore, useGlobalStore } from '@/store';
 import ChatPanel, { type Message } from './components/ChatPanel';
 import ResumeEditor from './components/ResumeEditor';
@@ -11,7 +21,6 @@ import ExportSplitButton from './components/ExportSplitButton';
 import VersionSelector from './components/VersionSelector';
 import TargetSelector, { type TargetType } from './components/TargetSelector';
 import { type FontSettings } from './components/FontSettingsPanel';
-import LoadingIndicator, { type LoadingStage } from '@/components/LoadingIndicator';
 import { defaultResumeData, type ResumeData } from '@/types/resume';
 import { resumeAPI } from '@/api/resume';
 import { showError, showSuccess, showInfo } from '@/utils/toast';
@@ -100,7 +109,6 @@ export default function ResumeDetails() {
   const [currentStage, setCurrentStage] = useState<ProcessingStage>('parsing');
   const [progress, setProgress] = useState(0);
   const [progressText, setProgressText] = useState('');
-  const [showCompleted, setShowCompleted] = useState(false);
   const progressUpdaterRef = useRef<TimeBasedProgressUpdater | null>(null);
   const [isSaving, setSaving] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
@@ -114,14 +122,6 @@ export default function ResumeDetails() {
     labelSize: 'medium',
     contentSize: 'medium',
   });
-
-  // 加载步骤配置
-  const loadingStages: LoadingStage[] = useMemo(() => [
-    { key: 'parsing', label: '简历文件解析', order: 1 },
-    { key: 'structuring', label: '简历信息结构化', order: 2 },
-    { key: 'analyzing', label: isJD ? 'JD简历优化' : 'AI简历分析', order: 3 },
-    { key: 'exporting', label: '简历内容优化', order: 4 },
-  ], [isJD]);
 
   // 初始化进度更新器
   const initProgressUpdater = useCallback(() => {
@@ -139,10 +139,6 @@ export default function ResumeDetails() {
       },
       onAllComplete: () => {
         setCurrentStage('completed');
-        setShowCompleted(true);
-        setTimeout(() => {
-          setShowCompleted(false);
-        }, 2000);
       }
     });
     progressUpdaterRef.current = updater;
@@ -158,7 +154,6 @@ export default function ResumeDetails() {
     setProgress(0);
     setProgressText('');
     setCurrentStage('parsing');
-    setShowCompleted(false);
   }, []);
 
   const { user } = useAuthStore();
@@ -710,8 +705,80 @@ export default function ResumeDetails() {
     };
   }, []);
 
-  const showContent = !metadata.isNewResume || metadata.hasStructuredData;
-  // console.log('showContent', showContent);
+  const hasRenderableResumeData = useMemo(() => {
+    return resumeData.blocks.some((block) => {
+      if (block.title?.trim()) return true;
+
+      if (typeof block.data === 'string') {
+        return block.data.trim().length > 0;
+      }
+
+      if (Array.isArray(block.data)) {
+        return block.data.some((item) =>
+          Object.values(item).some((value) => typeof value === 'string' && value.trim().length > 0)
+        );
+      }
+
+      if (block.data && typeof block.data === 'object') {
+        return Object.values(block.data).some((value) => typeof value === 'string' && value.trim().length > 0);
+      }
+
+      return false;
+    });
+  }, [resumeData]);
+
+  const stageStatus = useMemo(() => {
+    const labels: Record<ProcessingStage, { badge: string; title: string; description: string }> = {
+      parsing: {
+        badge: '解析中',
+        title: '正在解析上传文件',
+        description: '已进入编辑页，正在提取简历文本。',
+      },
+      structuring: {
+        badge: '结构化',
+        title: '正在生成简历结构',
+        description: '左侧会在结构化完成后立即显示简历内容。',
+      },
+      analyzing: {
+        badge: '诊断中',
+        title: isJD ? '正在匹配职位要求' : '正在诊断简历亮点',
+        description: '你可以先查看左侧简历，AI 会继续在右侧同步进度。',
+      },
+      exporting: {
+        badge: '生成中',
+        title: '正在生成可确认修改',
+        description: '系统正在把建议转换成左侧可接收或拒绝的修改卡片。',
+      },
+      completed: {
+        badge: '已完成',
+        title: '简历处理完成',
+        description: '修改建议已准备好，可以逐条确认。',
+      },
+    };
+
+    return labels[currentStage];
+  }, [currentStage, isJD]);
+
+  const inlineProcessingActive = loading || backgroundProcessing.active || Boolean(metadata.isNewResume && !metadata.hasStructuredData);
+  const progressValue = useMemo(() => {
+    if (backgroundProcessing.active) {
+      return currentStage === 'exporting' ? Math.max(progress, 82) : Math.max(progress, 62);
+    }
+
+    if (loading) {
+      return Math.max(progress, currentStage === 'parsing' ? 18 : 36);
+    }
+
+    return progress;
+  }, [backgroundProcessing.active, currentStage, loading, progress]);
+  const clampedProgress = Math.min(98, Math.max(0, progressValue));
+  const chatProcessingStatus = useMemo(() => ({
+    active: inlineProcessingActive,
+    title: backgroundProcessing.title || stageStatus.title,
+    description: backgroundProcessing.description || progressText || stageStatus.description,
+    progress: clampedProgress,
+    stageLabel: stageStatus.badge,
+  }), [backgroundProcessing.description, backgroundProcessing.title, clampedProgress, inlineProcessingActive, progressText, stageStatus.badge, stageStatus.description, stageStatus.title]);
 
   return (
     <div className="fixed top-0 left-0 h-screen w-screen flex flex-col bg-gray-50">
@@ -775,10 +842,54 @@ export default function ResumeDetails() {
 
       {/* Main Content */}
       <div className="flex-1 flex">
-        {showContent && (
-          <>
-            {/* Editor Panel */}
-            <div className="w-full md:flex-1 border-gray-200 bg-white overflow-auto" style={{ height: 'calc(100vh - 48px)' }}>
+        <>
+          {/* Editor Panel */}
+          <div className="w-full md:flex-1 border-gray-200 bg-white overflow-auto" style={{ height: 'calc(100vh - 48px)' }}>
+            <div
+              className="min-h-full bg-background"
+              style={{
+                backgroundImage:
+                  'radial-gradient(circle at 1px 1px, hsl(var(--muted-foreground) / 0.16) 1px, transparent 0), linear-gradient(hsl(var(--border) / 0.45) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--border) / 0.45) 1px, transparent 1px)',
+                backgroundSize: '18px 18px, 72px 72px, 72px 72px',
+              }}
+            >
+              {inlineProcessingActive && (
+                <div className="mx-auto flex w-full max-w-4xl flex-col gap-4 px-4 pb-2 pt-6">
+                  <Card className="overflow-hidden border-border/80 bg-card/95 shadow-sm backdrop-blur">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-base">
+                        {backgroundProcessing.active ? <Sparkles className="animate-pulse" /> : <Loader2 className="animate-spin" />}
+                        {backgroundProcessing.title || stageStatus.title}
+                      </CardTitle>
+                      <CardDescription>
+                        {backgroundProcessing.description || progressText || stageStatus.description}
+                      </CardDescription>
+                      <CardAction>
+                        <Badge variant="secondary">{stageStatus.badge}</Badge>
+                      </CardAction>
+                    </CardHeader>
+                    <CardContent className="flex flex-col gap-4">
+                      <Progress value={clampedProgress} />
+                      <div className="grid gap-3 text-sm text-muted-foreground sm:grid-cols-3">
+                        <div className="flex items-center gap-2">
+                          <FileText />
+                          <span>解析后立即显示</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Sparkles />
+                          <span>AI 后台继续优化</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Loader2 className="animate-spin" />
+                          <span>右侧同步进度</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+
+              {hasRenderableResumeData ? (
               <ResumeEditor
                 resumeData={resumeData}
                 newResumeData={newResumeData}
@@ -786,40 +897,46 @@ export default function ResumeDetails() {
                 onResumeDataChange={(data) => {handleResumeDataChange(data, false)}}
                 fontSettings={fontSettings}
               />
+              ) : (
+                <div className="mx-auto flex min-h-[calc(100vh-180px)] w-full max-w-4xl items-center px-4 pb-10">
+                  <Card className="w-full border-dashed bg-card/85 shadow-sm backdrop-blur">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-base">
+                        <FileText />
+                        简历内容准备中
+                      </CardTitle>
+                      <CardDescription>
+                        上传完成后会直接进入这里，结构化结果生成后会自动替换为可编辑简历。
+                      </CardDescription>
+                      <CardAction>
+                        <Badge variant="outline">等待内容</Badge>
+                      </CardAction>
+                    </CardHeader>
+                  </Card>
+                </div>
+              )}
             </div>
+          </div>
 
-            {/* Chat Panel - 始终渲染，内部控制显示/隐藏 */}
-            <ChatPanel
-              initialMessages={chatMessages}
-              onMessagesChange={setChatMessages}
-              resumeData={resumeData}
-              onResumeDataChange={(data, require_commit) => handleResumeDataChange(data as ResumeData, require_commit)}
-              resumeId={resumeId}
-              currentTarget={currentTarget}
-              processingStatus={backgroundProcessing}
-              updateMetadata={updateMetadata}
-              emptyComponent={
-                <TargetSelector
-                  currentTarget={currentTarget}
-                  onTargetChange={handleTargetChange}
-                />
-              }
-              saveMessageToBackend={saveMessageToBackend}
-            />
-          </>
-        )}
-
-        {loading && (
-          <LoadingIndicator
-            stages={loadingStages}
-            currentStage={currentStage}
-            progress={progress}
-            progressText={progressText}
-            showCompleted={showCompleted}
-            title="正在处理您的简历"
-            classNames={metadata.hasStructuredData ? 'bg-black/20' : ''}
+          {/* Chat Panel - 始终渲染，内部控制显示/隐藏 */}
+          <ChatPanel
+            initialMessages={chatMessages}
+            onMessagesChange={setChatMessages}
+            resumeData={resumeData}
+            onResumeDataChange={(data, require_commit) => handleResumeDataChange(data as ResumeData, require_commit)}
+            resumeId={resumeId}
+            currentTarget={currentTarget}
+            processingStatus={chatProcessingStatus}
+            updateMetadata={updateMetadata}
+            emptyComponent={
+              <TargetSelector
+                currentTarget={currentTarget}
+                onTargetChange={handleTargetChange}
+              />
+            }
+            saveMessageToBackend={saveMessageToBackend}
           />
-        )}
+        </>
       </div>
     </div>
   );

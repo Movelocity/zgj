@@ -1,5 +1,15 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import {Button, Modal} from '@/components/ui';
+import { Badge } from '@/components/ui/badge';
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
 import AiMessageRenderer from './AiMessageRenderer';
 import { Send, Lightbulb, Sparkles, X } from 'lucide-react';
 import { FiMessageSquare, FiFileText } from 'react-icons/fi';
@@ -34,6 +44,8 @@ interface ChatPanelProps {
     active: boolean;
     title?: string;
     description?: string;
+    progress?: number;
+    stageLabel?: string;
   };
   emptyComponent?: React.ReactNode; // 无消息时显示的组件
 
@@ -1054,29 +1066,26 @@ export default function ChatPanel({
 
               {processingStatus?.active && (
                 <div className="w-full px-4 animate-in fade-in-0 slide-in-from-bottom-2 duration-300">
-                  <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 shadow-sm">
-                    <div className="mb-3 flex items-center gap-3">
-                      <div className="relative">
-                        <Sparkles className="w-5 h-5 text-blue-600 animate-pulse" />
-                        <div className="absolute -right-1 -top-1 size-2 rounded-full bg-blue-500 animate-ping"></div>
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <h4 className="text-sm font-medium text-blue-950">
-                          {processingStatus.title || '正在处理简历'}
-                        </h4>
-                        {processingStatus.description && (
-                          <p className="text-xs text-blue-700">{processingStatus.description}</p>
-                        )}
-                      </div>
-                      <div className="rounded bg-blue-100 px-2 py-1 font-mono text-xs text-blue-600">
-                        AI
-                      </div>
-                    </div>
-
-                    <div className="h-2 w-full overflow-hidden rounded-full bg-blue-100">
-                      <div className="h-full w-2/3 rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 animate-pulse"></div>
-                    </div>
-                  </div>
+                  <Card className="gap-4 border-border/80 bg-card/95 py-4 shadow-sm">
+                    <CardHeader className="px-4">
+                      <CardTitle className="flex items-center gap-2 text-sm">
+                        <Sparkles className="animate-pulse" />
+                        {processingStatus.title || '正在处理简历'}
+                      </CardTitle>
+                      {processingStatus.description && (
+                        <CardDescription className="text-xs">
+                          {processingStatus.description}
+                        </CardDescription>
+                      )}
+                      <CardAction>
+                        <Badge variant="secondary">{processingStatus.stageLabel || '运行中'}</Badge>
+                      </CardAction>
+                    </CardHeader>
+                    <CardContent className="flex flex-col gap-2 px-4">
+                      <Progress value={processingStatus.progress ?? 66} />
+                      <p className="text-xs text-muted-foreground">完成后会自动写入左侧可确认修改。</p>
+                    </CardContent>
+                  </Card>
                 </div>
               )}
 
