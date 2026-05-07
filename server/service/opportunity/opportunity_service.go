@@ -146,6 +146,7 @@ func (s *opportunityService) Create(req *OpportunityUpsertRequest, createdBy str
 	if err := global.DB.Create(opportunity).Error; err != nil {
 		return nil, errors.New("创建岗位失败")
 	}
+	go s.syncOpportunityVectors([]model.JobOpportunity{*opportunity})
 	return opportunity, nil
 }
 
@@ -172,6 +173,7 @@ func (s *opportunityService) BatchCreate(req *OpportunityBatchCreateRequest, cre
 		return nil, errors.New("批量创建岗位失败")
 	}
 
+	go s.syncOpportunityVectors(opportunities)
 	return opportunities, nil
 }
 
@@ -208,6 +210,7 @@ func (s *opportunityService) Update(id int64, req *OpportunityUpsertRequest) (*m
 		return nil, errors.New("查询岗位失败")
 	}
 
+	go s.syncOpportunityVectors([]model.JobOpportunity{existing})
 	return &existing, nil
 }
 
@@ -219,5 +222,6 @@ func (s *opportunityService) Archive(id int64) error {
 	if result.RowsAffected == 0 {
 		return errors.New("岗位不存在")
 	}
+	go s.deleteOpportunityVectors([]int64{id})
 	return nil
 }

@@ -43,11 +43,11 @@ type SpugSMS struct {
 
 // AliyunSMS 阿里云短信配置
 type AliyunSMS struct {
-	Name            string `mapstructure:"name" json:"name" yaml:"name"`                               // 短信签名名称（用于显示）
-	SignName        string `mapstructure:"sign-name" json:"sign-name" yaml:"sign-name"`                // 阿里云短信签名
-	AccessKeyId     string `mapstructure:"access-key-id" json:"access-key-id" yaml:"access-key-id"`    // 阿里云 AccessKey ID
+	Name            string `mapstructure:"name" json:"name" yaml:"name"`                                        // 短信签名名称（用于显示）
+	SignName        string `mapstructure:"sign-name" json:"sign-name" yaml:"sign-name"`                         // 阿里云短信签名
+	AccessKeyId     string `mapstructure:"access-key-id" json:"access-key-id" yaml:"access-key-id"`             // 阿里云 AccessKey ID
 	AccessKeySecret string `mapstructure:"access-key-secret" json:"access-key-secret" yaml:"access-key-secret"` // 阿里云 AccessKey Secret
-	TemplateLogin   string `mapstructure:"template-login" json:"template-login" yaml:"template-login"` // 登录验证码模板
+	TemplateLogin   string `mapstructure:"template-login" json:"template-login" yaml:"template-login"`          // 登录验证码模板
 }
 
 type JWT struct {
@@ -115,17 +115,24 @@ type PdfExportConfig struct {
 	RenderBaseURL  string `mapstructure:"render_base_url" json:"render_base_url" yaml:"render_base_url"`    // 前端渲染页面基础URL
 }
 
+type LangChainServiceConfig struct {
+	BaseURL           string `mapstructure:"base_url" json:"base_url" yaml:"base_url"`
+	ServiceToken      string `mapstructure:"service_token" json:"service_token" yaml:"service_token"`
+	VectorSyncTimeout int    `mapstructure:"vector_sync_timeout" json:"vector_sync_timeout" yaml:"vector_sync_timeout"`
+}
+
 type Config struct {
-	Server    Server          `mapstructure:"server" json:"server" yaml:"server"`
-	CORS      CORS            `mapstructure:"cors" json:"cors" yaml:"cors"`
-	Pgsql     Pgsql           `mapstructure:"pgsql" json:"pgsql" yaml:"pgsql"`
-	SpugSMS   SpugSMS         `mapstructure:"spug-sms" json:"spug-sms" yaml:"spug-sms"`
-	AliyunSMS AliyunSMS       `mapstructure:"aliyun-sms" json:"aliyun-sms" yaml:"aliyun-sms"`
-	JWT       JWT             `mapstructure:"jwt" json:"jwt" yaml:"jwt"`
-	Local     Local           `mapstructure:"local" json:"local" yaml:"local"`
-	Upload    Upload          `mapstructure:"upload" json:"upload" yaml:"upload"`
-	Log       Log             `mapstructure:"log" json:"log" yaml:"log"`
-	TOS       TOSConfig       `mapstructure:"tos" json:"tos" yaml:"tos"`
-	ASR       ASRConfig       `mapstructure:"asr" json:"asr" yaml:"asr"`
-	PdfExport PdfExportConfig `mapstructure:"pdf_export" json:"pdf_export" yaml:"pdf_export"`
+	Server           Server                 `mapstructure:"server" json:"server" yaml:"server"`
+	CORS             CORS                   `mapstructure:"cors" json:"cors" yaml:"cors"`
+	Pgsql            Pgsql                  `mapstructure:"pgsql" json:"pgsql" yaml:"pgsql"`
+	SpugSMS          SpugSMS                `mapstructure:"spug-sms" json:"spug-sms" yaml:"spug-sms"`
+	AliyunSMS        AliyunSMS              `mapstructure:"aliyun-sms" json:"aliyun-sms" yaml:"aliyun-sms"`
+	JWT              JWT                    `mapstructure:"jwt" json:"jwt" yaml:"jwt"`
+	Local            Local                  `mapstructure:"local" json:"local" yaml:"local"`
+	Upload           Upload                 `mapstructure:"upload" json:"upload" yaml:"upload"`
+	Log              Log                    `mapstructure:"log" json:"log" yaml:"log"`
+	TOS              TOSConfig              `mapstructure:"tos" json:"tos" yaml:"tos"`
+	ASR              ASRConfig              `mapstructure:"asr" json:"asr" yaml:"asr"`
+	PdfExport        PdfExportConfig        `mapstructure:"pdf_export" json:"pdf_export" yaml:"pdf_export"`
+	LangChainService LangChainServiceConfig `mapstructure:"langchain_service" json:"langchain_service" yaml:"langchain_service"`
 }

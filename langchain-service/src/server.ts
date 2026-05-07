@@ -13,6 +13,13 @@ import {
   workflowResponse,
 } from "./dify.js";
 import { inferWorkflowName, runWorkflow } from "./workflows.js";
+import {
+  deleteOpportunityVectors,
+  matchResumeToOpportunities,
+  opportunityVectorHealth,
+  upsertOpportunityVectors,
+  type OpportunityVectorInput,
+} from "./opportunity-vectors.js";
 
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error || "unknown error");
@@ -51,7 +58,64 @@ app.get("/health", (_req, res) => {
     service: "zgj-langchain-service",
     model: config.deepseekModel,
     hasDeepSeekApiKey: Boolean(config.deepseekApiKey),
+    vector: {
+      chromaUrl: config.chromaUrl,
+      collection: config.chromaCollection,
+      embeddingModel: config.embeddingModel,
+    },
   });
+});
+
+app.get("/health/vector", async (_req, res) => {
+  try {
+    res.json({
+      ok: true,
+      service: "zgj-langchain-service",
+      vector: await opportunityVectorHealth(),
+    });
+  } catch (error) {
+    res.status(503).json({
+      ok: false,
+      error: errorMessage(error) || "vector health check failed",
+    });
+  }
+});
+
+app.post("/v1/opportunities/vector/upsert", async (req: Request, res: Response) => {
+  try {
+    const body = req.body as OpportunityVectorInput | OpportunityVectorInput[] | { items?: OpportunityVectorInput[] };
+    const items = Array.isArray(body)
+      ? body
+      : "items" in body && Array.isArray(body.items)
+        ? body.items
+        : body;
+    const result = await upsertOpportunityVectors(items as OpportunityVectorInput | OpportunityVectorInput[]);
+    res.json({ ok: true, ...result });
+  } catch (error) {
+    res.status(500).json({ error: errorMessage(error) || "opportunity vector upsert failed" });
+  }
+});
+
+app.post("/v1/opportunities/vector/delete", async (req: Request, res: Response) => {
+  try {
+    const ids = Array.isArray(req.body?.ids) ? req.body.ids : [];
+    const result = await deleteOpportunityVectors(ids);
+    res.json({ ok: true, ...result });
+  } catch (error) {
+    res.status(500).json({ error: errorMessage(error) || "opportunity vector delete failed" });
+  }
+});
+
+app.post("/v1/opportunities/vector/match", async (req: Request, res: Response) => {
+  try {
+    const result = await matchResumeToOpportunities({
+      resume: req.body?.resume,
+      top_k: req.body?.top_k,
+    });
+    res.json({ ok: true, ...result });
+  } catch (error) {
+    res.status(400).json({ error: errorMessage(error) || "opportunity vector match failed" });
+  }
 });
 
 app.post("/v1/files/upload", upload.single("file"), async (req: Request, res: Response) => {

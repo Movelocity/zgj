@@ -98,3 +98,9 @@ asr:
 pdf_export:
   node_service_url: "http://localhost:8889"      # Node.js PDF生成服务地址
   render_base_url: "http://localhost:8888"       # 前端渲染页面基础URL（开发环境：web_socket err，生产环境：8888）
+
+# LangChain 本机 AI 服务配置
+langchain_service:
+  base_url: "http://127.0.0.1:8890"              # LangChain 服务地址
+  service_token: ""                              # 可选：对应 LANGCHAIN_SERVICE_TOKEN
+  vector_sync_timeout: 30                        # Chroma 向量同步超时（秒）

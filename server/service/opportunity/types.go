@@ -37,3 +37,30 @@ type OpportunityUpsertRequest struct {
 type OpportunityBatchCreateRequest struct {
 	Items []OpportunityUpsertRequest `json:"items" binding:"required"`
 }
+
+type OpportunityVectorMatchRequest struct {
+	Resume interface{} `json:"resume" binding:"required"`
+	TopK   int         `json:"top_k"`
+}
+
+type OpportunityVectorMatch struct {
+	ID            string   `json:"id"`
+	OpportunityID int64    `json:"opportunity_id"`
+	Company       string   `json:"company"`
+	Title         string   `json:"title"`
+	Category      string   `json:"category"`
+	Location      string   `json:"location"`
+	ContactEmail  string   `json:"contact_email"`
+	Status        string   `json:"status"`
+	Distance      *float64 `json:"distance"`
+	Score         float64  `json:"score"`
+	Document      string   `json:"document"`
+	Reason        string   `json:"reason"`
+}
+
+type OpportunityVectorMatchResponse struct {
+	Total          int                      `json:"total"`
+	Matches        []OpportunityVectorMatch `json:"matches"`
+	EmbeddingModel string                   `json:"embedding_model"`
+	Collection     string                   `json:"collection"`
+}

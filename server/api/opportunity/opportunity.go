@@ -26,6 +26,23 @@ func ListPublicOpportunities(c *gin.Context) {
 	utils.OkWithData(list, c)
 }
 
+// MatchOpportunities 匹配简历与岗位机会
+func MatchOpportunities(c *gin.Context) {
+	var req opportunityService.OpportunityVectorMatchRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		utils.FailWithMessage(err.Error(), c)
+		return
+	}
+
+	result, err := opportunityService.OpportunityService.MatchResume(&req)
+	if err != nil {
+		utils.FailWithMessage(err.Error(), c)
+		return
+	}
+
+	utils.OkWithData(result, c)
+}
+
 // ListAdminOpportunities 获取管理员岗位列表
 func ListAdminOpportunities(c *gin.Context) {
 	var req opportunityService.OpportunityListRequest
@@ -118,4 +135,15 @@ func ArchiveOpportunity(c *gin.Context) {
 	}
 
 	utils.OkWithMessage("下架成功", c)
+}
+
+// RebuildOpportunityVectors 重建岗位向量索引
+func RebuildOpportunityVectors(c *gin.Context) {
+	result, err := opportunityService.OpportunityService.RebuildVectors()
+	if err != nil {
+		utils.FailWithMessage(err.Error(), c)
+		return
+	}
+
+	utils.OkWithDetailed(result, "重建岗位向量成功", c)
 }

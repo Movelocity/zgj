@@ -8,6 +8,7 @@
 | --- | --- | --- | --- |
 | Go 后端 | `8888` | API、静态前端、数据库、工作流代理 | `server/` |
 | LangChain 工作流服务 | `8890` | `doc_extract`、`smart-format-2`、`common-analysis`、`basic-chat` | `langchain-service/` |
+| ChromaDB | `8000` | 岗位机会向量库，供简历与岗位语义匹配 | 任意目录 |
 | PDF 导出服务 | `8889` | 接收 Go 后端 `/generate` 请求并生成 PDF | `server/pdfexport-service/` |
 | 前端构建产物 | 由 `8888` 提供 | React/Vite SPA，生产构建后由 Go 后端托管 | `web/dist/` |
 
@@ -25,6 +26,7 @@ http://127.0.0.1:8888
 - Node.js 18+
 - pnpm
 - PostgreSQL
+- ChromaDB
 - Playwright CLI（PDF 服务使用）
 
 检查 Playwright：
@@ -60,6 +62,11 @@ pgsql:
 pdf_export:
   node_service_url: "http://localhost:8889"
   render_base_url: "http://localhost:8888"
+
+langchain_service:
+  base_url: "http://127.0.0.1:8890"
+  service_token: ""
+  vector_sync_timeout: 30
 ```
 
 ### LangChain 服务
@@ -79,6 +86,9 @@ DEEPSEEK_API_KEY=你的 DeepSeek API Key
 DEEPSEEK_MODEL=deepseek-chat
 LLM_TIMEOUT_MS=180000
 UPLOAD_DIR=./data/uploads
+CHROMA_URL=http://127.0.0.1:8000
+CHROMA_COLLECTION=job_opportunities
+EMBEDDING_MODEL=Xenova/multilingual-e5-small
 ```
 
 `.env`、`node_modules/`、`dist/`、`data/` 已被 `langchain-service/.gitignore` 排除，不要提交真实密钥和上传缓存。
@@ -132,7 +142,27 @@ psql -d zgj -f scripts/seed_langchain_workflows.sql
 - `common-analysis`
 - `smart-format-2`
 
-## 4. 构建前端
+## 4. 启动 ChromaDB
+
+岗位机会会同步到 ChromaDB，简历匹配岗位时会查询这个向量库。推荐本机持久化启动：
+
+```bash
+chroma run --path ./data/chroma --host 127.0.0.1 --port 8000
+```
+
+如果本机没有 `chroma` 命令，可以安装：
+
+```bash
+pip install chromadb
+```
+
+健康检查：
+
+```bash
+curl --noproxy 127.0.0.1 -s http://127.0.0.1:8000/api/v2/heartbeat
+```
+
+## 5. 构建前端
 
 Go 后端会托管 `web/dist/`，所以启动后端前先构建前端：
 
@@ -150,11 +180,17 @@ pnpm dev
 
 但完整本机联调推荐访问 `http://127.0.0.1:8888`。
 
-## 5. 启动全部服务
+## 6. 启动全部服务
 
-建议开 3 个终端分别运行。
+建议开 4 个终端分别运行。
 
-### 终端 A：启动 Go 后端
+### 终端 A：启动 ChromaDB
+
+```bash
+chroma run --path ./data/chroma --host 127.0.0.1 --port 8000
+```
+
+### 终端 B：启动 Go 后端
 
 ```bash
 cd server
@@ -176,7 +212,7 @@ cd server
 go run main.go
 ```
 
-### 终端 B：启动 LangChain 工作流服务
+### 终端 C：启动 LangChain 工作流服务
 
 ```bash
 cd langchain-service
@@ -195,7 +231,13 @@ curl --noproxy 127.0.0.1 -s http://127.0.0.1:8890/health
 {"ok":true,"service":"zgj-langchain-service","model":"deepseek-chat","hasDeepSeekApiKey":true}
 ```
 
-### 终端 C：启动 PDF 导出服务
+向量健康检查：
+
+```bash
+curl --noproxy 127.0.0.1 -s http://127.0.0.1:8890/health/vector
+```
+
+### 终端 D：启动 PDF 导出服务
 
 ```bash
 cd server/pdfexport-service
@@ -214,14 +256,31 @@ curl --noproxy 127.0.0.1 -s http://127.0.0.1:8889/health
 {"ok":true,"service":"zgj-pdfexport-service"}
 ```
 
-## 6. 验证运行状态
+## 7. 重建岗位向量索引
 
-确认三个端口都在：
+首次启动 ChromaDB 后，或者 ChromaDB 曾经离线导致岗位同步失败，可以用管理员接口从 PostgreSQL 已发布岗位重建索引：
+
+```bash
+curl --noproxy 127.0.0.1 -X POST http://127.0.0.1:8888/api/admin/opportunities/vector/rebuild \
+  -H "Authorization: Bearer <管理员JWT>"
+```
+
+LangChain 服务也提供独立冒烟测试，会临时写入一条岗位、匹配简历并删除测试向量：
+
+```bash
+cd langchain-service
+npm run smoke:vector
+```
+
+## 8. 验证运行状态
+
+确认四个端口都在：
 
 ```bash
 lsof -nP -iTCP:8888 -sTCP:LISTEN
 lsof -nP -iTCP:8890 -sTCP:LISTEN
 lsof -nP -iTCP:8889 -sTCP:LISTEN
+lsof -nP -iTCP:8000 -sTCP:LISTEN
 ```
 
 确认前端可访问：
@@ -232,7 +291,7 @@ curl --noproxy 127.0.0.1 -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8888
 
 返回 `200` 即正常。
 
-## 7. 常用测试账号
+## 9. 常用测试账号
 
 本机调试可使用之前创建的测试账号：
 
@@ -249,7 +308,7 @@ curl --noproxy 127.0.0.1 -s -X POST http://127.0.0.1:8888/api/user/login \
   -d '{"phone":"13800000000","password":"Test123456"}'
 ```
 
-## 8. 冒烟测试
+## 10. 冒烟测试
 
 后端：
 
@@ -272,6 +331,7 @@ cd langchain-service
 npm run typecheck
 npm run smoke
 npm run smoke:doc
+npm run smoke:vector
 ```
 
 PDF 导出服务：
@@ -282,7 +342,7 @@ curl --noproxy 127.0.0.1 -s http://127.0.0.1:8889/health
 
 完整 PDF 导出需要同时运行 `8888` 和 `8889`。前端点击“导出PDF”时默认走服务端导出。
 
-## 9. 常见问题
+## 11. 常见问题
 
 ### 工作流报错 `connect: connection refused 127.0.0.1:8890`
 
