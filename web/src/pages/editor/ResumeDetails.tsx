@@ -195,6 +195,18 @@ export default function ResumeDetails() {
     return newMessage;
   }, []);
 
+  const updateChatMessage = useCallback((message: Message) => {
+    setChatMessages(prev => {
+      const exists = prev.some(m => m.id === message.id);
+      if (!exists) return [...prev, message];
+      return prev.map(m => m.id === message.id ? message : m);
+    });
+
+    window.dispatchEvent(new CustomEvent('chat-message-updated', {
+      detail: { message }
+    }));
+  }, []);
+
   const addAndSaveChatMessage = useCallback((content: string, type: 'user' | 'assistant' = 'assistant') => {
     const message = addChatMessage(content, type);
     saveMessageToBackend(message);
@@ -395,13 +407,17 @@ export default function ResumeDetails() {
               title: 'AI 正在诊断简历',
               description: '左侧已可查看解析结果，优化建议稍后自动生成。',
             });
-            addAndSaveChatMessage('正在进行 AI 简历诊断，完成后会在右侧给出原因说明。');
+            const analysisMessage = addChatMessage(
+              'AI 正在诊断简历\n\n左侧已可查看解析结果，优化建议会在这里逐步生成。',
+              'assistant'
+            );
             
             const processedData = effectiveStructuredData as ResumeData;
             let analysisContent = currentMetadata.initialAnalysisContent === 'cleared'
               ? ''
               : currentMetadata.initialAnalysisContent;
             if (!analysisContent) {
+              let streamedAnalysisContent = '';
               const analysisResult = await workflowAPI.executeWorkflow_v2({
                 id: "common-analysis",
                 inputs: {
@@ -412,6 +428,19 @@ export default function ResumeDetails() {
                 idAsName: true,
                 onNodeEvent: (event) => {
                   console.log(`[executeWorkflow_v2] [common-analysis] ${event.type}${event.nodeName ? ': ' + event.nodeName : ''}`);
+                },
+                onTextChunk: (chunk) => {
+                  streamedAnalysisContent += chunk;
+                  setProgress(prev => Math.min(88, Math.max(prev + 2, 62)));
+                  setBackgroundProcessing({
+                    active: true,
+                    title: 'AI 正在诊断简历',
+                    description: '诊断内容正在右侧聊天框逐步生成。',
+                  });
+                  updateChatMessage({
+                    ...analysisMessage,
+                    content: `AI 正在诊断简历\n\n${streamedAnalysisContent}`,
+                  });
                 },
               });
               
@@ -427,16 +456,22 @@ export default function ResumeDetails() {
                 throw new Error('分析结果格式错误');
               }
 
-              const newMessage = addChatMessage(
-                `已完成简历诊断，左侧黄色区域是可确认的修改建议。\n\n${analysisContent}`,
-                'assistant'
-              );
-              saveMessageToBackend(newMessage);
+              const finalAnalysisMessage = {
+                ...analysisMessage,
+                content: `已完成简历诊断，左侧黄色区域是可确认的修改建议。\n\n${analysisContent}`,
+              };
+              updateChatMessage(finalAnalysisMessage);
+              saveMessageToBackend(finalAnalysisMessage);
   
               // Mark initialization complete and update processing stage
               await updateMetadata({
                 initialAnalysisContent: analysisContent,
               }, true); // 暂存到服务器，防止下面的步骤炸了这里又要重来
+            } else {
+              updateChatMessage({
+                ...analysisMessage,
+                content: `已完成简历诊断，左侧黄色区域是可确认的修改建议。\n\n${analysisContent}`,
+              });
             }
             
             // Format result

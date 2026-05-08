@@ -20,6 +20,16 @@ http://127.0.0.1:8888
 
 不要直接访问 `http://localhost:8889/generate`，它是 PDF 服务的 `POST` 接口，不是浏览器页面。
 
+## 前端模块说明
+
+前端标题栏已经按职责拆分，方便多人分工维护导航入口、桌面端用户区和移动端菜单。
+
+- 标题栏模块说明：[web/src/components/layout/header/README.md](web/src/components/layout/header/README.md)
+- 主组装组件：`web/src/components/layout/Header2.tsx`
+- 导航入口配置：`web/src/components/layout/header/navigation.ts`
+
+新增顶部导航页面时，优先在 `navigation.ts` 中维护入口；如果是新路由常量，先补充 `web/src/utils/constants.ts`。
+
 ## 环境要求
 
 - Go 1.21+

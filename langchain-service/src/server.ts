@@ -25,6 +25,51 @@ function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error || "unknown error");
 }
 
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function splitTextChunks(text: string, maxLength = 220): string[] {
+  const normalized = text.replace(/\r\n/g, "\n");
+  const pieces = normalized
+    .split(/(?<=。|！|？|\.|\!|\?)\s+|\n{2,}/)
+    .map((piece) => piece.trim())
+    .filter(Boolean);
+  const chunks: string[] = [];
+
+  for (const piece of pieces.length ? pieces : [normalized]) {
+    if (piece.length <= maxLength) {
+      chunks.push(piece);
+      continue;
+    }
+
+    for (let index = 0; index < piece.length; index += maxLength) {
+      chunks.push(piece.slice(index, index + maxLength));
+    }
+  }
+
+  return chunks;
+}
+
+async function streamTextChunks(
+  res: Response,
+  workflowName: string,
+  outputs: Record<string, unknown>,
+) {
+  const outputKey = outputs.reply ? "reply" : outputs.answer ? "answer" : "output";
+  const text = String(outputs[outputKey] || "");
+
+  if (!text) return;
+
+  for (const chunk of splitTextChunks(text)) {
+    streamEvent(res, "text_chunk", {
+      text: `${chunk}\n\n`,
+      from_variable_selector: [workflowName, outputKey],
+    });
+    await sleep(30);
+  }
+}
+
 await ensureUploadDir();
 
 const app = express();
@@ -180,13 +225,7 @@ app.post("/v1/workflows/run", async (req: Request, res: Response) => {
         node_name: "LangChain DeepSeek",
       });
       const outputs = await runWorkflow(workflowName, inputs, query);
-      const text = String(outputs.reply || outputs.answer || outputs.output || "");
-      if (text) {
-        streamEvent(res, "text_chunk", {
-          text,
-          from_variable_selector: [workflowName, outputs.reply ? "reply" : "output"],
-        });
-      }
+      await streamTextChunks(res, workflowName, outputs);
       streamEvent(res, "node_finished", {
         node_id: "langchain-deepseek",
         node_name: "LangChain DeepSeek",

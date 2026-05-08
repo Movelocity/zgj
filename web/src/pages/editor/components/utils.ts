@@ -1,9 +1,65 @@
 import type { ResumeData, ResumeBlock } from '@/types/resume';
 
+const titleAliases: Record<string, string> = {
+  personalinformation: 'personal',
+  personalinfo: 'personal',
+  contactinformation: 'personal',
+  contactinfo: 'personal',
+  个人信息: 'personal',
+
+  summary: 'summary',
+  professionalsummary: 'summary',
+  profile: 'summary',
+  aboutme: 'summary',
+  个人总结: 'summary',
+  个人简介: 'summary',
+  自我评价: 'summary',
+
+  workexperience: 'work',
+  professionalexperience: 'work',
+  employmenthistory: 'work',
+  experience: 'work',
+  工作经历: 'work',
+  工作经验: 'work',
+  实习经历: 'work',
+
+  projects: 'projects',
+  projectexperience: 'projects',
+  project: 'projects',
+  项目经历: 'projects',
+  项目经验: 'projects',
+
+  education: 'education',
+  educationbackground: 'education',
+  educationalbackground: 'education',
+  教育背景: 'education',
+  教育经历: 'education',
+
+  certificatesother: 'certificates',
+  certificatesandother: 'certificates',
+  certifications: 'certificates',
+  certificates: 'certificates',
+  skills: 'certificates',
+  additionalskills: 'certificates',
+  证书与其他: 'certificates',
+  证书及其他: 'certificates',
+  专业技能: 'certificates',
+  技能证书: 'certificates',
+};
+
+function normalizeTitle(title = ''): string {
+  const compact = title
+    .toLowerCase()
+    .replace(/&/g, 'and')
+    .replace(/[\s/|·._\-—:：,，()（）]+/g, '');
+
+  return titleAliases[compact] || compact;
+}
+
 /**
  * Build a mapping from resumeData block indices to newResumeData block indices
  * Matching strategy:
- * 1. Match by title + type (exact match)
+ * 1. Match by normalized title + type (supports Chinese/English aliases)
  * 2. For blocks with the same title+type, match in order of appearance
  * 3. Returns -1 for blocks that have no match in newResumeData
  * 
@@ -19,7 +75,7 @@ export function buildBlockMatchMap(
   const usedNewIndices = new Set<number>();
 
   // Create a key for matching: title + type
-  const getBlockKey = (block: ResumeBlock) => `${block.title}|||${block.type}`;
+  const getBlockKey = (block: ResumeBlock) => `${normalizeTitle(block.title)}|||${block.type}`;
 
   // Build reverse index for newResumeData: key -> array of indices
   const newBlocksIndex = new Map<string, number[]>();

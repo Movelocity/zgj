@@ -505,6 +505,29 @@ export default function ChatPanel({
       window.removeEventListener('chat-message-added' as any, handleChatMessageAdded);
     };
   }, []);
+
+  // 监听 chat-message-updated 事件（外部流式更新消息内容）
+  useEffect(() => {
+    const handleChatMessageUpdated = (event: CustomEvent<{ message: Message }>) => {
+      const { message } = event.detail;
+      setMessages(prev => {
+        const exists = prev.some(m => m.id === message.id);
+        if (!exists) return [...prev, message];
+        return prev.map(m => m.id === message.id ? message : m);
+      });
+
+      setTimeout(() => {
+        if (scrollRef.current) {
+          scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+        }
+      }, 50);
+    };
+
+    window.addEventListener('chat-message-updated' as any, handleChatMessageUpdated);
+    return () => {
+      window.removeEventListener('chat-message-updated' as any, handleChatMessageUpdated);
+    };
+  }, []);
   
   useEffect(() => {
     if (scrollRef.current) {

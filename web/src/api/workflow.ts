@@ -17,6 +17,7 @@ type ExecuteWorkflowV2Params = {
   inputs: Record<string, unknown>,
   idAsName?: boolean,
   onNodeEvent?: (event: { type: string; nodeName?: string; nodeId?: string }) => void,
+  onTextChunk?: (text: string) => void,
 }
 
 export const workflowAPI = {
@@ -59,6 +60,7 @@ export const workflowAPI = {
     inputs,
     idAsName = false,
     onNodeEvent,
+    onTextChunk,
   }: ExecuteWorkflowV2Params): Promise<ApiResponse<any>> => {
     const tag = `[executeWorkflow_v2] [${id}]`;
     console.log(`${tag} 开始执行`);
@@ -131,6 +133,11 @@ export const workflowAPI = {
               console.log(`${tag} 工作流完成`);
               finalOutputs = event.data?.outputs ?? null;
               onNodeEvent?.({ type: 'workflow_finished' });
+              break;
+            case 'text_chunk':
+              if (typeof event.data?.text === 'string' && event.data.text) {
+                onTextChunk?.(event.data.text);
+              }
               break;
             case 'error':
               console.error(`${tag} 工作流错误:`, event.data?.message);

@@ -7,7 +7,6 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/Button';
 import {
   Card,
-  CardAction,
   CardContent,
   CardDescription,
   CardHeader,
@@ -51,7 +50,7 @@ export const EditableText = ({
   // Current display value
   const currentDisplayValue = hasNewContent ? newValue : value;
 
-  const { isHoverOpen, handleMouseEnter, handleMouseLeave } = useHover()
+  const { handleMouseEnter, handleMouseLeave } = useHover()
   
   // Auto-resize textarea to fit content
   const adjustTextareaHeight = (textarea: HTMLTextAreaElement) => {
@@ -135,9 +134,10 @@ export const EditableText = ({
   if (hasNewContent) {
     return (
       <div 
+        data-ai-suggestion-field
         className={cn(
-          'relative cursor-default transition-colors',
-          baseClasses, 
+          'relative block w-full max-w-full cursor-default transition-colors',
+          multiline ? 'min-h-[2rem]' : 'min-h-[1.5rem]',
           className, 
           !currentDisplayValue ? 'text-muted-foreground italic' : ''
         )}
@@ -147,19 +147,18 @@ export const EditableText = ({
       >
         <Card
           className={cn(
-            'relative gap-3 overflow-hidden rounded-lg border-border/80 bg-background/95 py-3 shadow-sm',
+            'relative w-full max-w-full gap-3 overflow-hidden rounded-lg border-border/80 bg-background/95 py-3 shadow-sm',
             'bg-[radial-gradient(circle_at_1px_1px,color-mix(in_oklab,var(--muted-foreground)_18%,transparent)_1px,transparent_0),linear-gradient(color-mix(in_oklab,var(--border)_38%,transparent)_1px,transparent_1px),linear-gradient(90deg,color-mix(in_oklab,var(--border)_38%,transparent)_1px,transparent_1px)]',
             'bg-[length:12px_12px,24px_24px,24px_24px]'
           )}
         >
-          <CardHeader className="gap-1 px-3">
-            <CardTitle className="text-xs">AI 修改建议</CardTitle>
-            <CardDescription className="text-xs">确认后应用到简历</CardDescription>
-            <CardAction
-              className={cn(
-                'flex items-center gap-1 rounded-md border bg-background/95 p-1 shadow-sm transition-opacity',
-                isHoverOpen ? 'opacity-100' : 'opacity-0'
-              )}
+          <CardHeader className="flex min-w-0 flex-col gap-3 px-3 sm:flex-row sm:items-start sm:justify-between">
+            <div className="min-w-0 flex-1">
+              <CardTitle className="whitespace-normal text-sm leading-5">AI 修改建议</CardTitle>
+              <CardDescription className="mt-1 whitespace-normal text-xs leading-5">确认后应用到简历</CardDescription>
+            </div>
+            <div
+              className="flex shrink-0 flex-wrap items-center gap-1 rounded-md border bg-background/95 p-1 shadow-sm sm:justify-end"
             >
               <Button
                 size="sm"
@@ -184,24 +183,24 @@ export const EditableText = ({
                 <X data-icon="inline-start" />
                 拒绝
               </Button>
-            </CardAction>
+            </div>
           </CardHeader>
 
           <CardContent className="flex flex-col gap-3 px-3">
-            <div className="rounded-md border bg-background/85 p-3">
+            <div className="min-w-0 rounded-md border bg-background/85 p-3">
               <div className="mb-2 flex items-center gap-2">
                 <Badge variant="secondary">原始内容</Badge>
               </div>
-              <div className="whitespace-pre-wrap break-words text-muted-foreground">{value || placeholder}</div>
+              <div className="min-w-0 whitespace-pre-wrap break-words text-muted-foreground">{value || placeholder}</div>
             </div>
 
             <Separator />
 
-            <div className="rounded-md border bg-card/95 p-3 shadow-xs">
+            <div className="min-w-0 rounded-md border bg-card/95 p-3 shadow-xs">
               <div className="mb-2 flex items-center gap-2">
                 <Badge variant="default">修改内容</Badge>
               </div>
-              <div className="whitespace-pre-wrap break-words text-card-foreground">{content}</div>
+              <div className="min-w-0 whitespace-pre-wrap break-words text-card-foreground">{content}</div>
             </div>
           </CardContent>
         </Card>

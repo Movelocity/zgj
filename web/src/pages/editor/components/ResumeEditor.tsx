@@ -10,6 +10,14 @@ import { useMemo, useState } from 'react';
 import cn from 'classnames';
 import PortraitImageEditor from './PortraitImageEditor';
 import HoverOperationPanel from './HoverOperationPanel';
+import { Button } from '@/components/ui/Button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 
 interface ResumeEditorProps {
   resumeData: ResumeData;
@@ -188,12 +196,22 @@ export default function ResumeEditor({
     return (
       <div>
         {block.data.map((item, itemIndex) => {
+          const suggestedName = editorState.getNewValue(blockIndex, item.id, 'name');
+          const suggestedTime = editorState.getNewValue(blockIndex, item.id, 'time');
+          const hasHeaderSuggestion = Boolean(
+            (suggestedName && suggestedName !== item.name) ||
+            (suggestedTime && suggestedTime !== item.time)
+          );
+
           return (
             <div key={item.id} className="relative pl-4 break-inside-avoid ">
-              <div className="flex justify-between items-start">
-                <div className="flex-1">
-                  <h4 className={`text-gray-800 font-medium group/item ${fontSizeClasses.label} inline-flex items-center gap-2`}>
+              <div className={cn(
+                hasHeaderSuggestion ? 'flex flex-col gap-3' : 'flex justify-between items-start gap-4'
+              )}>
+                <div className={cn('min-w-0', hasHeaderSuggestion ? 'w-full' : 'flex-1')}>
+                  <h4 className={`text-gray-800 font-medium group/item ${fontSizeClasses.label} flex w-full items-center gap-2`}>
                     <EditableText
+                      className="min-w-0 flex-1"
                       editorState={editorState}
                       fieldId={`block${blockIndex}-${item.id}-name`}
                       value={item.name}
@@ -254,7 +272,8 @@ export default function ResumeEditor({
                 </div>
                 <span 
                   className={cn(
-                    'text-gray-500 ml-4', 
+                    'text-gray-500',
+                    hasHeaderSuggestion ? 'block w-full' : 'ml-4 shrink-0',
                     fontSizeClasses.content, 
                     item.time ? '' : 'hide-when-print'
                   )}
@@ -416,8 +435,9 @@ export default function ResumeEditor({
               <div key={originalIndex} className="relative">
                 {/* Block Header with left border */}
                 <div className="relative group/block">
-                  <h3 className={`text-gray-800 border-l-4 border-blue-600 pl-2 inline-flex items-center gap-2 font-semibold ${fontSizeClasses.title}`}>
+                  <h3 className={`text-gray-800 border-l-4 border-blue-600 pl-2 flex w-full items-start gap-2 font-semibold ${fontSizeClasses.title}`}>
                     <EditableText
+                      className="min-w-0 flex-1"
                       editorState={editorState}
                       fieldId={`block${originalIndex}--title`}
                       value={block.title}
@@ -479,74 +499,80 @@ export default function ResumeEditor({
             );
           })}
 
-          {/* AI Suggested New Blocks - rendered inline with indicator */}
+          {/* AI Suggested New Blocks */}
           {newBlockIndices.map((newBlockIdx) => {
             const block = newResumeData.blocks[newBlockIdx];
             if (!block || block.type === 'object') return null;
             
             return (
-              <div key={`new-${newBlockIdx}`} className="relative group/block">
-                {/* Block Header with left border and action buttons */}
-                <div className="relative flex items-center justify-between">
-                  <h3 className={`text-gray-800 border-l-4 border-blue-600 pl-2 inline-flex items-center gap-2 font-semibold ${fontSizeClasses.title}`}>
-                    <span>{block.title || '(无标题)'}</span>
-                  </h3>
-                  
-                  {/* Accept/Reject buttons on the right */}
-                  <div className="flex items-center gap-1">
-                    <button
+              <Card key={`new-${newBlockIdx}`} className="my-4 gap-3 overflow-hidden rounded-lg border-border/80 bg-background/95 py-3 shadow-sm">
+                <CardHeader className="flex min-w-0 flex-col gap-3 px-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="min-w-0 flex-1">
+                    <CardTitle className="text-sm leading-5">
+                      新增板块建议：{block.title || '(无标题)'}
+                    </CardTitle>
+                    <CardDescription className="mt-1 text-xs leading-5">
+                      这是 AI 额外生成的板块，确认后才会加入简历。
+                    </CardDescription>
+                  </div>
+
+                  <div className="flex shrink-0 items-center gap-1 rounded-md border bg-background/95 p-1 shadow-sm">
+                    <Button
                       onClick={() => addNewBlock(newBlockIdx)}
-                      className="flex items-center gap-1 px-2 py-0.5 text-xs text-white bg-green-500 hover:bg-green-600 rounded transition-colors cursor-pointer"
+                      size="sm"
                       title="确认添加到简历"
                     >
                       <Check size={12} />
                       <span>确认</span>
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       onClick={() => rejectNewBlock(newBlockIdx)}
-                      className="flex items-center gap-1 px-2 py-0.5 text-xs text-gray-500 hover:text-red-600 hover:bg-red-50 rounded transition-colors cursor-pointer"
+                      variant="ghost"
+                      size="icon-sm"
                       title="移除此板块"
                     >
                       <X size={12} />
-                    </button>
+                    </Button>
                   </div>
-                </div>
+                </CardHeader>
 
                 {/* Block Content - read only preview */}
-                {isListBlock(block) && (
-                  <div className="">
-                    {block.data.map((item) => (
-                      <div key={item.id} className="relative pl-4 break-inside-avoid">
-                        <div className="flex justify-between items-start">
-                          <div className="flex-1">
-                            <h4 className={`text-gray-800 font-medium ${fontSizeClasses.label}`}>
-                              {item.name || '(无标题)'}
-                            </h4>
+                <CardContent className="px-3">
+                  {isListBlock(block) && (
+                    <div className="flex flex-col gap-3">
+                      {block.data.map((item) => (
+                        <div key={item.id} className="min-w-0 rounded-md border bg-card/95 p-3 break-inside-avoid">
+                          <div className="flex justify-between items-start gap-3">
+                            <div className="min-w-0 flex-1">
+                              <h4 className={`text-gray-800 font-medium ${fontSizeClasses.label}`}>
+                                {item.name || '(无标题)'}
+                              </h4>
+                            </div>
+                            {item.time && (
+                              <span className={cn('shrink-0 text-gray-500', fontSizeClasses.content)}>
+                                {item.time}
+                              </span>
+                            )}
                           </div>
-                          {item.time && (
-                            <span className={cn('text-gray-500 ml-4', fontSizeClasses.content)}>
-                              {item.time}
-                            </span>
+                          {item.description && (
+                            <div className={cn('mt-2 text-gray-700 leading-relaxed whitespace-pre-line', fontSizeClasses.content)}>
+                              {item.description}
+                            </div>
                           )}
                         </div>
-                        {item.description && (
-                          <div className={cn('text-gray-700 leading-relaxed whitespace-pre-line', fontSizeClasses.content)}>
-                            {item.description}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                    {block.data.length === 0 && (
-                      <p className="text-gray-500 italic pl-4">暂无内容</p>
-                    )}
-                  </div>
-                )}
-                {isTextBlock(block) && (
-                  <div className={`text-gray-700 leading-relaxed ml-4 whitespace-pre-line ${fontSizeClasses.content}`}>
-                    {block.data || '(无内容)'}
-                  </div>
-                )}
-              </div>
+                      ))}
+                      {block.data.length === 0 && (
+                        <p className="text-gray-500 italic">暂无内容</p>
+                      )}
+                    </div>
+                  )}
+                  {isTextBlock(block) && (
+                    <div className={`rounded-md border bg-card/95 p-3 text-gray-700 leading-relaxed whitespace-pre-line ${fontSizeClasses.content}`}>
+                      {block.data || '(无内容)'}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
             );
           })}
 
@@ -564,4 +590,3 @@ export default function ResumeEditor({
     </div>
   );
 }
-
