@@ -1,12 +1,18 @@
 # 前端标题栏模块说明
 
-本目录用于拆分首页/业务页共用的顶部标题栏，目标是让导航入口、用户操作、移动端菜单可以分工维护。
+本目录用于拆分首页/业务页共用的顶部标题栏，目标是让品牌、用户操作、移动端菜单可以分工维护。
+
+顶部导航对应的业务模块已经迁移到 `web/src/modules/`。如果要维护“简历优化”“职位匹配”“岗位机会”等页面入口，优先查看：
+
+- `web/src/modules/README.md`
+- `web/src/modules/index.ts`
+- 对应模块文件，例如 `web/src/modules/opportunities.tsx`
 
 ## 文件职责
 
 | 文件 | 说明 |
 | --- | --- |
-| `navigation.ts` | 统一维护标题栏导航配置、辅助入口和选中态判断。新增页面入口优先改这里。 |
+| `navigation.ts` | 从 `web/src/modules` 读取主导航入口，并维护辅助入口和选中态判断。 |
 | `HeaderBrand.tsx` | Logo 与品牌名。 |
 | `HeaderPrimaryNav.tsx` | 桌面端主导航。 |
 | `HeaderUserActions.tsx` | 桌面端右侧操作区：使用指南、管理后台、用户入口、立即试用。 |
@@ -16,22 +22,23 @@
 
 ## 新增顶部导航入口
 
-在 `navigation.ts` 的 `HEADER_PRIMARY_NAV_ITEMS` 中增加一项：
+在 `web/src/modules/` 中新增业务模块，并给模块配置 `nav`：
 
 ```ts
-{
+nav: {
   path: ROUTES.OPPORTUNITIES,
   label: '岗位机会',
-}
+  order: 40,
+},
 ```
 
-如果是全局路径，先在 `web/src/utils/constants.ts` 的 `ROUTES` 中补充常量，再在导航配置中引用。
+如果是全局路径，先在 `web/src/utils/constants.ts` 的 `ROUTES` 中补充常量，再在模块配置中引用。
 
 ## 分工建议
 
 | 负责人范围 | 主要文件 |
 | --- | --- |
-| 页面入口/导航文案 | `navigation.ts` |
+| 页面入口/导航文案 | `web/src/modules/*.tsx` |
 | 品牌展示 | `HeaderBrand.tsx` |
 | 桌面端导航样式 | `HeaderPrimaryNav.tsx` |
 | 登录态/管理员入口 | `HeaderUserActions.tsx` |

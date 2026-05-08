@@ -1,36 +1,12 @@
+import { APP_NAV_ITEMS, type ModuleNavItem } from '@/modules';
 import { ROUTES } from '@/utils/constants';
 
-export interface HeaderNavItem {
-  path: string;
-  label: string;
-}
+export type HeaderNavItem = Omit<ModuleNavItem, 'order'>;
 
-export const HEADER_PRIMARY_NAV_ITEMS: HeaderNavItem[] = [
-  {
-    path: ROUTES.HOME,
-    label: '首页',
-  },
-  {
-    path: ROUTES.SIMPLE_RESUME,
-    label: '简历优化',
-  },
-  {
-    path: ROUTES.JOB_RESUME,
-    label: '职位匹配',
-  },
-  {
-    path: ROUTES.OPPORTUNITIES,
-    label: '岗位机会',
-  },
-  {
-    path: ROUTES.RESUMES,
-    label: '我的简历',
-  },
-  {
-    path: ROUTES.INTERVIEW,
-    label: '面试复盘',
-  },
-];
+export const HEADER_PRIMARY_NAV_ITEMS: HeaderNavItem[] = APP_NAV_ITEMS.map(({ path, label }) => ({
+  path,
+  label,
+}));
 
 export const HEADER_GUIDE_ITEM: HeaderNavItem = {
   path: ROUTES.CONTACT,

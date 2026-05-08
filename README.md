@@ -22,13 +22,15 @@ http://127.0.0.1:8888
 
 ## 前端模块说明
 
-前端标题栏已经按职责拆分，方便多人分工维护导航入口、桌面端用户区和移动端菜单。
+前端导航栏对应的业务入口已经按模块拆分，方便多人分工维护“简历优化”“职位匹配”“岗位机会”等页面。
 
+- 业务模块说明：[web/src/modules/README.md](web/src/modules/README.md)
+- 业务模块注册表：`web/src/modules/index.ts`
 - 标题栏模块说明：[web/src/components/layout/header/README.md](web/src/components/layout/header/README.md)
 - 主组装组件：`web/src/components/layout/Header2.tsx`
-- 导航入口配置：`web/src/components/layout/header/navigation.ts`
+- Header 辅助入口配置：`web/src/components/layout/header/navigation.ts`
 
-新增顶部导航页面时，优先在 `navigation.ts` 中维护入口；如果是新路由常量，先补充 `web/src/utils/constants.ts`。
+新增顶部导航页面时，优先在 `web/src/modules/` 中新建或修改对应模块；如果是新路由常量，先补充 `web/src/utils/constants.ts`。模块里的 `nav` 会自动同步到顶部导航，模块里的 `routes` 会自动同步到路由表。
 
 ## 环境要求
 
