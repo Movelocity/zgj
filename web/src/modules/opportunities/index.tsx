@@ -1,6 +1,6 @@
 import { lazy } from 'react';
 import { ROUTES } from '@/utils/constants';
-import type { FrontendModule } from './types';
+import type { FrontendModule } from '../types';
 
 const Opportunities = lazy(() => import('@/pages/opportunities/Opportunities'));
 

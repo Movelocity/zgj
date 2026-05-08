@@ -1,5 +1,5 @@
 import { lazy } from 'react';
-import type { FrontendModule } from './types';
+import type { FrontendModule } from '../types';
 
 const TemplateDemo = lazy(() => import('@/pages/test/TemplateDemo'));
 const AllTests = lazy(() => import('@/pages/test/AllTests'));

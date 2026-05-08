@@ -1,6 +1,6 @@
 import { lazy } from 'react';
 import { ROUTES } from '@/utils/constants';
-import type { FrontendModule } from './types';
+import type { FrontendModule } from '../types';
 
 const Auth = lazy(() => import('@/pages/auth/Auth2'));
 const CodeAuth = lazy(() => import('@/pages/auth/CodeAuth'));

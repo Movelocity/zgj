@@ -6,7 +6,7 @@
 
 - `web/src/modules/README.md`
 - `web/src/modules/index.ts`
-- 对应模块文件，例如 `web/src/modules/opportunities.tsx`
+- 对应模块目录，例如 `web/src/modules/opportunities/index.tsx`
 
 ## 文件职责
 
@@ -38,7 +38,7 @@ nav: {
 
 | 负责人范围 | 主要文件 |
 | --- | --- |
-| 页面入口/导航文案 | `web/src/modules/*.tsx` |
+| 页面入口/导航文案 | `web/src/modules/*/index.tsx` |
 | 品牌展示 | `HeaderBrand.tsx` |
 | 桌面端导航样式 | `HeaderPrimaryNav.tsx` |
 | 登录态/管理员入口 | `HeaderUserActions.tsx` |

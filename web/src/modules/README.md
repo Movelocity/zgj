@@ -35,22 +35,22 @@ export const opportunitiesModule: FrontendModule = {
 
 ## 当前模块分工
 
-| 模块文件 | 导航入口 | 维护范围 |
+| 模块目录 | 导航入口 | 维护范围 |
 | --- | --- | --- |
-| `home.tsx` | 首页 | 首页、使用指南。 |
-| `resumeOptimization.tsx` | 简历优化 | 简历上传、解析、AI 优化入口。 |
-| `jobMatching.tsx` | 职位匹配 | JD 匹配和定向优化入口。 |
-| `opportunities.tsx` | 岗位机会 | 岗位列表、岗位搜索、简历上传匹配。 |
-| `resumeWorkspace.tsx` | 我的简历 | 简历列表、卡片视图、详情、编辑器、导出渲染。 |
-| `interviewReview.tsx` | 面试复盘 | 面试复盘列表、详情和分析流程。 |
-| `account.tsx` | 无主导航 | 登录注册、个人中心、管理后台。 |
-| `system.tsx` | 无主导航 | 错误页、测试页、开发辅助页面。 |
+| `home/` | 首页 | 首页、使用指南。 |
+| `resumeOptimization/` | 简历优化 | 简历上传、解析、AI 优化入口。 |
+| `jobMatching/` | 职位匹配 | JD 匹配和定向优化入口。 |
+| `opportunities/` | 岗位机会 | 岗位列表、岗位搜索、简历上传匹配。 |
+| `resumeWorkspace/` | 我的简历 | 简历列表、卡片视图、详情、编辑器、导出渲染。 |
+| `interviewReview/` | 面试复盘 | 面试复盘列表、详情和分析流程。 |
+| `account/` | 无主导航 | 登录注册、个人中心、管理后台。 |
+| `system/` | 无主导航 | 错误页、测试页、开发辅助页面。 |
 
 ## 新增导航模块
 
 1. 在 `web/src/utils/constants.ts` 添加路由常量。
-2. 在 `web/src/modules/` 下新建模块文件。
-3. 在模块中声明 `nav` 和 `routes`。
+2. 在 `web/src/modules/` 下新建模块目录，例如 `web/src/modules/opportunities/`。
+3. 在模块目录的 `index.tsx` 中声明 `nav` 和 `routes`。
 4. 在 `web/src/modules/index.ts` 中把模块加入 `APP_MODULES`。
 
 这样顶部导航和路由会自动同步，不需要再分别改 `Header2.tsx` 和 `router/index.tsx`。

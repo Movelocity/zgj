@@ -30,7 +30,7 @@ http://127.0.0.1:8888
 - 主组装组件：`web/src/components/layout/Header2.tsx`
 - Header 辅助入口配置：`web/src/components/layout/header/navigation.ts`
 
-新增顶部导航页面时，优先在 `web/src/modules/` 中新建或修改对应模块；如果是新路由常量，先补充 `web/src/utils/constants.ts`。模块里的 `nav` 会自动同步到顶部导航，模块里的 `routes` 会自动同步到路由表。
+新增顶部导航页面时，优先在 `web/src/modules/` 中新建或修改对应模块目录，例如 `web/src/modules/opportunities/index.tsx`；如果是新路由常量，先补充 `web/src/utils/constants.ts`。模块里的 `nav` 会自动同步到顶部导航，模块里的 `routes` 会自动同步到路由表。
 
 ## 环境要求
 
