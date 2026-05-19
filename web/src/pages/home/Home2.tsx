@@ -1,14 +1,11 @@
 import React from 'react';
-import { Button, Badge } from '@/components/ui';
+import { Button } from '@/components/ui';
 import { Separator } from '@/components/ui/separator';
-import { ChevronRight, CheckCircle, Star, Users, TrendingUp, FileText, Briefcase, Target, Zap, Shield, Clock, Award } from 'lucide-react';
+import { ChevronRight, Star } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store';
 import { ROUTES } from '@/utils/constants';
 import { Link } from 'react-router-dom';
-
-const icp = import.meta.env.VITE_ICP_FILING;
-
 
 const Home2: React.FC = () => {
   const navigate = useNavigate();
