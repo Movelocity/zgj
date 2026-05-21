@@ -9,3 +9,5 @@ export { default as Modal } from './Modal';
 export { default as Toast } from './Toast';
 export { default as ToastContainer } from './ToastContainer';
 export { default as Drawer } from './Drawer';
+export * from './dialog';
+export * from './sheet';

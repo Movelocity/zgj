@@ -1,5 +1,7 @@
 import React, { forwardRef } from 'react';
 import type { InputHTMLAttributes } from 'react';
+import { cn } from '@/lib/utils';
+import { Label } from './label';
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   label?: string;
@@ -20,55 +22,53 @@ const Input = forwardRef<HTMLInputElement, InputProps>(({
   required = false,
   ...props
 }, ref) => {
-  const baseClasses = 'block w-full rounded-md border border-gray-300 px-3 py-2 text-sm placeholder-gray-400 focus:border-blue-500 focus:outline-none disabled:bg-gray-50 disabled:text-gray-500';
-  
-  const errorClasses = error 
-    ? 'border-red-300 focus:border-red-500 focus:ring-red-500' 
-    : '';
-  
-  const paddingClasses = leftIcon 
-    ? 'pl-10' 
-    : rightIcon 
-    ? 'pr-10' 
-    : '';
-  
-  const inputClasses = `${baseClasses} ${errorClasses} ${paddingClasses} ${className}`;
+  const inputId = props.id || props.name;
 
   return (
-    <div className="w-full">
+    <div className="flex w-full flex-col gap-1.5">
       {label && (
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <Label htmlFor={inputId} className="gap-1">
           {label}
-          {required && <span className="text-red-500 ml-1">*</span>}
-        </label>
+          {required && <span className="text-destructive">*</span>}
+        </Label>
       )}
       
       <div className="relative">
         {leftIcon && (
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <span className="text-gray-400 sm:text-sm">{leftIcon}</span>
+          <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+            <span className="text-muted-foreground">{leftIcon}</span>
           </div>
         )}
         
         <input
+          id={inputId}
           ref={ref}
-          className={inputClasses}
+          aria-invalid={Boolean(error)}
+          required={required}
+          className={cn(
+            "border-input file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground flex h-9 w-full min-w-0 rounded-md border bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
+            "focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]",
+            "aria-invalid:ring-destructive/20 aria-invalid:border-destructive",
+            leftIcon && "pl-10",
+            rightIcon && "pr-10",
+            className
+          )}
           {...props}
         />
         
         {rightIcon && (
-          <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
-            <span className="text-gray-400 sm:text-sm">{rightIcon}</span>
+          <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+            <span className="text-muted-foreground">{rightIcon}</span>
           </div>
         )}
       </div>
       
       {error && (
-        <p className="mt-1 text-sm text-red-600">{error}</p>
+        <p className="text-sm text-destructive">{error}</p>
       )}
       
       {helperText && !error && (
-        <p className="mt-1 text-sm text-gray-500">{helperText}</p>
+        <p className="text-sm text-muted-foreground">{helperText}</p>
       )}
     </div>
   );

@@ -2,15 +2,17 @@ import { useEffect, useRef, useState } from 'react';
 import MarkdownRenderer from '@/components/ui/Markdown';
 import { FiFileText, FiCheckSquare, FiPlus, FiEdit, FiStar, FiInfo, FiChevronDown, FiChevronUp, FiCheck, FiX } from 'react-icons/fi';
 import { generateHash } from '@/utils/hash';
-import { parseAndFixResumeJson } from '@/utils/helpers';
+import { isUsableResumeData, parseAndFixResumeJson } from '@/utils/helpers';
 import { workflowAPI } from '@/api/workflow';
 import type { ResumeData } from '@/types/resume';
+import { normalizeResumeDataForLanguage } from '@/utils/resumeSections';
 
 interface AiMessageRendererProps {
   content: string;
   messageId: string;
   className?: string;
   resumeData: ResumeData;
+  currentTarget?: 'jd' | 'normal' | 'foreign';
   isHistorical?: boolean; // 是否为历史消息，历史消息不触发事件
   onQuestionClick?: (question: string) => void; // 当用户点击 DISPLAY marker 时触发，将问题传递到输入框
 }
@@ -230,6 +232,7 @@ export default function AiMessageRenderer({
   messageId,
   className,
   resumeData,
+  currentTarget,
   isHistorical = false, // 默认为非历史消息
   onQuestionClick
 }: AiMessageRendererProps) {
@@ -240,6 +243,7 @@ export default function AiMessageRenderer({
   // 用于追踪每个块的状态，key 是 blockId，value 是状态信息
   const blockStatesRef = useRef<Map<string, ResumeUpdateBlock>>(new Map());
   const markerStatesRef = useRef<Map<string, ActionMarker>>(new Map());
+  const isForeignTarget = currentTarget === 'foreign';
 
   /**
    * Toggle expand/collapse state of a marker
@@ -448,7 +452,8 @@ export default function AiMessageRenderer({
       // 调用格式化 API
       const uploadData = {
         current_resume: JSON.stringify(resumeData),
-        resume_edit: content
+        resume_edit: content,
+        scene: currentTarget,
       };
       
       const structuredResumeResult = await workflowAPI.executeWorkflow("smart-format-2", uploadData, true);
@@ -463,7 +468,9 @@ export default function AiMessageRenderer({
 
       if (structuredResumeData && typeof structuredResumeData === 'string') {
         // 使用 parseAndFixResumeJson 确保数据安全性和格式正确性
-        const finalResumeData = parseAndFixResumeJson(structuredResumeData as string);
+        const finalResumeData = parseAndFixResumeJson(structuredResumeData as string, {
+          language: isForeignTarget ? 'en' : undefined,
+        });
         
         // 更新块状态为 completed
         const blockState = blockStatesRef.current.get(blockId);
@@ -481,17 +488,20 @@ export default function AiMessageRenderer({
           );
         }
 
-        // 触发格式化完成事件
-        const event = new CustomEvent('resume-update-formatted', {
-          detail: {
-            blockId,
-            data: finalResumeData,
-            messageId
-          }
-        });
-        window.dispatchEvent(event);
-        
-        console.log(`[Resume Update] 格式化块 ${blockId} 完成，已触发事件`);
+        if (isUsableResumeData(finalResumeData)) {
+          // 触发格式化完成事件
+          const event = new CustomEvent('resume-update-formatted', {
+            detail: {
+              blockId,
+              data: normalizeResumeDataForLanguage(finalResumeData, isForeignTarget ? 'en' : undefined),
+              messageId
+            }
+          });
+          window.dispatchEvent(event);
+          console.log(`[Resume Update] 格式化块 ${blockId} 完成，已触发事件`);
+        } else {
+          console.warn(`[Resume Update] 格式化块 ${blockId} 不是可用简历 JSON，已跳过应用`);
+        }
       }
     } catch (error) {
       console.error('[Resume Update] 格式化过程出错:', error);
@@ -559,9 +569,11 @@ export default function AiMessageRenderer({
           let needsFormatting = false;
           
           try {
-            const resumeUpdateData = parseAndFixResumeJson(currentBlockContent);
+            const resumeUpdateData = parseAndFixResumeJson(currentBlockContent, {
+              language: isForeignTarget ? 'en' : undefined,
+            });
             
-            if (resumeUpdateData.blocks && resumeUpdateData.blocks.length > 0) {
+            if (isUsableResumeData(resumeUpdateData)) {
               // 解析成功
               blockStatus = 'completed';
               
@@ -571,7 +583,7 @@ export default function AiMessageRenderer({
                   detail: {
                     blockId,
                     content: currentBlockContent,
-                    data: resumeUpdateData,
+                    data: normalizeResumeDataForLanguage(resumeUpdateData, isForeignTarget ? 'en' : undefined),
                     messageId
                   }
                 });
@@ -771,4 +783,3 @@ export default function AiMessageRenderer({
 
   return <div className="w-full">{renderContent()}</div>;
 }
-

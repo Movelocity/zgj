@@ -7,6 +7,7 @@ export interface StepResult {
   success: boolean;
   needsReload?: boolean;
   error?: string;
+  data?: any;
 }
 
 // 定义哪些内容是AI优化过的

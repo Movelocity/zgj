@@ -111,8 +111,12 @@ func (s *siteVariableService) GetSiteVariableList(req *GetSiteVariableListReques
 // GetSiteVariableByKey 通过key获取网站变量
 func (s *siteVariableService) GetSiteVariableByKey(key string) (*GetSiteVariableByKeyResponse, error) {
 	var variable model.SiteVariable
-	if err := global.DB.Where("key = ?", key).First(&variable).Error; err != nil {
+	result := global.DB.Where("key = ?", key).Find(&variable)
+	if result.Error != nil {
 		return nil, errors.New("变量不存在")
+	}
+	if result.RowsAffected == 0 {
+		return &GetSiteVariableByKeyResponse{}, nil
 	}
 
 	response := &GetSiteVariableByKeyResponse{

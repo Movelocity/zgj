@@ -5,6 +5,7 @@ import (
 	"server/service/eventlog"
 	"server/service/file"
 	"server/service/invitation"
+	"server/service/opportunity"
 	"server/service/resume"
 	"server/service/sitevariable"
 	"server/service/system"
@@ -19,6 +20,7 @@ var (
 	ResumeService       = resume.ResumeService
 	FileService         = file.FileService
 	InvitationService   = invitation.InvitationService
+	OpportunityService  = opportunity.OpportunityService
 	SiteVariableService = sitevariable.SiteVariableService
 	EventLogService     = eventlog.EventLogService
 )

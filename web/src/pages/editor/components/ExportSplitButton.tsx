@@ -16,10 +16,13 @@ export default function ExportSplitButton({
   isExporting = false,
 }: ExportSplitButtonProps) {
   const [open, setOpen] = useState(false);
-  const [defaultMethod] = useState<'text' | 'image'>('text'); // 默认使用文字PDF
+  const defaultMethod = onServerExport ? 'server' : 'text';
 
   const handleMainButtonClick = () => {
-    // 主体按钮点击：直接触发默认的文字PDF导出
+    if (onServerExport) {
+      onServerExport();
+      return;
+    }
     onTextPdfExport();
   };
 
@@ -113,6 +116,9 @@ export default function ExportSplitButton({
                       <div className="font-medium">远程导出</div>
                       <div className="text-xs text-gray-500">服务器生成pdf</div>
                     </div>
+                    {defaultMethod === 'server' && (
+                      <FiCheck className="w-4 h-4 text-blue-600 ml-2" />
+                    )}
                   </DropdownMenu.Item>
                 </>
               )}
@@ -123,4 +129,3 @@ export default function ExportSplitButton({
     </div>
   );
 }
-

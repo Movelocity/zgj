@@ -1,5 +1,11 @@
-import React, { useEffect } from 'react';
-import { FaTimes } from 'react-icons/fa';
+import React from 'react';
+import { cn } from '@/lib/utils';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from './sheet';
 
 interface DrawerProps {
   isOpen: boolean;
@@ -14,49 +20,23 @@ const Drawer: React.FC<DrawerProps> = ({
   onClose,
   title,
   children,
-  width = '480px'
+  width = '480px',
 }) => {
-  useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-    }
-    return () => {
-      document.body.style.overflow = 'unset';
-    };
-  }, [isOpen]);
-
-  if (!isOpen) return null;
-
   return (
-    <>
-      {/* Backdrop */}
-      <div
-        className="fixed inset-0 bg-black/25 z-40 transition-all"
-        onClick={onClose}
-      />
-
-      {/* Drawer */}
-      <div
-        className="fixed right-0 top-0 h-full bg-white shadow-xl z-50 flex flex-col transition-transform"
-        style={{ width }}
+    <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <SheetContent
+        side="right"
+        className={cn('w-[min(100vw,var(--drawer-width))] sm:max-w-none')}
+        style={{ '--drawer-width': width } as React.CSSProperties}
       >
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-          <h2 className="text-xl font-semibold text-gray-900">{title}</h2>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
-          >
-            <FaTimes className="w-5 h-5" />
-          </button>
-        </div>
-
-        {/* Content */}
+        <SheetHeader className="border-b px-6 py-4">
+          <SheetTitle className="text-xl">{title}</SheetTitle>
+        </SheetHeader>
         <div className="flex-1 overflow-y-auto">
           {children}
         </div>
-      </div>
-    </>
+      </SheetContent>
+    </Sheet>
   );
 };
 

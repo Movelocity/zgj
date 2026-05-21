@@ -1,3 +1,6 @@
+import type { ResumeData } from '@/types/resume';
+import { normalizeResumeDataForLanguage, type ResumeSectionLanguage } from './resumeSections';
+
 // 辅助函数
 export const formatFileSize = (bytes: number): string => {
   if (bytes === 0) return '0 Bytes';
@@ -85,12 +88,70 @@ export const truncate = (text: string, maxLength: number): string => {
  * 
  */
 export const smartJsonParser = <T>(json: string): T => {
-  const jsonStart = json.indexOf('{');
-  const jsonEnd = json.lastIndexOf('}');
-  const jsonStr = json.slice(jsonStart, jsonEnd + 1);
-  console.debug('jsonStr', jsonStr);
-  return JSON.parse(jsonStr);
+  const candidates = extractJsonObjectCandidates(json);
+  let lastError: unknown;
+
+  for (const jsonStr of candidates) {
+    try {
+      const parsed = JSON.parse(jsonStr);
+      if (parsed?.blocks && Array.isArray(parsed.blocks)) {
+        return parsed;
+      }
+      lastError = new Error('JSON 中缺少 blocks 数组');
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  throw lastError || new Error('未找到有效的简历 JSON');
 }
+
+const extractJsonObjectCandidates = (rawInput: string): string[] => {
+  const raw = String(rawInput || '');
+  const candidates: string[] = [];
+  let depth = 0;
+  let start = -1;
+  let inString = false;
+  let escaped = false;
+
+  for (let i = 0; i < raw.length; i += 1) {
+    const char = raw[i];
+
+    if (inString) {
+      if (escaped) {
+        escaped = false;
+      } else if (char === '\\') {
+        escaped = true;
+      } else if (char === '"') {
+        inString = false;
+      }
+      continue;
+    }
+
+    if (char === '"') {
+      inString = true;
+      continue;
+    }
+
+    if (char === '{') {
+      if (depth === 0) {
+        start = i;
+      }
+      depth += 1;
+      continue;
+    }
+
+    if (char === '}' && depth > 0) {
+      depth -= 1;
+      if (depth === 0 && start >= 0) {
+        candidates.push(raw.slice(start, i + 1));
+        start = -1;
+      }
+    }
+  }
+
+  return candidates;
+};
 
 /**
  * 纠正异常格式的 Resume Block 数据
@@ -182,7 +243,11 @@ export const fixResumeBlockFormat = (blocks: any[]): any[] => {
  * 结合 smartJsonParser 和 fixResumeBlockFormat，自动处理异常格式
  * 确保返回的数据总是有效的 ResumeData 格式
  */
-export const parseAndFixResumeJson = (json: string): any => {
+interface ParseAndFixResumeJsonOptions {
+  language?: ResumeSectionLanguage;
+}
+
+export const parseAndFixResumeJson = (json: string, options: ParseAndFixResumeJsonOptions = {}): any => {
   try {
     const parsed = smartJsonParser<any>(json);
     
@@ -220,20 +285,24 @@ export const parseAndFixResumeJson = (json: string): any => {
         return block;
       });
       
-      return {
+      const resumeData: ResumeData = {
         version: parsed.version || 2,
         portrait_img: parsed.portrait_img || '',
         blocks: validatedBlocks
       };
+
+      return normalizeResumeDataForLanguage(resumeData, options.language);
     }
     
     // 如果本身就是 blocks 数组
     if (Array.isArray(parsed)) {
       const fixedBlocks = fixResumeBlockFormat(parsed);
-      return {
+      const resumeData: ResumeData = {
         version: 2,
         blocks: fixedBlocks
       };
+
+      return normalizeResumeDataForLanguage(resumeData, options.language);
     }
     
     // 如果既没有 blocks 也不是数组，返回默认结构
@@ -251,3 +320,31 @@ export const parseAndFixResumeJson = (json: string): any => {
     };
   }
 }
+
+export const isFallbackMixedContentResume = (resumeData: any): boolean => {
+  const blocks = resumeData?.blocks;
+  if (!Array.isArray(blocks)) return false;
+
+  const fallbackSummaryTitles = new Set(['简历内容', 'Resume Content', 'Professional Summary']);
+
+  const mixedContentBlock = blocks.find((block: any) => {
+    if (!fallbackSummaryTitles.has(block?.title) || block?.type !== 'text') return false;
+    const data = String(block.data || '');
+    return (
+      data.includes('"blocks"') ||
+      data.includes('```resume-update') ||
+      data.includes('整体分析与优先级') ||
+      data.includes('具体可替换的表达') ||
+      data.includes('Core Strengths') ||
+      data.includes('Potential Optimization') ||
+      data.includes('Modification Notes') ||
+      data.includes('优化版本')
+    );
+  });
+
+  return Boolean(mixedContentBlock);
+};
+
+export const isUsableResumeData = (resumeData: any): boolean => {
+  return Boolean(resumeData?.blocks?.length) && !isFallbackMixedContentResume(resumeData);
+};

@@ -1,9 +1,14 @@
 import type { ResumeData, ResumeBlock } from '@/types/resume';
+import { normalizeResumeSectionTitle } from '@/utils/resumeSections';
+
+function normalizeTitle(title = ''): string {
+  return normalizeResumeSectionTitle(title);
+}
 
 /**
  * Build a mapping from resumeData block indices to newResumeData block indices
  * Matching strategy:
- * 1. Match by title + type (exact match)
+ * 1. Match by normalized title + type (supports Chinese/English aliases)
  * 2. For blocks with the same title+type, match in order of appearance
  * 3. Returns -1 for blocks that have no match in newResumeData
  * 
@@ -19,7 +24,7 @@ export function buildBlockMatchMap(
   const usedNewIndices = new Set<number>();
 
   // Create a key for matching: title + type
-  const getBlockKey = (block: ResumeBlock) => `${block.title}|||${block.type}`;
+  const getBlockKey = (block: ResumeBlock) => `${normalizeTitle(block.title)}|||${block.type}`;
 
   // Build reverse index for newResumeData: key -> array of indices
   const newBlocksIndex = new Map<string, number[]>();

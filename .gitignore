@@ -4,3 +4,5 @@ backups
 
 CLUADE.md
 .claude
+.DS_Store
+data/

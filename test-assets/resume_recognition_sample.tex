@@ -1,0 +1,90 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[margin=1.7cm]{geometry}
+\usepackage{fontspec}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{hyperref}
+
+\setmainfont[
+  Path=/System/Library/Fonts/Supplemental/,
+  AutoFakeBold=2.5
+]{Arial Unicode.ttf}
+\setsansfont[
+  Path=/System/Library/Fonts/Supplemental/,
+  AutoFakeBold=2.5
+]{Arial Unicode.ttf}
+\definecolor{accent}{HTML}{1F6F78}
+\hypersetup{colorlinks=true,urlcolor=accent}
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\XeTeXlinebreaklocale "zh"
+\XeTeXlinebreakskip = 0pt plus 1pt
+\sloppy
+\setlist[itemize]{leftmargin=1.2em,itemsep=0.2em,topsep=0.2em}
+\titleformat{\section}{\large\bfseries\color{accent}}{}{0pt}{}[\titlerule]
+\titlespacing*{\section}{0pt}{0.8em}{0.45em}
+
+\begin{document}
+
+{\Huge\bfseries 张明远}\\[0.25em]
+{\large 后端开发工程师 / Go + PostgreSQL + 云服务}\\[0.45em]
+手机：13800000000 \quad 邮箱：zhang.mingyuan@example.com \quad 城市：上海\\
+GitHub：\url{https://github.com/example/zhangmingyuan} \quad 期望岗位：后端开发工程师
+
+\section{个人简介}
+5 年后端开发经验，熟悉 Go、Gin、GORM、PostgreSQL、Redis 与消息队列。参与过用户系统、简历解析平台、文件上传与异步任务系统建设，关注接口稳定性、数据一致性、可观测性与工程交付效率。
+
+\section{核心技能}
+\begin{itemize}
+  \item 编程语言：Go、TypeScript、Python，熟悉 RESTful API 设计与服务端工程实践。
+  \item 后端框架：Gin、GORM、Viper、Zap，具备模块化服务拆分和中间件开发经验。
+  \item 数据库：PostgreSQL、MySQL、Redis，熟悉索引设计、事务、慢查询分析与数据迁移。
+  \item 工程工具：Docker、GitHub Actions、Nginx、Linux，能够独立完成部署与故障排查。
+  \item 业务方向：用户认证、文件上传、PDF/简历解析、计费套餐、事件日志与后台管理。
+\end{itemize}
+
+\section{工作经历}
+\textbf{云启科技有限公司} \hfill 2022.06 -- 至今\\
+\textit{后端开发工程师}
+\begin{itemize}
+  \item 负责简历润色平台后端服务，设计用户、简历、对话、工作流、文件与计费等核心模块。
+  \item 基于 Gin + GORM 实现统一 API 服务，支持 JWT 鉴权、管理员权限、CORS、结构化日志和自动数据库迁移。
+  \item 设计文件上传链路，支持本地存储与对象存储预签名 URL，提升大文件上传稳定性。
+  \item 建设事件日志系统，记录注册、登录、文件操作和工作流调用，辅助运营分析与问题排查。
+\end{itemize}
+
+\textbf{星河数据服务有限公司} \hfill 2019.07 -- 2022.05\\
+\textit{后端开发工程师}
+\begin{itemize}
+  \item 参与企业内部 CRM 系统建设，负责客户、合同、权限和报表接口开发。
+  \item 优化 PostgreSQL 查询与索引，将重点报表接口平均响应时间从 2.8 秒降至 420 毫秒。
+  \item 编写 CI 构建脚本与部署文档，降低新环境交付成本。
+\end{itemize}
+
+\section{项目经历}
+\textbf{职管加简历识别与润色平台} \hfill 2025.03 -- 2026.05
+\begin{itemize}
+  \item 项目简介：面向求职者的简历上传、解析、结构化编辑、AI 润色和 PDF 导出平台。
+  \item 技术栈：Go、Gin、GORM、PostgreSQL、React、Vite、TOS、ASR。
+  \item 个人贡献：实现简历记录管理、PDF 导出任务状态机、用户套餐扣费校验与后台管理接口。
+  \item 成果：支持多版本简历管理，接口错误率稳定低于 0.3\%，核心接口 P95 响应时间低于 300 毫秒。
+\end{itemize}
+
+\textbf{异步文件处理中心} \hfill 2024.01 -- 2024.08
+\begin{itemize}
+  \item 设计文件元数据表、上传校验、预览接口和任务状态表，实现上传、识别、解析、下载的完整链路。
+  \item 通过哈希去重和任务幂等处理，减少重复文件处理成本约 35\%。
+\end{itemize}
+
+\section{教育背景}
+\textbf{华东理工大学} \hfill 2015.09 -- 2019.06\\
+软件工程 / 本科
+
+\section{证书与其他}
+\begin{itemize}
+  \item CET-6，能够阅读英文技术文档。
+  \item 熟悉常见线上问题处理流程：日志定位、指标观察、数据库连接排查和回滚方案制定。
+\end{itemize}
+
+\end{document}

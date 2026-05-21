@@ -1,16 +1,27 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import {Button, Modal} from '@/components/ui';
+import { Badge } from '@/components/ui/badge';
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
 import AiMessageRenderer from './AiMessageRenderer';
 import { Send, Lightbulb, Sparkles, X } from 'lucide-react';
 import { FiMessageSquare, FiFileText } from 'react-icons/fi';
 import type { ResumeData } from '@/types/resume';
 import { workflowAPI } from '@/api/workflow';
-import { parseAndFixResumeJson } from '@/utils/helpers';
+import { isUsableResumeData, parseAndFixResumeJson } from '@/utils/helpers';
 import { generateAIResponse, generateSuggestions, truncate } from './utils';
 import { previewPrintContent } from '@/utils/pdfExport';
 import { resumeAPI } from '@/api/resume';
 import { chatMessageAPI } from '@/api/chatMessage';
 import type { ChatMessage as BackendChatMessage } from '@/types/chatMessage';
+import { normalizeResumeDataForLanguage } from '@/utils/resumeSections';
 // import { useAuthStore } from '@/store';
 import cn from 'classnames';
 
@@ -30,6 +41,13 @@ interface ChatPanelProps {
   onMessagesChange?: (messages: Message[]) => void;
   resumeId?: string; // 简历ID，用于保存pending_content
   currentTarget?: 'jd' | 'normal' | 'foreign'; // 当前任务类型
+  processingStatus?: {
+    active: boolean;
+    title?: string;
+    description?: string;
+    progress?: number;
+    stageLabel?: string;
+  };
   emptyComponent?: React.ReactNode; // 无消息时显示的组件
 
   metadata?: Record<string, any>;
@@ -71,6 +89,7 @@ export default function ChatPanel({
   onMessagesChange,
   resumeId,
   currentTarget,
+  processingStatus,
   emptyComponent,
   saveMessageToBackend,
   updateMetadata,
@@ -115,6 +134,11 @@ export default function ChatPanel({
   
   // 用于去重的哈希表，存储已处理的 blockId
   const processedBlocksRef = useRef<Set<string>>(new Set());
+  const isForeignTarget = currentTarget === 'foreign';
+
+  const normalizeResumeData = useCallback((data: ResumeData) => {
+    return normalizeResumeDataForLanguage(data, isForeignTarget ? 'en' : undefined);
+  }, [isForeignTarget]);
   
   // 内部管理打开/关闭状态
   const [isOpen, setIsOpen] = useState(true);
@@ -256,11 +280,14 @@ export default function ChatPanel({
       processedBlocksRef.current.add(blockId);
       console.log(`[ChatPanel] 处理更新块: ${blockId}`, data);
       
-      if (data && data.blocks && data.blocks.length > 0) {
+      if (isUsableResumeData(data)) {
         // 更新ref以跟踪最新数据
-        latestResumeDataRef.current = data;
-        onResumeDataChange(data, true);
+        const normalizedData = normalizeResumeData(data);
+        latestResumeDataRef.current = normalizedData;
+        onResumeDataChange(normalizedData, true);
         console.log(`[ChatPanel] 简历数据已更新`);
+      } else {
+        console.warn(`[ChatPanel] 更新块不是可用简历 JSON，已跳过: ${blockId}`);
       }
     };
 
@@ -268,7 +295,7 @@ export default function ChatPanel({
     return () => {
       window.removeEventListener('resume-update-detected' as any, handleResumeUpdate);
     };
-  }, [onResumeDataChange]);
+  }, [onResumeDataChange, normalizeResumeData]);
 
   // 监听 resume-update-formatted 事件（格式化后的情况）
   useEffect(() => {
@@ -285,11 +312,14 @@ export default function ChatPanel({
       processedBlocksRef.current.add(`formatted-${blockId}`);
       console.log(`[ChatPanel] 处理格式化块: ${blockId}`, data);
       
-      if (data && data.blocks && data.blocks.length > 0) {
+      if (isUsableResumeData(data)) {
         // 更新ref以跟踪最新数据
-        latestResumeDataRef.current = data;
-        onResumeDataChange(data, true);
+        const normalizedData = normalizeResumeData(data);
+        latestResumeDataRef.current = normalizedData;
+        onResumeDataChange(normalizedData, true);
         console.log(`[ChatPanel] 格式化后的简历数据已更新`);
+      } else {
+        console.warn(`[ChatPanel] 格式化块不是可用简历 JSON，已跳过: ${blockId}`);
       }
     };
 
@@ -297,7 +327,7 @@ export default function ChatPanel({
     return () => {
       window.removeEventListener('resume-update-formatted' as any, handleResumeFormatted);
     };
-  }, [onResumeDataChange]);
+  }, [onResumeDataChange, normalizeResumeData]);
 
   // 监听 action-marker-accepted 事件
   useEffect(() => {
@@ -483,6 +513,29 @@ export default function ChatPanel({
       window.removeEventListener('chat-message-added' as any, handleChatMessageAdded);
     };
   }, []);
+
+  // 监听 chat-message-updated 事件（外部流式更新消息内容）
+  useEffect(() => {
+    const handleChatMessageUpdated = (event: CustomEvent<{ message: Message }>) => {
+      const { message } = event.detail;
+      setMessages(prev => {
+        const exists = prev.some(m => m.id === message.id);
+        if (!exists) return [...prev, message];
+        return prev.map(m => m.id === message.id ? message : m);
+      });
+
+      setTimeout(() => {
+        if (scrollRef.current) {
+          scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+        }
+      }, 50);
+    };
+
+    window.addEventListener('chat-message-updated' as any, handleChatMessageUpdated);
+    return () => {
+      window.removeEventListener('chat-message-updated' as any, handleChatMessageUpdated);
+    };
+  }, []);
   
   useEffect(() => {
     if (scrollRef.current) {
@@ -514,6 +567,28 @@ export default function ChatPanel({
       setIsTyping(false);
     }
   };
+
+  const applyResumeUpdateFromContent = useCallback((content: string): boolean => {
+    const blocks = [...content.matchAll(/```resume-update\s*([\s\S]*?)```/g)];
+    const latestBlock = blocks.at(-1)?.[1]?.trim();
+
+    if (!latestBlock) {
+      return false;
+    }
+
+    const finalResumeData = parseAndFixResumeJson(latestBlock, {
+      language: isForeignTarget ? 'en' : undefined,
+    }) as ResumeData;
+    if (!isUsableResumeData(finalResumeData)) {
+      console.warn('[ChatPanel] resume-update 内容解析后没有可用 blocks，跳过自动应用');
+      return false;
+    }
+
+    latestResumeDataRef.current = finalResumeData;
+    onResumeDataChange(finalResumeData, true);
+    console.log('[ChatPanel] 已将 resume-update 写入待确认修改区');
+    return true;
+  }, [onResumeDataChange, isForeignTarget]);
   
   const handleSlashCommand = (command: string) => {
     command = command.replace("/", "");
@@ -685,6 +760,7 @@ export default function ChatPanel({
           setIsTyping(false);
           setIsResponding(false);
           console.log(`[${aiResponse.id}] 工作流完成`);
+          const appliedResumeUpdate = applyResumeUpdateFromContent(aiResponse.content);
           
           // Save AI message to backend when workflow is finished
           if (aiResponse.content.trim()) {
@@ -692,7 +768,7 @@ export default function ChatPanel({
           }
           
           // Auto-save: 工作流完成时自动保存pending_content和messages
-          if (resumeId) {
+          if (resumeId && appliedResumeUpdate) {
             const pendingData = {
               newResumeData: latestResumeDataRef.current,
               lastUpdate: new Date().toISOString()
@@ -745,6 +821,8 @@ export default function ChatPanel({
           name: "common-analysis",
           inputs: {
             origin_resume: JSON.stringify(latestResumeDataRef.current),
+            job_description: currentTarget === 'jd' ? localStorage.getItem('job_description') : '',
+            scene: currentTarget,
           },
           onMessage: onMessage,
           onError: onError,
@@ -799,7 +877,8 @@ export default function ChatPanel({
       // 2. 调用阻塞式api，得到结构化的简历内容
       const uploadData = {
         current_resume: JSON.stringify(latestResumeDataRef.current),
-        resume_edit: content
+        resume_edit: content,
+        scene: currentTarget,
       }
       const structuredResumeResult = await workflowAPI.executeWorkflow("smart-format-2", uploadData, true);
       if (structuredResumeResult.code !== 0) {
@@ -811,10 +890,13 @@ export default function ChatPanel({
 
       if (structuredResumeData && typeof structuredResumeData === 'string') {
         // 使用 parseAndFixResumeJson 确保数据安全性和格式正确性
-        const finalResumeData = parseAndFixResumeJson(structuredResumeData as string);
+        const finalResumeData = parseAndFixResumeJson(structuredResumeData as string, {
+          language: isForeignTarget ? 'en' : undefined,
+        });
         // 更新ref以跟踪最新数据
-        latestResumeDataRef.current = finalResumeData;
-        onResumeDataChange(finalResumeData, true);
+        const normalizedData = normalizeResumeData(finalResumeData as ResumeData);
+        latestResumeDataRef.current = normalizedData;
+        onResumeDataChange(normalizedData, true);
       }
     } catch (error) {
       console.error('Execution error:', error);
@@ -991,6 +1073,7 @@ export default function ChatPanel({
                       messageId={message.id}
                       className="text-sm leading-relaxed text-gray-800"
                       resumeData={resumeData}
+                      currentTarget={currentTarget}
                       isHistorical={message.isHistorical} // 传递历史消息标记
                       onQuestionClick={(question) => setInputValue(question)} // 将问题设置到输入框
                     />
@@ -1022,6 +1105,31 @@ export default function ChatPanel({
                     </div>
                     
                   </div>
+                </div>
+              )}
+
+              {processingStatus?.active && (
+                <div className="w-full px-4 animate-in fade-in-0 slide-in-from-bottom-2 duration-300">
+                  <Card className="gap-4 border-border/80 bg-card/95 py-4 shadow-sm">
+                    <CardHeader className="px-4">
+                      <CardTitle className="flex items-center gap-2 text-sm">
+                        <Sparkles className="animate-pulse" />
+                        {processingStatus.title || '正在处理简历'}
+                      </CardTitle>
+                      {processingStatus.description && (
+                        <CardDescription className="text-xs">
+                          {processingStatus.description}
+                        </CardDescription>
+                      )}
+                      <CardAction>
+                        <Badge variant="secondary">{processingStatus.stageLabel || '运行中'}</Badge>
+                      </CardAction>
+                    </CardHeader>
+                    <CardContent className="flex flex-col gap-2 px-4">
+                      <Progress value={processingStatus.progress ?? 66} />
+                      <p className="text-xs text-muted-foreground">完成后会自动写入左侧可确认修改。</p>
+                    </CardContent>
+                  </Card>
                 </div>
               )}
 
