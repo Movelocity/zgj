@@ -1,59 +1,8 @@
 import type { ResumeData, ResumeBlock } from '@/types/resume';
-
-const titleAliases: Record<string, string> = {
-  personalinformation: 'personal',
-  personalinfo: 'personal',
-  contactinformation: 'personal',
-  contactinfo: 'personal',
-  个人信息: 'personal',
-
-  summary: 'summary',
-  professionalsummary: 'summary',
-  profile: 'summary',
-  aboutme: 'summary',
-  个人总结: 'summary',
-  个人简介: 'summary',
-  自我评价: 'summary',
-
-  workexperience: 'work',
-  professionalexperience: 'work',
-  employmenthistory: 'work',
-  experience: 'work',
-  工作经历: 'work',
-  工作经验: 'work',
-  实习经历: 'work',
-
-  projects: 'projects',
-  projectexperience: 'projects',
-  project: 'projects',
-  项目经历: 'projects',
-  项目经验: 'projects',
-
-  education: 'education',
-  educationbackground: 'education',
-  educationalbackground: 'education',
-  教育背景: 'education',
-  教育经历: 'education',
-
-  certificatesother: 'certificates',
-  certificatesandother: 'certificates',
-  certifications: 'certificates',
-  certificates: 'certificates',
-  skills: 'certificates',
-  additionalskills: 'certificates',
-  证书与其他: 'certificates',
-  证书及其他: 'certificates',
-  专业技能: 'certificates',
-  技能证书: 'certificates',
-};
+import { normalizeResumeSectionTitle } from '@/utils/resumeSections';
 
 function normalizeTitle(title = ''): string {
-  const compact = title
-    .toLowerCase()
-    .replace(/&/g, 'and')
-    .replace(/[\s/|·._\-—:：,，()（）]+/g, '');
-
-  return titleAliases[compact] || compact;
+  return normalizeResumeSectionTitle(title);
 }
 
 /**

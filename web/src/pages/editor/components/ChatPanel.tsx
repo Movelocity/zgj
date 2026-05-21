@@ -21,6 +21,7 @@ import { previewPrintContent } from '@/utils/pdfExport';
 import { resumeAPI } from '@/api/resume';
 import { chatMessageAPI } from '@/api/chatMessage';
 import type { ChatMessage as BackendChatMessage } from '@/types/chatMessage';
+import { normalizeResumeDataForLanguage } from '@/utils/resumeSections';
 // import { useAuthStore } from '@/store';
 import cn from 'classnames';
 
@@ -133,6 +134,11 @@ export default function ChatPanel({
   
   // 用于去重的哈希表，存储已处理的 blockId
   const processedBlocksRef = useRef<Set<string>>(new Set());
+  const isForeignTarget = currentTarget === 'foreign';
+
+  const normalizeResumeData = useCallback((data: ResumeData) => {
+    return normalizeResumeDataForLanguage(data, isForeignTarget ? 'en' : undefined);
+  }, [isForeignTarget]);
   
   // 内部管理打开/关闭状态
   const [isOpen, setIsOpen] = useState(true);
@@ -276,8 +282,9 @@ export default function ChatPanel({
       
       if (isUsableResumeData(data)) {
         // 更新ref以跟踪最新数据
-        latestResumeDataRef.current = data;
-        onResumeDataChange(data, true);
+        const normalizedData = normalizeResumeData(data);
+        latestResumeDataRef.current = normalizedData;
+        onResumeDataChange(normalizedData, true);
         console.log(`[ChatPanel] 简历数据已更新`);
       } else {
         console.warn(`[ChatPanel] 更新块不是可用简历 JSON，已跳过: ${blockId}`);
@@ -288,7 +295,7 @@ export default function ChatPanel({
     return () => {
       window.removeEventListener('resume-update-detected' as any, handleResumeUpdate);
     };
-  }, [onResumeDataChange]);
+  }, [onResumeDataChange, normalizeResumeData]);
 
   // 监听 resume-update-formatted 事件（格式化后的情况）
   useEffect(() => {
@@ -307,8 +314,9 @@ export default function ChatPanel({
       
       if (isUsableResumeData(data)) {
         // 更新ref以跟踪最新数据
-        latestResumeDataRef.current = data;
-        onResumeDataChange(data, true);
+        const normalizedData = normalizeResumeData(data);
+        latestResumeDataRef.current = normalizedData;
+        onResumeDataChange(normalizedData, true);
         console.log(`[ChatPanel] 格式化后的简历数据已更新`);
       } else {
         console.warn(`[ChatPanel] 格式化块不是可用简历 JSON，已跳过: ${blockId}`);
@@ -319,7 +327,7 @@ export default function ChatPanel({
     return () => {
       window.removeEventListener('resume-update-formatted' as any, handleResumeFormatted);
     };
-  }, [onResumeDataChange]);
+  }, [onResumeDataChange, normalizeResumeData]);
 
   // 监听 action-marker-accepted 事件
   useEffect(() => {
@@ -568,7 +576,9 @@ export default function ChatPanel({
       return false;
     }
 
-    const finalResumeData = parseAndFixResumeJson(latestBlock) as ResumeData;
+    const finalResumeData = parseAndFixResumeJson(latestBlock, {
+      language: isForeignTarget ? 'en' : undefined,
+    }) as ResumeData;
     if (!isUsableResumeData(finalResumeData)) {
       console.warn('[ChatPanel] resume-update 内容解析后没有可用 blocks，跳过自动应用');
       return false;
@@ -578,7 +588,7 @@ export default function ChatPanel({
     onResumeDataChange(finalResumeData, true);
     console.log('[ChatPanel] 已将 resume-update 写入待确认修改区');
     return true;
-  }, [onResumeDataChange]);
+  }, [onResumeDataChange, isForeignTarget]);
   
   const handleSlashCommand = (command: string) => {
     command = command.replace("/", "");
@@ -811,6 +821,8 @@ export default function ChatPanel({
           name: "common-analysis",
           inputs: {
             origin_resume: JSON.stringify(latestResumeDataRef.current),
+            job_description: currentTarget === 'jd' ? localStorage.getItem('job_description') : '',
+            scene: currentTarget,
           },
           onMessage: onMessage,
           onError: onError,
@@ -865,7 +877,8 @@ export default function ChatPanel({
       // 2. 调用阻塞式api，得到结构化的简历内容
       const uploadData = {
         current_resume: JSON.stringify(latestResumeDataRef.current),
-        resume_edit: content
+        resume_edit: content,
+        scene: currentTarget,
       }
       const structuredResumeResult = await workflowAPI.executeWorkflow("smart-format-2", uploadData, true);
       if (structuredResumeResult.code !== 0) {
@@ -877,10 +890,13 @@ export default function ChatPanel({
 
       if (structuredResumeData && typeof structuredResumeData === 'string') {
         // 使用 parseAndFixResumeJson 确保数据安全性和格式正确性
-        const finalResumeData = parseAndFixResumeJson(structuredResumeData as string);
+        const finalResumeData = parseAndFixResumeJson(structuredResumeData as string, {
+          language: isForeignTarget ? 'en' : undefined,
+        });
         // 更新ref以跟踪最新数据
-        latestResumeDataRef.current = finalResumeData;
-        onResumeDataChange(finalResumeData, true);
+        const normalizedData = normalizeResumeData(finalResumeData as ResumeData);
+        latestResumeDataRef.current = normalizedData;
+        onResumeDataChange(normalizedData, true);
       }
     } catch (error) {
       console.error('Execution error:', error);
@@ -1057,6 +1073,7 @@ export default function ChatPanel({
                       messageId={message.id}
                       className="text-sm leading-relaxed text-gray-800"
                       resumeData={resumeData}
+                      currentTarget={currentTarget}
                       isHistorical={message.isHistorical} // 传递历史消息标记
                       onQuestionClick={(question) => setInputValue(question)} // 将问题设置到输入框
                     />

@@ -1,3 +1,6 @@
+import type { ResumeData } from '@/types/resume';
+import { normalizeResumeDataForLanguage, type ResumeSectionLanguage } from './resumeSections';
+
 // 辅助函数
 export const formatFileSize = (bytes: number): string => {
   if (bytes === 0) return '0 Bytes';
@@ -240,7 +243,11 @@ export const fixResumeBlockFormat = (blocks: any[]): any[] => {
  * 结合 smartJsonParser 和 fixResumeBlockFormat，自动处理异常格式
  * 确保返回的数据总是有效的 ResumeData 格式
  */
-export const parseAndFixResumeJson = (json: string): any => {
+interface ParseAndFixResumeJsonOptions {
+  language?: ResumeSectionLanguage;
+}
+
+export const parseAndFixResumeJson = (json: string, options: ParseAndFixResumeJsonOptions = {}): any => {
   try {
     const parsed = smartJsonParser<any>(json);
     
@@ -278,20 +285,24 @@ export const parseAndFixResumeJson = (json: string): any => {
         return block;
       });
       
-      return {
+      const resumeData: ResumeData = {
         version: parsed.version || 2,
         portrait_img: parsed.portrait_img || '',
         blocks: validatedBlocks
       };
+
+      return normalizeResumeDataForLanguage(resumeData, options.language);
     }
     
     // 如果本身就是 blocks 数组
     if (Array.isArray(parsed)) {
       const fixedBlocks = fixResumeBlockFormat(parsed);
-      return {
+      const resumeData: ResumeData = {
         version: 2,
         blocks: fixedBlocks
       };
+
+      return normalizeResumeDataForLanguage(resumeData, options.language);
     }
     
     // 如果既没有 blocks 也不是数组，返回默认结构
@@ -314,14 +325,19 @@ export const isFallbackMixedContentResume = (resumeData: any): boolean => {
   const blocks = resumeData?.blocks;
   if (!Array.isArray(blocks)) return false;
 
+  const fallbackSummaryTitles = new Set(['简历内容', 'Resume Content', 'Professional Summary']);
+
   const mixedContentBlock = blocks.find((block: any) => {
-    if (block?.title !== '简历内容' || block?.type !== 'text') return false;
+    if (!fallbackSummaryTitles.has(block?.title) || block?.type !== 'text') return false;
     const data = String(block.data || '');
     return (
       data.includes('"blocks"') ||
       data.includes('```resume-update') ||
       data.includes('整体分析与优先级') ||
       data.includes('具体可替换的表达') ||
+      data.includes('Core Strengths') ||
+      data.includes('Potential Optimization') ||
+      data.includes('Modification Notes') ||
       data.includes('优化版本')
     );
   });

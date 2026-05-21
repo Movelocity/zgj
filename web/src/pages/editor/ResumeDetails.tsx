@@ -30,6 +30,7 @@ import { createExportTask, getExportTaskStatus, downloadExportPdf } from '@/api/
 import type { ProcessingStage, StepResult } from './types';
 import { TimeBasedProgressUpdater, RESUME_PROCESSING_STEPS } from '@/utils/progress';
 import { isUsableResumeData, parseAndFixResumeJson } from '@/utils/helpers';
+import { normalizeResumeDataForLanguage } from '@/utils/resumeSections';
 import { chatMessageAPI } from '@/api/chatMessage';
 
 
@@ -63,6 +64,18 @@ export default function ResumeDetails() {
   // 从 metadata 派生的状态
   const currentTarget = metadata.currentTarget || 'normal';
   const isJD = currentTarget === 'jd';
+  const getResumeLanguage = useCallback(() => (
+    metadataRef.current.currentTarget === 'foreign' ? 'en' : undefined
+  ), []);
+
+  useEffect(() => {
+    if (currentTarget !== 'foreign') {
+      return;
+    }
+
+    setResumeData((current) => normalizeResumeDataForLanguage(current, 'en'));
+    setNewResumeData((current) => normalizeResumeDataForLanguage(current, 'en'));
+  }, [currentTarget]);
   
   // 更新 metadata 的钩子函数，可以传递给子组件使用
   const updateMetadata = useCallback(async (updates: Partial<typeof metadata>, persistToServer = true) => {
@@ -253,7 +266,10 @@ export default function ResumeDetails() {
       }
       const structuredResumeResult = await workflowAPI.executeWorkflow_v2({
         id: "smart-format-2",
-        inputs: uploadData,
+        inputs: {
+          ...uploadData,
+          scene: metadataRef.current.currentTarget || '',
+        },
         idAsName: true,
         onNodeEvent: (event) => {
           console.log(`[executeWorkflow_v2] [smart-format-2] ${event.type}${event.nodeName ? ': ' + event.nodeName : ''}`);
@@ -267,7 +283,9 @@ export default function ResumeDetails() {
       console.log('structuredResumeData', structuredResumeData);
 
       if (structuredResumeData && typeof structuredResumeData === 'string') {
-        const finalResumeData = parseAndFixResumeJson(structuredResumeData as string);
+        const finalResumeData = parseAndFixResumeJson(structuredResumeData as string, {
+          language: getResumeLanguage(),
+        });
         setResumeData(finalResumeData);
         await resumeAPI.updateResume(id, {
           structured_data: finalResumeData
@@ -331,7 +349,12 @@ export default function ResumeDetails() {
       if (pending_content) {
         console.log('[ResumeDetails] 发现pending_content，恢复数据:', pending_content);
         if (isUsableResumeData(pending_content.newResumeData)) {
-          setNewResumeData(pending_content.newResumeData);
+          setNewResumeData(
+            normalizeResumeDataForLanguage(
+              pending_content.newResumeData,
+              getResumeLanguage(),
+            ),
+          );
         } else if (pending_content.newResumeData) {
           console.warn('[ResumeDetails] pending_content 中的 AI 修改不是可用简历 JSON，已忽略');
         }
@@ -375,8 +398,12 @@ export default function ResumeDetails() {
       if (effectiveStructuredData && Object.keys(effectiveStructuredData).length) {
         // if (isV2Format(structured_data)) {
            // If V2 format, use directly
-          setResumeData(effectiveStructuredData as ResumeData);
-          console.log('structured_data', effectiveStructuredData);
+          const normalizedStructuredData = normalizeResumeDataForLanguage(
+            effectiveStructuredData as ResumeData,
+            getResumeLanguage(),
+          );
+          setResumeData(normalizedStructuredData);
+          console.log('structured_data', normalizedStructuredData);
         // } else if (isV1Format(structured_data)) { // If V1 format, convert to V2
         //   console.log('检测到V1格式简历，转换为V2格式');
         //   const convertedData = convertV1ToV2(structured_data);
@@ -489,6 +516,7 @@ export default function ResumeDetails() {
               inputs: {
                 current_resume: JSON.stringify(processedData),
                 resume_edit: analysisContent,
+                scene: metadataRef.current.currentTarget || '',
               },
               idAsName: true,
               onNodeEvent: (event) => {
@@ -505,12 +533,15 @@ export default function ResumeDetails() {
               throw new Error('格式化结果为空');
             }
             
-            const formattedResumeData = parseAndFixResumeJson(formattedResult) as ResumeData;
+            const formattedResumeData = parseAndFixResumeJson(formattedResult, {
+              language: getResumeLanguage(),
+            }) as ResumeData;
             if (!isUsableResumeData(formattedResumeData)) {
               throw new Error('格式化结果没有可用简历内容');
             }
 
-            setNewResumeData(formattedResumeData);
+            const normalizedFormattedResumeData = normalizeResumeDataForLanguage(formattedResumeData, getResumeLanguage());
+            setNewResumeData(normalizedFormattedResumeData);
             
             // Mark initialization complete and update processing stage
             await updateMetadata({
@@ -520,19 +551,19 @@ export default function ResumeDetails() {
               initialAnalysisContent: "cleared"  // 内容已经被消费，可以清理了
             }, false); // 不立即持久化，和 pending_content 一起更新
             
-            await resumeAPI.updateResume(resumeId, {
-              metadata: {
-                ...metadataRef.current,
+              await resumeAPI.updateResume(resumeId, {
+                metadata: {
+                  ...metadataRef.current,
                 isNewResume: false,
                 processingStage: 'completed',
                 hasStructuredData: true,
                 lastUpdated: new Date().toISOString(),
-              },
-              pending_content: {
-                newResumeData: formattedResumeData,
-                lastUpdate: new Date().toISOString(),
-              }
-            });
+                },
+                pending_content: {
+                  newResumeData: normalizedFormattedResumeData,
+                  lastUpdate: new Date().toISOString(),
+                }
+              });
             
             console.log('新简历分析完成');
             setBackgroundProcessing({ active: false });

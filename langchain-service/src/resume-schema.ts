@@ -39,6 +39,48 @@ export const resumeJsonInstruction = `
 list 项只能包含 id、name、time、description、highlight。object 个人信息只能包含 name、title、phone、email、location、photo。保留候选人的真实经历，不要编造不存在的学校、公司、项目或时间。
 `.trim();
 
+export const resumeJsonInstructionEn = `
+Output exactly one JSON object only. Do not wrap it in Markdown or add explanations. Use this structure:
+{
+  "version": 2,
+  "portrait_img": "",
+  "blocks": [
+    {
+      "title": "Personal Information",
+      "type": "object",
+      "data": {
+        "name": "",
+        "title": "",
+        "phone": "",
+        "email": "",
+        "location": "",
+        "photo": ""
+      }
+    },
+    {
+      "title": "Professional Summary",
+      "type": "text",
+      "data": ""
+    },
+    {
+      "title": "Work Experience",
+      "type": "list",
+      "data": [
+        {
+          "id": "work-1",
+          "name": "Company or Organization",
+          "time": "Start - End",
+          "description": "Role and achievements, organized with line breaks",
+          "highlight": "keywords separated by commas"
+        }
+      ]
+    }
+  ]
+}
+Only use English section titles. Do not keep Chinese titles. Do not duplicate the same section in both Chinese and English. Preserve only factual experience and do not invent schools, companies, projects, or dates.
+For any mixed-language text you receive, rewrite it into clean English only. Replace Chinese phrases instead of appending them, and do not leave Chinese fragments inside English sections.
+`.trim();
+
 type ResumeBlock = {
   title: string;
   type: "object" | "text" | "list";
@@ -51,17 +93,28 @@ export type ResumeData = {
   blocks: ResumeBlock[];
 };
 
-export function fallbackResume(text = ""): ResumeData {
+export function fallbackResume(text = "", language: 'zh' | 'en' = 'zh'): ResumeData {
   const normalized = String(text).replace(/\r\n/g, "\n").trim();
   const lines = normalized.split("\n").map((line) => line.trim()).filter(Boolean);
   const firstLine = lines[0] || "";
+  const titles = language === 'en'
+    ? {
+        personal: "Personal Information",
+        summary: "Professional Summary",
+        content: "Resume Content",
+      }
+    : {
+        personal: "个人信息",
+        summary: "个人总结",
+        content: "简历内容",
+      };
 
   return {
     version: 2,
     portrait_img: "",
     blocks: [
       {
-        title: "个人信息",
+        title: titles.personal,
         type: "object",
         data: {
           name: firstLine.slice(0, 20),
@@ -73,7 +126,7 @@ export function fallbackResume(text = ""): ResumeData {
         },
       },
       {
-        title: "简历内容",
+        title: titles.summary,
         type: "text",
         data: normalized,
       },
@@ -81,9 +134,9 @@ export function fallbackResume(text = ""): ResumeData {
   };
 }
 
-export function parseJsonObject(text: string, originalText = ""): ResumeData {
+export function parseJsonObject(text: string, originalText = "", options: { language?: 'en' } = {}): ResumeData {
   if (!text) {
-    return fallbackResume(originalText);
+    return fallbackResume(originalText, options.language === 'en' ? 'en' : 'zh');
   }
 
   const raw = String(text).trim();
@@ -105,7 +158,7 @@ export function parseJsonObject(text: string, originalText = ""): ResumeData {
     }
   }
 
-  return fallbackResume(originalText);
+  return fallbackResume(originalText, options.language === 'en' ? 'en' : 'zh');
 }
 
 function extractJsonObjectCandidates(raw: string): string[] {
