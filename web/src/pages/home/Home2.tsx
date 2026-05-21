@@ -1,22 +1,15 @@
 import React from 'react';
-import { Button, Badge } from '@/components/ui';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui';
 import { Separator } from '@/components/ui/separator';
-import { ChevronRight, CheckCircle, Star, Users, TrendingUp, FileText, Briefcase, Target, Zap, Shield, Clock, Award } from 'lucide-react';
+import { ChevronRight, Star } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store';
 import { ROUTES } from '@/utils/constants';
 import { Link } from 'react-router-dom';
-import { useSiteVariable } from '@/hooks/useSiteVariable';
-
-const icp = import.meta.env.VITE_ICP_FILING;
-
 
 const Home2: React.FC = () => {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuthStore();
-
-  const { value: qr_code_img, loading: qr_code_loading } = useSiteVariable('qr_code_img');
 
   const handleGetStarted = () => {
     if (isAuthenticated) {
@@ -33,87 +26,84 @@ const Home2: React.FC = () => {
         <Header2 />
       </nav> */}
 
-      {/* 主视觉区 */}
+      {/* Hero 主视觉区 */}
       <section className="relative pt-24 pb-10 px-4 sm:px-6 lg:px-8">
         {/* 背景图片 */}
-        <div 
+        <div
           className="absolute inset-0 -z-10 bg-cover bg-left md:bg-center h-screen"
-          style={{ 
-            backgroundImage: 'url(/images/background.jpg)',
+          style={{
+            backgroundImage: 'url(/images/background.png)',
             backgroundSize: 'cover',
             backgroundPosition: 'left center',
           }}
         />
         <div className="max-w-7xl mx-auto">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <div className="text-center lg:text-left bg-white/80 backdrop-blur-sm p-8 rounded-2xl">
-              <Badge className="mb-4 bg-blue-100 text-blue-700 hover:bg-blue-100">
-                <Star className="w-4 h-4 mr-1" />
-                AI 智能简历分析
-              </Badge>
-              <h1 className="text-6xl font-bold text-slate-900 leading-tight mb-6 flex items-center gap-2 justify-center flex-col md:flex-row lg:flex-col lg:items-start">
-                用 AI 打造
-                <span className="bg-gradient-to-r from-blue-900 to-cyan-400 bg-clip-text text-transparent block">
+          <div className="grid lg:grid-cols-2 gap-[60px] items-center">
+            {/* 左侧文字区域 */}
+            <div className="bg-white/50 rounded-[32px] p-8">
+              {/* 标题 */}
+              <div className="flex flex-col gap-[8.5px] mb-3">
+                <h1 className="text-[48px] font-bold leading-[48px] text-[#101828] font-['Inter']">
+                  用 AI 打造
+                </h1>
+                <h1 className="text-[48px] font-bold leading-[48px] font-['Inter']"
+                  style={{
+                    background: 'linear-gradient(90deg, #1C398E 0%, #00D3F2 100%)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    backgroundClip: 'text',
+                  }}
+                >
                   完美简历
-                </span>
-              </h1>
-              <p className="text-lg lg:text-xl text-slate-600 mb-8 leading-relaxed">
+                </h1>
+              </div>
+
+              {/* 副标题 */}
+              <p className="text-[16px] leading-[26px] text-[#45556C] mb-4 max-w-[440px]">
                 获取即时、可视化的简历反馈。AI 智能分析，色彩标注优化建议，公司研究洞察，个性化求职信生成，让你的简历在众多候选人中脱颖而出。
               </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-                <Button 
+
+              {/* 按钮组 */}
+              <div className="flex flex-row gap-4">
+                <Button
                   onClick={handleGetStarted}
-                  size="lg" 
-                  className="bg-blue-600 hover:bg-blue-700 text-lg px-8 py-6 rounded-xl"
+                  className="bg-[#155DFC] hover:bg-[#155DFC]/90 text-[#F9FAFB] text-lg font-medium px-4 py-[24px] rounded-[14px] h-[48px] inline-flex items-center gap-2"
                 >
                   免费试用
-                  <ChevronRight className="w-5 h-5 ml-2" />
+                  <ChevronRight className="w-4 h-4" />
                 </Button>
-                <Button 
-                  variant="outline" 
-                  size="lg" 
-                  className="text-lg px-8 py-6 rounded-xl border-2 border-slate-300 hover:border-slate-400"
+                <Button
+                  variant="outline"
+                  className="bg-white hover:bg-gray-50 text-[#030712] text-lg font-medium px-8 py-[24px] rounded-[14px] h-[52px] border-2 border-[#CAD5E2] shadow-[0px_1px_2px_rgba(0,0,0,0.05)]"
                 >
                   查看演示
                 </Button>
               </div>
-              <div className="mt-8 flex items-center gap-6 justify-center lg:justify-start text-sm text-slate-600">
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="w-5 h-5 text-blue-800" />
-                  免费试用
-                </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="w-5 h-5 text-blue-800" />
-                  快速获取结果
-                </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="w-5 h-5 text-blue-800" />
-                  100% 安全
-                </div>
-              </div>
             </div>
+
+            {/* 右侧简历预览 */}
             <div className="relative">
-              <div className="relative bg-white rounded-2xl shadow-2xl p-8 transform rotate-1">
-                <img 
-                  src="/images/demo-resume.jpg" 
-                  alt="Professional Resume with AI Analysis" 
-                  className="w-full h-auto rounded-lg"
+              <div className="relative bg-white rounded-2xl shadow-[0px_25px_50px_-12px_rgba(0,0,0,0.25)] p-8 rotate-[1deg]">
+                <img
+                  src="/images/demo-resume.jpg"
+                  alt="Professional Resume with AI Analysis"
+                  className="w-full h-auto rounded-[10px] rotate-[1deg]"
                 />
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 to-emerald-500/20 rounded-lg mix-blend-overlay"></div>
-                <div className="absolute top-4 right-4 bg-blue-800 text-white px-3 py-1 rounded-full text-sm font-medium">
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 to-emerald-500/20 rounded-[10px] mix-blend-overlay rotate-[1deg]" />
+                <div className="absolute top-[25px] right-[2px] bg-[#193CB8] text-white px-3 py-[3.5px] rounded-full text-[13.9px] rotate-[1deg]">
                   92% 匹配度
                 </div>
               </div>
-              <div className="absolute -top-4 -left-4 bg-white rounded-xl shadow-lg p-4 transform -rotate-2">
-                <div className="flex items-center gap-2 text-sm">
-                  <div className="w-3 h-3 bg-blue-800 rounded-full"></div>
-                  <span className="font-medium">技能匹配：优秀</span>
+              <div className="absolute -top-4 -left-2 bg-white rounded-[14px] shadow-lg p-4 -rotate-[2deg]">
+                <div className="flex items-center gap-2 text-sm rotate-[-2deg]">
+                  <div className="w-3 h-3 bg-[#193CB8] rounded-full" />
+                  <span className="font-medium text-[#030712]">技能匹配：优秀</span>
                 </div>
               </div>
-              <div className="absolute -bottom-4 -right-4 bg-white rounded-xl shadow-lg p-4 transform rotate-2">
-                <div className="flex items-center gap-2 text-sm">
-                  <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                  <span className="font-medium">求职信已生成</span>
+              <div className="absolute -bottom-2 -right-4 bg-white rounded-[14px] shadow-lg p-4 rotate-[2deg]">
+                <div className="flex items-center gap-2 text-sm rotate-[2deg]">
+                  <div className="w-3 h-3 bg-[#2B7FFF] rounded-full" />
+                  <span className="font-medium text-[#030712]">求职信已生成</span>
                 </div>
               </div>
             </div>
@@ -121,164 +111,200 @@ const Home2: React.FC = () => {
         </div>
       </section>
 
-      {/* 社会认证 */}
-      <section className="py-12 bg-white/50">
+      {/* Hero 2 - 文字 + 合作院校 Logo 滚动 */}
+      <section className="bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-8">
-            <p className="text-slate-600 font-medium mb-4">全球求职者信赖的选择</p>
-            <div className="flex flex-wrap justify-center items-center gap-8 opacity-60">
-              <div className="flex items-center gap-2">
-                <Users className="w-5 h-5" />
-                <span className="font-semibold">200+</span>
-                <span className="text-sm">活跃用户</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <TrendingUp className="w-5 h-5" />
-                <span className="font-semibold">40%</span>
-                <span className="text-sm">面试增长</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Award className="w-5 h-5" />
-                <span className="font-semibold">4.9/5</span>
-                <span className="text-sm">用户评分</span>
+          <div className="flex flex-col justify-center items-center pt-[120px] pb-[80px] gap-8">
+            {/* 文字 */}
+            <h2 className="text-xl md:text-2xl font-medium text-[#45556C] text-center">
+              已有多所海内外在校学生使用，广受好评
+            </h2>
+
+            {/* Logo 滚动条 */}
+            <div className="relative w-full overflow-hidden">
+              <div className="flex animate-marquee gap-12 items-center whitespace-nowrap">
+                <img src="/images/logos/cuhk_logo_2x.png" alt="CUHK" className="h-12 shrink-0 opacity-60" />
+                <img src="/images/logos/hku-115.svg" alt="HKU" className="h-12 shrink-0 opacity-60" />
+                <img src="/images/logos/UoN-Logo.jpg" alt="UoN" className="h-12 shrink-0 opacity-60" />
+                <img src="/images/logos/zh-hans_logo.png" alt="University" className="h-12 shrink-0 opacity-60" />
+                <img src="/images/logos/main-logo-3x.png" alt="University" className="h-12 shrink-0 opacity-60" />
+                <img src="/images/logos/logo-2.png" alt="University" className="h-12 shrink-0 opacity-60" />
+                <img src="/images/logos/logo.png" alt="University" className="h-12 shrink-0 opacity-60" />
+                <img src="/images/logos/175-black.svg" alt="University" className="h-12 shrink-0 opacity-60" />
+                <img src="/images/logos/20210106_newLogo.svg" alt="University" className="h-12 shrink-0 opacity-60" />
+                <img src="/images/logos/most-international-university-2425.svg" alt="University" className="h-12 shrink-0 opacity-60" />
+                <img src="/images/logos/virtual_attach_file.vsb-2.png" alt="University" className="h-12 shrink-0 opacity-60" />
+                {/* 第二组 - 无缝滚动 */}
+                <img src="/images/logos/cuhk_logo_2x.png" alt="CUHK" className="h-12 shrink-0 opacity-60" />
+                <img src="/images/logos/hku-115.svg" alt="HKU" className="h-12 shrink-0 opacity-60" />
+                <img src="/images/logos/UoN-Logo.jpg" alt="UoN" className="h-12 shrink-0 opacity-60" />
+                <img src="/images/logos/zh-hans_logo.png" alt="University" className="h-12 shrink-0 opacity-60" />
+                <img src="/images/logos/main-logo-3x.png" alt="University" className="h-12 shrink-0 opacity-60" />
+                <img src="/images/logos/logo-2.png" alt="University" className="h-12 shrink-0 opacity-60" />
+                <img src="/images/logos/logo.png" alt="University" className="h-12 shrink-0 opacity-60" />
+                <img src="/images/logos/175-black.svg" alt="University" className="h-12 shrink-0 opacity-60" />
+                <img src="/images/logos/20210106_newLogo.svg" alt="University" className="h-12 shrink-0 opacity-60" />
+                <img src="/images/logos/most-international-university-2425.svg" alt="University" className="h-12 shrink-0 opacity-60" />
+                <img src="/images/logos/virtual_attach_file.vsb-2.png" alt="University" className="h-12 shrink-0 opacity-60" />
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* 功能特色 */}
-      <section id="features" className="py-20 px-4 sm:px-6 lg:px-8 bg-white">
+      {/* Text 1 - 产品功能介绍 */}
+      <section className="bg-[#F1F5F9] py-[120px] px-4 sm:px-6 lg:px-[64px]">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
-            {/* <Badge className="mb-4 bg-emerald-100 text-emerald-700 hover:bg-emerald-100">
-              功能特色
-            </Badge> */}
-            <h2 className="w-fit mx-auto text-5xl font-bold bg-gradient-to-r from-blue-800 to-cyan-400 bg-clip-text text-transparent mb-4">
-              一站式简历优化
+          <div className="flex flex-col items-center gap-4">
+            <h2
+              className="text-[32px] md:text-[36px] font-bold text-center leading-[120%] tracking-[-0.01em] md:tracking-[-0.02em] bg-clip-text text-transparent"
+              style={{ backgroundImage: 'linear-gradient(90deg, #193CB8 0%, #00D3F2 100%)' }}
+            >
+              产品功能
             </h2>
-            <p className="text-lg lg:text-xl text-slate-600 max-w-3xl mx-auto">
+            <p className="text-lg leading-7 text-[#45556C] text-center max-w-3xl"
+               style={{ fontFamily: 'Arial' }}>
               具有AI简历分析，智能职位匹配，求职信生成，简历差距分析等功能，
-              <br/>
+              <br />
               配合可视化反馈，让优化过程更加高效
             </p>
           </div>
-          
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <Card className="group hover:shadow-lg transition-all duration-300 border-0 bg-white/80 backdrop-blur-sm">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div className="w-12 h-12 bg-gradient-to-br from-blue-700 to-blue-200 rounded-xl flex items-center justify-center mb-4 group-hover:scale-105 transition-transform">
-                    <Target className="w-6 h-6 text-white" />
-                  </div>
-                  <Link to="/simple-resume" className="text-blue-600 group-hover:scale-105 transition-transform">立即体验 →</Link>
-                </div>
-                <CardTitle className="text-xl">AI 简历分析</CardTitle>
-                <CardDescription>利用先进的自然语言处理技术，智能解析简历内容，精准匹配职位描述。</CardDescription>
-              </CardHeader>
-            </Card>
+        </div>
+      </section>
 
-            <Card className="group hover:shadow-lg transition-all duration-300 border-0 bg-white/80 backdrop-blur-sm">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div className="w-12 h-12 bg-gradient-to-br from-cyan-500 to-cyan-200 rounded-xl flex items-center justify-center mb-4 group-hover:scale-105 transition-transform">
-                    <FileText className="w-6 h-6 text-white" />
-                  </div>
-                  <Link to="/job-resume" className="text-cyan-600 group-hover:scale-105 transition-transform">立即体验 →</Link>
-                </div>
-                <CardTitle className="text-xl">简历-职位匹配</CardTitle>
-                <CardDescription>根据职位描述，智能分析简历与职位的匹配度，给出优化建议。</CardDescription>
-              </CardHeader>
-            </Card>
+      {/* Feature 1 - 功能卡片区 */}
+      <section id="features" className="bg-[#F1F5F9]">
+        <div className="max-w-7xl mx-auto">
+          {/* Row 1 */}
+          <div className="flex flex-col lg:flex-row justify-between items-center pt-[120px] pb-[40px] gap-[64px] px-4 sm:px-6 lg:px-[64px]">
+            {/* Card 1 - 文字内容 */}
+            <div className="flex flex-col items-start gap-12 w-full lg:w-[577px] shrink-0">
+              <div className="flex flex-col items-start gap-6">
+                <h3 className="text-2xl font-bold text-[#101828]">AI通用简历分析</h3>
+                <p className="text-base text-[#45556C] leading-relaxed">
+                  利用先进的自然语言处理技术，智能解析简历内容，精准匹配职位描述。
+                </p>
+                <p className="text-base text-[#45556C] leading-relaxed">
+                  同时具有英文简历特色功能，申请海外岗位也毫无压力。
+                </p>
+              </div>
+              <a
+                href="/simple-resume"
+                className="inline-flex items-center justify-center bg-[#155DFC] text-white font-medium text-base rounded-[12px] px-4 py-3 hover:bg-[#155DFC]/90 transition-colors"
+                style={{ width: '120px', height: '50px' }}
+              >
+                点击前往
+              </a>
+            </div>
+            {/* 图片 */}
+            <div className="w-full lg:w-[690px] h-[200px] lg:h-[424px] bg-slate-200 rounded-lg flex items-center justify-center text-slate-400 text-sm">
+              截图占位（待替换）
+            </div>
+          </div>
 
-            <Card className="group hover:shadow-lg transition-all duration-300 border-0 bg-white/80 backdrop-blur-sm">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div className="w-12 h-12 bg-gradient-to-br from-violet-500 to-violet-200 rounded-xl flex items-center justify-center mb-4 group-hover:scale-105 transition-transform">
-                    <Briefcase className="w-6 h-6 text-white" />
-                  </div>
-                  <Link to="/contact" className="text-violet-600 group-hover:scale-105 transition-transform">查看二维码 →</Link>
-                </div>
-
-                <CardTitle className="text-xl">内推机会</CardTitle>
-                <CardDescription>加入群聊，每周查看内推机会，提升面试获得率</CardDescription>
-              </CardHeader>
-            </Card>
-
-            <Card className="group hover:shadow-lg transition-all duration-300 border-0 bg-white/80 backdrop-blur-sm">
-              <CardHeader>
-                <div className="w-12 h-12 bg-gradient-to-br from-amber-500 to-amber-200 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                  <Zap className="w-6 h-6 text-white" />
-                </div>
-                <CardTitle className="text-xl">求职信生成</CardTitle>
-                <CardDescription>为每份工作申请量身定制个性化求职信，讲述引人入胜的故事。</CardDescription>
-              </CardHeader>
-            </Card>
-
-            <Card className="group hover:shadow-lg transition-all duration-300 border-0 bg-white/80 backdrop-blur-sm">
-              <CardHeader>
-                <div className="w-12 h-12 bg-gradient-to-br from-red-500 to-red-100 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                  <TrendingUp className="w-6 h-6 text-white" />
-                </div>
-                <CardTitle className="text-xl">差距分析</CardTitle>
-                <CardDescription>详细的简历改进建议，配合优先级排序的行动清单。</CardDescription>
-              </CardHeader>
-            </Card>
-
-            <Card className="group hover:shadow-lg transition-all duration-300 border-0 bg-white/80 backdrop-blur-sm">
-              <CardHeader>
-                <div className="w-12 h-12 bg-gradient-to-br from-teal-400 to-teal-100 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                  <Shield className="w-6 h-6 text-white" />
-                </div>
-                <CardTitle className="text-xl">多格式支持</CardTitle>
-                <CardDescription>支持 PDF、Word 和图片上传，配备 OCR 技术进行全面文档分析。</CardDescription>
-              </CardHeader>
-            </Card>
+          {/* Row 2 - 图片在左，文字在右 */}
+          <div className="flex flex-col lg:flex-row justify-between items-center pt-[40px] pb-[120px] gap-[64px] px-4 sm:px-6 lg:px-[64px]">
+            {/* 图片 */}
+            <div className="w-full lg:w-[690px] h-[200px] lg:h-[424px] bg-slate-200 rounded-lg flex items-center justify-center text-slate-400 text-sm">
+              截图占位（待替换）
+            </div>
+            {/* Card 2 - 文字内容 */}
+            <div className="flex flex-col items-start gap-12 w-full lg:w-[569px] shrink-0">
+              <div className="flex flex-col items-start gap-6">
+                <h3 className="text-2xl font-bold text-[#101828]">
+                  专业职位匹配
+                </h3>
+                <p className="text-base text-[#45556C] leading-relaxed">
+                  针对特定岗位定制优化，精准匹配JD要求，提升面试获得率
+                </p>
+              </div>
+              <a
+                href="/job-resume"
+                className="inline-flex items-center justify-center bg-[#155DFC] text-white font-medium text-base rounded-[12px] px-4 py-3 hover:bg-[#155DFC]/90 transition-colors"
+                style={{ width: '120px', height: '50px' }}
+              >
+                点击前往
+              </a>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* 优势展示 */}
-      <section className="py-20 bg-gradient-to-r from-slate-900 to-slate-800 text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              为什么选择职管加？
-            </h2>
-            <p className="text-xl text-slate-300 max-w-3xl mx-auto">
-              已有数百名通过我们的 AI 简历优化服务改变职业生涯的求职者。
-            </p>
+      {/* Feature 2 - AI面试录音复盘 */}
+      <section className="bg-[#F1F5F9]">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex flex-col lg:flex-row justify-between items-center pt-[40px] pb-[120px] gap-[64px] px-4 sm:px-6 lg:px-[64px]">
+            {/* 文字内容 */}
+            <div className="flex flex-col items-start gap-12 w-full lg:w-[577px] shrink-0">
+              <div className="flex flex-col items-start gap-6">
+                <h3 className="text-2xl font-bold text-[#101828]">AI面试录音复盘</h3>
+                <p className="text-base text-[#45556C] leading-relaxed">
+                  AI智能解析录音，专业复盘面试表现，沉淀你的求职知识库与备战题库，让每次面试都成为进阶的阶梯。
+                </p>
+              </div>
+              <a
+                href="/simple-resume"
+                className="inline-flex items-center justify-center bg-[#155DFC] text-white font-medium text-base rounded-[12px] px-4 py-3 hover:bg-[#155DFC]/90 transition-colors"
+                style={{ width: '120px', height: '50px' }}
+              >
+                点击前往
+              </a>
+            </div>
+            {/* 图片 */}
+            <div className="w-full lg:w-[690px] h-[200px] lg:h-[424px] bg-slate-200 rounded-lg flex items-center justify-center text-slate-400 text-sm">
+              截图占位（待替换）
+            </div>
           </div>
-          
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-emerald-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                <TrendingUp className="w-8 h-8" />
-              </div>
-              <h3 className="text-2xl font-bold mb-4">获得更多面试</h3>
-              <p className="text-slate-300 leading-relaxed">
-                用户在使用我们的可视化反馈系统优化简历后，面试回调增加了 40%。
-              </p>
+        </div>
+      </section>
+
+      {/* 优势展示 - Text list 1 */}
+      <section className="bg-white">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex flex-col lg:flex-row items-start pt-[120px] pb-[120px] gap-4 lg:gap-[9px] px-4 sm:px-6 lg:px-[64px]">
+            {/* 左侧标题 */}
+            <div className="w-full lg:w-[661px] shrink-0">
+              <h2
+                className="text-2xl md:text-[48px] font-bold leading-[120%] tracking-[-0.02em]"
+                style={{
+                  background: 'linear-gradient(90deg, #193CB8 0%, #00D3F2 100%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text',
+                }}
+              >
+                为什么选择职管加？
+              </h2>
             </div>
-            
-            <div className="text-center">
-              <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                <Clock className="w-8 h-8" />
+            {/* 右侧列表 */}
+            <div className="flex flex-col gap-4 w-full lg:w-[661px]">
+              <div>
+                <div className="flex items-center gap-3 mb-1">
+                  <div className="w-6 h-6 shrink-0 relative flex items-center justify-center"><div className="w-[15px] h-[15px] bg-[#1447E6] rounded-full" /></div>
+                  <h3 className="text-xl font-semibold text-[#101828]">获得更多面试机会</h3>
+                </div>
+                <p className="text-base text-[#45556C] leading-relaxed">
+                  用户在使用我们的可视化反馈系统优化简历后，面试回调增加了 40%。
+                </p>
               </div>
-              <h3 className="text-2xl font-bold mb-4">节省时间</h3>
-              <p className="text-slate-300 leading-relaxed">
-                自动化分析和建议节省了简历优化过程中数小时的人工审查和猜测。
-              </p>
-            </div>
-            
-            <div className="text-center">
-              <div className="w-16 h-16 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                <Award className="w-8 h-8" />
+              <div>
+                <div className="flex items-center gap-3 mb-1">
+                  <div className="w-6 h-6 shrink-0 relative flex items-center justify-center"><div className="w-[11px] h-[11px] bg-[#1447E6] rotate-45" /></div>
+                  <h3 className="text-xl font-semibold text-[#101828]">节省准备简历的时间</h3>
+                </div>
+                <p className="text-base text-[#45556C] leading-relaxed">
+                  自动化分析和建议节省了简历优化过程中数小时的人工审查和猜测。
+                </p>
               </div>
-              <h3 className="text-2xl font-bold mb-4">脱颖而出</h3>
-              <p className="text-slate-300 leading-relaxed">
-                获得其他候选人无法获得的可视化反馈和专业见解。
-              </p>
+              <div>
+                <div className="flex items-center gap-3 mb-1">
+                  <div className="w-6 h-6 shrink-0 relative flex items-center justify-center"><div className="w-0 h-0 border-l-[9px] border-r-[9px] border-b-[15px] border-l-transparent border-r-transparent border-b-[#1447E6]" /></div>
+                  <h3 className="text-xl font-semibold text-[#101828]">在面试者中脱颖而出</h3>
+                </div>
+                <p className="text-base text-[#45556C] leading-relaxed">
+                  获得其他候选人无法获得的可视化反馈和专业见解。
+                </p>
+              </div>
             </div>
           </div>
         </div>
@@ -288,10 +314,12 @@ const Home2: React.FC = () => {
       <section id="testimonials" className="py-20 px-4 sm:px-6 lg:px-8 bg-white/30">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
-            {/* <Badge className="mb-4 bg-blue-100 text-blue-700 hover:bg-blue-100">
-              用户评价
-            </Badge> */}
-            <h2 className="w-fit mx-auto text-5xl font-bold bg-gradient-to-r from-blue-800 to-cyan-400 bg-clip-text text-transparent mb-4">
+            <h2 className="text-4xl font-bold text-center mb-4 leading-[40px] bg-clip-text text-transparent"
+              style={{
+                fontFamily: 'Arial',
+                fontSize: '36px',
+                backgroundImage: 'linear-gradient(90deg, #023B9C 29.81%, #57CAE9 100%)',
+              }}>
               用户心声
             </h2>
             <p className="text-lg lg:text-xl text-slate-600 max-w-3xl mx-auto">
@@ -300,335 +328,154 @@ const Home2: React.FC = () => {
               以用户声音驱动产品持续优化。
             </p>
           </div>
-          
-          <div className="grid md:grid-cols-3 gap-8">
-            <Card className="bg-white border-0 shadow-lg">
-              <CardContent className="flex flex-col h-full">
-                <div className="flex items-center mb-4">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="w-5 h-5 fill-yellow-400 text-yellow-400" />
-                  ))}
-                </div>
-                <blockquote className="text-slate-700 mb-6">
-                  "我之前海投了快200份实习，收到的面邀寥寥无几。我还一直觉得是自己学校不够好。用了‘职管加’的AI分析才发现，我的简历里全是‘负责了…参与了…’，干巴巴的，一点成绩都体现不出来。AI帮我把这些经历重新措辞，比如把‘参与公众号运营’改成‘独立负责每周两篇推文撰写，平均阅读量提升30%’，一下就立体了！内推后现在已经拿到两个面试了！"
-                </blockquote>
-                <div className="flex items-center">
-                  {/* <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-emerald-500 rounded-full flex items-center justify-center text-white font-bold mr-4">
-                    张
-                  </div> */}
-                  <img src={"/images/user1.webp"} alt="Annie" className="w-12 h-12 rounded-full mr-4" />
-                  <div>
-                    <div className="font-semibold">Annie</div>
-                    <div className="text-sm text-slate-600">大三在校生</div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card className="bg-white border-0 shadow-lg">
-              <CardContent className="flex flex-col h-full">
-                <div className="flex items-center mb-4">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="w-5 h-5 fill-yellow-400 text-yellow-400" />
-                  ))}
-                </div>
-                <blockquote className="text-slate-700 mb-6 flex-1">
-                  "我之前的简历太长了，研究项目写了一大堆，HR根本没耐心看。但是我又不知道怎么精简，还好职管加帮我提炼出了重点，还把深奥的技术术语转化成业务方也能听懂的价值描述。同时它还能直接告诉HR相对于其他申请者，我的优势和短板在哪里，让我投递时占据了更大优势。"
-                </blockquote>
-                <div className="flex items-center">
-                  {/* <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-bold mr-4">
-                    李
-                  </div> */}
-                  <img src={"/images/user2.webp"} alt="Ethan" className="w-12 h-12 rounded-full mr-4" />
-                  <div>
-                    <div className="font-semibold">Ethan</div>
-                    <div className="text-sm text-slate-600">大四在校生</div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card className="bg-white border-0 shadow-lg">
-              <CardContent className="flex flex-col h-full">
-                <div className="flex items-center mb-4">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="w-5 h-5 fill-yellow-400 text-yellow-400" />
-                  ))}
-                </div>
-                <blockquote className="text-slate-700 mb-6 flex-1">
-                  "我考研失败后急着找工作，简历就是拿课程作业和社团经历凑的，自己都知道很单薄。‘职管加’最牛的是，它能根据我想投的‘产品助理’岗位，智能地帮我挖掘和提炼经历里匹配的点，比如把一个普通的校园调研项目，包装成‘用户需求调研与分析’的经验。它还给了我针对这个岗位的技能关键词，让我心里特别有底！"
-                </blockquote>
-                <div className="flex items-center">
-                  {/* <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-full flex items-center justify-center text-white font-bold mr-4">
-                    王
-                  </div> */}
-                  <img src={"/images/user3.webp"} alt="Amy" className="w-12 h-12 rounded-full mr-4" />
-                  <div>
-                    <div className="font-semibold">Amy</div>
-                    <div className="text-sm text-slate-600">应届生</div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </section>
 
-      {/* 价格方案 */}
-      <section id="pricing" className="py-20 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-8">
-            {/* <Badge className="mb-4 bg-emerald-100 text-emerald-700 hover:bg-emerald-100">
-              价格方案
-            </Badge> */}
-            {/* <h2 className="w-fit mx-auto text-5xl font-bold bg-gradient-to-r from-blue-800 to-cyan-400 bg-clip-text text-transparent mb-4">
-              简单透明的定价
-            </h2> */}
-            <p className="text-xl text-slate-600">
-              从免费开始，按需升级，零隐藏费用
-            </p>
-          </div>
-          
-          <Card className="relative bg-gradient-to-br from-blue-50 to-gray-50 border-2 border-blue-200 shadow-xl">
-            <CardContent>
-              <ul className="space-y-4 mb-8">
-                <li className="flex items-center">
-                  <CheckCircle className="w-5 h-5 text-emerald-500 mr-3" />
-                  <span>无限次简历分析</span>
-                </li>
-                <li className="flex items-center">
-                  <CheckCircle className="w-5 h-5 text-emerald-500 mr-3" />
-                  <span>可视化标注和反馈</span>
-                </li>
-                <li className="flex items-center">
-                  <CheckCircle className="w-5 h-5 text-emerald-500 mr-3" />
-                  <span>公司研究和洞察</span>
-                </li>
-                <li className="flex items-center">
-                  <CheckCircle className="w-5 h-5 text-emerald-500 mr-3" />
-                  <span>求职信生成</span>
-                </li>
-                <li className="flex items-center">
-                  <CheckCircle className="w-5 h-5 text-emerald-500 mr-3" />
-                  <span>多格式支持（PDF、Word、图片）</span>
-                </li>
-                <li className="flex items-center">
-                  <CheckCircle className="w-5 h-5 text-emerald-500 mr-3" />
-                  <span>优先客户支持</span>
-                </li>
-              </ul>
-              <Button 
-                onClick={handleGetStarted}
-                className="w-full bg-gradient-to-r from-blue-700 to-blue-600 hover:from-blue-600 hover:to-blue-500 text-lg py-6"
-                size="lg"
-              >
-                立即免费开始
-              </Button>
-              <p className="text-center text-sm text-slate-600 mt-4">
-                无需充值
-              </p>
-            </CardContent>
-          </Card>
-          
-          {/* <div className="mt-12 text-center">
-            <p className="text-slate-600 mb-4">寻找团队或企业解决方案？</p>
-            <Button variant="outline" size="lg">
-              <Link to="/contact">
-                联系销售
-              </Link>
-            </Button>
-          </div> */}
-        </div>
-      </section>
+          <div className="grid md:grid-cols-3 gap-6">
+            {/* Testimonial 1 */}
+            <div className="flex flex-col h-full bg-white rounded-2xl border border-slate-100 shadow-lg p-6">
+              <div className="flex items-center mb-4">
+                {[...Array(5)].map((_, i) => (
+                  <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                ))}
+              </div>
+              <blockquote className="text-slate-700 text-sm mb-6 flex-1 leading-relaxed">
+                "我之前海投了快200份实习，收到的面邀寥寥无几。我还一直觉得是自己学校不够好。用了’职管加’的AI分析才发现，我的简历里全是’负责了…参与了…’，干巴巴的，一点成绩都体现不出来。AI帮我把这些经历重新措辞，比如把’参与公众号运营’改成’独立负责每周两篇推文撰写，平均阅读量提升30%’，一下就立体了！内推后现在已经拿到两个面试了！"
+              </blockquote>
+              <div className="flex items-center pt-4 border-t border-slate-100">
+                <img src="/images/user1.webp" alt="Annie" className="w-10 h-10 rounded-full mr-3" />
+                <div>
+                  <div className="font-semibold text-slate-900 text-sm">Annie</div>
+                  <div className="text-xs text-slate-500">大三在校生</div>
+                </div>
+              </div>
+            </div>
 
-      {/* 常见问题 */}
-      <section id="faq" className="py-20 px-4 sm:px-6 lg:px-8 bg-white/30">
-        <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-16 cursor-pointer" onClick={() => {
-            const faqContent = document.getElementById('faq-content');
-            if (faqContent) {
-              if (faqContent.style.display === 'block') {
-                faqContent.style.display = 'none';
-                return;
-              } else {
-                faqContent.style.display = 'block';
-                faqContent.scrollIntoView({ behavior: 'smooth' });
-              }
-            }
-          }}>
-            {/* <Badge className="mb-4 bg-blue-100 text-blue-700 hover:bg-blue-100">
-              FAQ
-            </Badge> */}
-            <h2 className="w-fit mx-auto text-5xl font-bold bg-gradient-to-r from-blue-800 to-cyan-400 bg-clip-text text-transparent mb-4">
-              常见问题解答
-            </h2>
-            <p className="text-lg lg:text-xl text-slate-600 max-w-3xl mx-auto">
-              您想问的，或许就在这里（点击展开）
-            </p>
-          </div>
-          
-          <div className="space-y-4 hidden" id="faq-content">
-            <Card className="bg-white border-0 shadow-sm">
-              <CardContent>
-                <h3 className="text-xl font-semibold mb-3">AI 分析的准确性如何？</h3>
-                <p className="text-slate-600">
-                  我们的 Agent 使用先进的自然语言处理和机器学习模型，基于数千份成功简历和职位描述进行提示词总结。分析准确性会根据用户反馈和实际招聘结果持续改进。
-                </p>
-              </CardContent>
-            </Card>
-            
-            <Card className="bg-white border-0 shadow-sm">
-              <CardContent>
-                <h3 className="text-xl font-semibold mb-3">支持哪些文件格式？</h3>
-                <p className="text-slate-600">
-                  我们支持 PDF、Microsoft Word（DOC/DOCX）和图片文件（JPG、PNG）。我们的 OCR 技术可以从基于图像的简历中提取文本，进行全面分析。
-                </p>
-              </CardContent>
-            </Card>
-            
-            <Card className="bg-white border-0 shadow-sm">
-              <CardContent>
-                <h3 className="text-xl font-semibold mb-3">我的简历数据安全和隐私如何？</h3>
-                <p className="text-slate-600">
-                  是的，绝对安全。我们使用企业级加密和安全措施。您的简历数据永远不会与第三方共享，您可以随时删除数据。本产品完全符合 GDPR 规定。
-                </p>
-              </CardContent>
-            </Card>
-            
-            <Card className="bg-white border-0 shadow-sm">
-              <CardContent>
-                <h3 className="text-xl font-semibold mb-3">可视化标注系统如何工作？</h3>
-                <p className="text-slate-600">
-                  我们的系统分析您的简历内容，并在文档上直接叠加色彩编码的标注。绿色高亮显示优势，黄色表示需要改进的地方，红色标记缺失元素。这使得重点改进一目了然。
-                </p>
-              </CardContent>
-            </Card>
-            
-            <Card className="bg-white border-0 shadow-sm">
-              <CardContent>
-                <h3 className="text-xl font-semibold mb-3">我可以同时改多份不同岗位的简历吗？</h3>
-                <p className="text-slate-600">
-                  当然可以！您可以针对多个职位描述分析简历，并为每个职位获得定制反馈。我们的职位匹配功能就是为此而生的。
-                </p>
-              </CardContent>
-            </Card>
+            {/* Testimonial 2 */}
+            <div className="flex flex-col h-full bg-white rounded-2xl border border-slate-100 shadow-lg p-6">
+              <div className="flex items-center mb-4">
+                {[...Array(5)].map((_, i) => (
+                  <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                ))}
+              </div>
+              <blockquote className="text-slate-700 text-sm mb-6 flex-1 leading-relaxed">
+                "我之前的简历太长了，研究项目写了一大堆，HR根本没耐心看。但是我又不知道怎么精简，还好职管加帮我提炼出了重点，还把深奥的技术术语转化成业务方也能听懂的价值描述。同时它还能直接告诉HR相对于其他申请者，我的优势和短板在哪里，让我投递时占据了更大优势。"
+              </blockquote>
+              <div className="flex items-center pt-4 border-t border-slate-100">
+                <img src="/images/user2.webp" alt="Ethan" className="w-10 h-10 rounded-full mr-3" />
+                <div>
+                  <div className="font-semibold text-slate-900 text-sm">Ethan</div>
+                  <div className="text-xs text-slate-500">大四在校生</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Testimonial 3 */}
+            <div className="flex flex-col h-full bg-white rounded-2xl border border-slate-100 shadow-lg p-6">
+              <div className="flex items-center mb-4">
+                {[...Array(5)].map((_, i) => (
+                  <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                ))}
+              </div>
+              <blockquote className="text-slate-700 text-sm mb-6 flex-1 leading-relaxed">
+                "我考研失败后急着找工作，简历就是拿课程作业和社团经历凑的，自己都知道很单薄。’职管加’最牛的是，它能根据我想投的’产品助理’岗位，智能地帮我挖掘和提炼经历里匹配的点，比如把一个普通的校园调研项目，包装成’用户需求调研与分析’的经验。它还给了我针对这个岗位的技能关键词，让我心里特别有底！"
+              </blockquote>
+              <div className="flex items-center pt-4 border-t border-slate-100">
+                <img src="/images/user3.webp" alt="Amy" className="w-10 h-10 rounded-full mr-3" />
+                <div>
+                  <div className="font-semibold text-slate-900 text-sm">Amy</div>
+                  <div className="text-xs text-slate-500">应届生</div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
       {/* 行动号召 */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-r from-blue-800 to-cyan-400">
-        <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
+      <section className="py-[80px] px-4 sm:px-6 lg:px-[512px]"
+        style={{ background: 'linear-gradient(90deg, #193CB8 0%, #00D3F2 100%)' }}>
+        <div className="max-w-[896px] mx-auto text-center">
+          <h2
+            className="text-[36px] font-bold leading-[40px] text-center text-white mb-8"
+            style={{ fontFamily: 'Inter' }}
+          >
             职管加陪你一起迈好求职第一步
           </h2>
-          <p className="text-xl text-blue-100 mb-8">
+          <p
+            className="text-xl leading-7 text-center text-[#DBEAFE] mb-8"
+            style={{ fontFamily: 'Inter' }}
+          >
             成为数千名即将通过职管加提升面试率的求职者之一
           </p>
-          <Button 
+          <button
             onClick={handleGetStarted}
-            size="lg" 
-            className="bg-white text-blue-600 hover:bg-blue-50 text-lg px-12 py-6 rounded-xl font-semibold"
+            className="inline-flex items-center justify-center gap-2 bg-white text-[#155DFC] rounded-[14px] hover:bg-white/90 transition-colors font-semibold text-lg leading-7"
+            style={{ fontFamily: 'Inter', width: '172px', height: '48px', padding: '24px 16px' }}
           >
             立即免费试用
-            <ChevronRight className="w-5 h-5 ml-2" />
-          </Button>
-          <p className="text-blue-100 mt-4">无需消费 • 即刻访问 • 100% 安全</p>
+            <ChevronRight className="w-4 h-4" />
+          </button>
+          <p className="text-[15.5px] leading-6 text-[#DBEAFE] text-center mt-6" style={{ fontFamily: 'Inter' }}>无需消费 · 即刻访问 · 100% 安全</p>
         </div>
       </section>
 
       {/* 页脚 */}
-      <footer className="bg-slate-900 text-slate-300 py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-8">
+      <footer className="bg-[#101828] text-slate-400 py-12 px-4 sm:px-6 lg:px-[320px]">
+        <div className="max-w-[1280px] mx-auto">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-8">
+            {/* 品牌 */}
             <div>
               <div className="flex items-center space-x-2 mb-4">
                 <img src="/images/icon_128x128.webp" alt="职管加" className="h-8 w-8" />
-
                 <span className="text-xl font-bold text-white">职管加</span>
               </div>
-              <p className="text-slate-400">
-                用 AI 驱动的简历分析和可视化反馈改变您的职业生涯。
+              <p className="text-slate-400 text-sm leading-relaxed">
+                用 AI 驱动的简历分析和可视化<br />反馈改变您的职业生涯。
               </p>
             </div>
+            {/* 产品 */}
             <div>
               <h3 className="font-semibold text-white mb-4">产品</h3>
               <ul className="space-y-2 text-sm">
-              <li>
-                <Link to="/simple-resume" className="hover:text-white">
-                  简历优化
-                </Link>
-              </li>
-              <li>
-                <Link to="/job-resume" className="hover:text-white">
-                  职位匹配
-                </Link>
-              </li>
-              <li>
-                <Link to="/resumes" className="hover:text-white">
-                  简历管理
-                </Link>
-              </li>
+                <li><Link to="/simple-resume" className="text-slate-400 hover:text-white transition-colors">简历优化</Link></li>
+                <li><Link to="/job-resume" className="text-slate-400 hover:text-white transition-colors">职位匹配</Link></li>
+                <li><Link to="/resumes" className="text-slate-400 hover:text-white transition-colors">简历管理</Link></li>
               </ul>
             </div>
+            {/* 团队 */}
             <div>
               <h3 className="font-semibold text-white mb-4">团队</h3>
               <ul className="space-y-2 text-sm">
-                <li>
-                  <Link to="/contact" className="hover:text-white">
-                    关于我们
-                  </Link>
-                </li>
-                <li>
-                  {!qr_code_loading && qr_code_img && (
-                    <img src={qr_code_img} alt="职管加" className="h-20 w-20" />
-                  )}
+                <li><Link to="/contact" className="text-slate-400 hover:text-white transition-colors">关于我们</Link></li>
+                <li className="pt-2">
+                  <img src="/images/qr-code.png" alt="QR码" className="w-20 h-20 rounded-lg" />
                 </li>
               </ul>
             </div>
+            {/* 支持 */}
             <div>
               <h3 className="font-semibold text-white mb-4">支持</h3>
               <ul className="space-y-2 text-sm">
-                <li>
-                  <Link to="/contact" className="hover:text-white">
-                    帮助中心
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/contact" className="hover:text-white">
-                    联系我们
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/contact" className="hover:text-white">
-                    隐私政策
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/contact" className="hover:text-white">
-                    服务条款
-                  </Link>
-                </li>
+                <li><Link to="/contact" className="text-slate-400 hover:text-white transition-colors">帮助中心</Link></li>
+                <li><Link to="/contact" className="text-slate-400 hover:text-white transition-colors">联系我们</Link></li>
+                <li><Link to="/contact" className="text-slate-400 hover:text-white transition-colors">隐私政策</Link></li>
+                <li><Link to="/contact" className="text-slate-400 hover:text-white transition-colors">服务条款</Link></li>
               </ul>
             </div>
           </div>
           <Separator className="my-8 bg-slate-700" />
-          <div className="w-full text-slate-400 flex items-center justify-center">
-            <p>&copy; 2025 职管加。保留所有权利。</p>
-
-            {/* 备案信息 - 仅在有值时显示 */}
-            {icp && (
-              <p className="text-gray-400 text-base">
-                <a 
-                  href="https://beian.miit.gov.cn/" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="hover:underline"
-                >
-                  {icp}
-                </a>
-              </p>
-            )}
+          <div className="flex flex-col md:flex-row items-center justify-center gap-4 text-sm">
+            <p className="text-[15.5px] leading-6 text-[#90A1B9]" style={{ fontFamily: 'Inter' }}>
+              &copy; 2025 职管加。保留所有权利。
+            </p>
+            <a
+              href="https://beian.miit.gov.cn/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[15.4px] leading-6 text-[#99A1AF] hover:text-white transition-colors"
+              style={{ fontFamily: 'Inter' }}
+            >
+              粤ICP备2024301748号-1
+            </a>
           </div>
         </div>
       </footer>
